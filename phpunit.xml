@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <!--
+            As demais variaveis (DB_*, REDIS_*, etc.) vem de .env.testing,
+            carregado automaticamente pelo Laravel quando APP_ENV=testing.
+            O banco de dados de testes e um PostgreSQL real e separado
+            (DB_TEST_DATABASE), nunca SQLite: o projeto usa recursos
+            especificos do PostgreSQL nas proximas fases.
+
+            force="true" e obrigatorio aqui: o container "app" ja define
+            APP_ENV=local como variavel de ambiente real (ver compose.yaml),
+            e o PHPUnit nao sobrescreve uma env var ja existente por padrao.
+        -->
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="BROADCAST_CONNECTION" value="null"/>
+        <env name="PULSE_ENABLED" value="false"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="NIGHTWATCH_ENABLED" value="false"/>
+    </php>
+</phpunit>

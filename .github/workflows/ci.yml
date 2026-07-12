@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: gestao_clinicas_test
+          POSTGRES_USER: gestao_clinicas
+          POSTGRES_PASSWORD: gestao_clinicas_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gestao_clinicas -d gestao_clinicas_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: gestao_clinicas_test
+      DB_USERNAME: gestao_clinicas
+      DB_PASSWORD: gestao_clinicas_ci
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: null
+      CACHE_STORE: redis
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: redis
+      MAIL_MAILER: array
+      FILESYSTEM_DISK: local
+      APP_ENV: testing
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pgsql, bcmath, intl, pcntl, posix, sockets, zip, exif, gd, opcache, redis, imagick
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Cache npm packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Prepare .env.testing
+        run: |
+          cp .env.example .env.testing
+          {
+            echo "APP_ENV=testing"
+            echo "DB_CONNECTION=pgsql"
+            echo "DB_HOST=127.0.0.1"
+            echo "DB_PORT=5432"
+            echo "DB_DATABASE=gestao_clinicas_test"
+            echo "DB_USERNAME=gestao_clinicas"
+            echo "DB_PASSWORD=gestao_clinicas_ci"
+            echo "REDIS_HOST=127.0.0.1"
+            echo "REDIS_PORT=6379"
+            echo "REDIS_PASSWORD="
+            echo "CACHE_STORE=redis"
+            echo "SESSION_DRIVER=array"
+            echo "QUEUE_CONNECTION=redis"
+            echo "MAIL_MAILER=array"
+            echo "FILESYSTEM_DISK=local"
+          } >> .env.testing
+
+      - name: Generate application key
+        run: php artisan key:generate --env=testing --ansi
+
+      - name: Wait for PostgreSQL
+        run: |
+          for i in $(seq 1 30); do
+            pg_isready -h 127.0.0.1 -p 5432 -U gestao_clinicas && break
+            sleep 2
+          done
+
+      - name: Run test database migrations
+        run: php artisan migrate --force --env=testing
+
+      - name: Pint (verificação)
+        run: ./vendor/bin/pint --test
+
+      - name: Larastan / PHPStan
+        run: ./vendor/bin/phpstan analyse --no-progress
+
+      - name: Pest
+        run: php artisan test --env=testing
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier (verificação)
+        run: npm run format:check
+
+      - name: vue-tsc
+        run: npm run types
+
+      - name: Vitest
+        run: npm run test:run
+
+      - name: Build frontend
+        run: npm run build
