@@ -3,6 +3,25 @@
 # Nao usa Laravel Sail. Configuracao explicita e documentada em docs/architecture/docker.md.
 # Todas as portas publicadas sao vinculadas a 127.0.0.1 (nunca 0.0.0.0) e nenhum
 # segredo esta hardcoded aqui - tudo vem do .env (nunca versionado).
+#
+# Redes:
+#   frontend-network: nginx, node, app (acesso normal, com saida para internet -
+#     necessario para o app consultar APIs externas como o ViaCEP, e para o
+#     node baixar fontes via Vite).
+#   data-network: app, queue, scheduler, postgres, redis, minio, minio-init,
+#     mailpit. Separada da frontend-network (nginx/node nao enxergam banco/
+#     cache/storage diretamente). NAO marcada "internal: true": testado e
+#     confirmado que, neste Docker Desktop, uma rede "internal" impede a
+#     publicacao das portas de host (127.0.0.1:5433/9000/9001/8025) dos
+#     containers que estao *somente* nela (postgres/minio/mailpit) - quebrando
+#     o acesso local a essas ferramentas, que e um requisito explicito desta
+#     fundacao. A regra que pediu essa rede tambem previa essa ressalva
+#     ("internal quando isso nao impedir o funcionamento necessario"). A
+#     segmentacao de rede (nginx/node nunca alcancam banco/cache/storage) e o
+#     binding exclusivo em 127.0.0.1 continuam garantindo o isolamento pedido.
+#     O "app" participa das duas redes (fala com Postgres/Redis/MinIO/Mailpit
+#     e tambem com APIs externas). "queue"/"scheduler" ficam somente na
+#     data-network nesta fase (nao fazem chamadas externas ainda).
 
 name: gestao-clinicas
 
@@ -24,14 +43,18 @@ services:
       - .:/var/www/html
       - vendor:/var/www/html/vendor
     networks:
-      - app-network
+      - frontend-network
+      - data-network
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/9000' || exit 1"]
+      # So fica "healthy" quando o PHP-FPM responde E as dependencias
+      # Composer ja foram instaladas (evita que queue/scheduler/node
+      # iniciem contra um vendor/ inexistente em um clone limpo).
+      test: ["CMD-SHELL", "[ -f /var/www/html/vendor/autoload.php ] && bash -c '</dev/tcp/127.0.0.1/9000'"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -49,7 +72,7 @@ services:
     ports:
       - "127.0.0.1:${APP_PORT:-8080}:80"
     networks:
-      - app-network
+      - frontend-network
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/up"]
       interval: 10s
@@ -70,16 +93,22 @@ services:
     volumes:
       - .:/var/www/html
       - node_modules:/var/www/html/node_modules
+      # Somente leitura: o vendor e gerenciado exclusivamente pelo container
+      # "app"/bootstrap. O node so precisa dele para o wayfinder:generate.
+      - vendor:/var/www/html/vendor:ro
     environment:
       NODE_ENV: development
       CHOKIDAR_USEPOLLING: "true"
     command: >
-      sh -c "[ -d node_modules/.bin ] || npm install &&
+      sh -c "[ -d node_modules/.bin ] || npm ci &&
              npm run dev -- --host 0.0.0.0 --port 5173"
     ports:
       - "127.0.0.1:${VITE_PORT:-5173}:5173"
     networks:
-      - app-network
+      - frontend-network
+    depends_on:
+      app:
+        condition: service_healthy
 
   postgres:
     image: postgres:17-alpine
@@ -97,7 +126,7 @@ services:
     ports:
       - "127.0.0.1:${FORWARD_DB_PORT:-5433}:5432"
     networks:
-      - app-network
+      - data-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-gestao_clinicas} -d ${DB_DATABASE:-gestao_clinicas}"]
       interval: 10s
@@ -117,7 +146,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - app-network
+      - data-network
     healthcheck:
       test: ["CMD-SHELL", "redis-cli --no-auth-warning -a $${REDIS_PASSWORD:?} ping | grep -q PONG"]
       interval: 10s
@@ -134,7 +163,7 @@ services:
       - .:/var/www/html
       - vendor:/var/www/html/vendor
     networks:
-      - app-network
+      - data-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -159,14 +188,14 @@ services:
       - .:/var/www/html
       - vendor:/var/www/html/vendor
     networks:
-      - app-network
+      - data-network
     depends_on:
       app:
         condition: service_healthy
     command: ["php", "artisan", "schedule:work"]
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -178,7 +207,7 @@ services:
       - "127.0.0.1:${MINIO_API_PORT:-9000}:9000"
       - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
     networks:
-      - app-network
+      - data-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
       interval: 10s
@@ -187,12 +216,12 @@ services:
       start_period: 15s
 
   minio-init:
-    image: minio/mc:latest
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     depends_on:
       minio:
         condition: service_healthy
     networks:
-      - app-network
+      - data-network
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:?defina MINIO_ROOT_USER no .env}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?defina MINIO_ROOT_PASSWORD no .env}
@@ -207,7 +236,7 @@ services:
     restart: "no"
 
   mailpit:
-    image: axllent/mailpit:latest
+    image: axllent/mailpit:v1.30.4
     restart: unless-stopped
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: "1"
@@ -215,10 +244,12 @@ services:
     ports:
       - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
     networks:
-      - app-network
+      - data-network
 
 networks:
-  app-network:
+  frontend-network:
+    driver: bridge
+  data-network:
     driver: bridge
 
 volumes:

@@ -251,6 +251,8 @@ npm run quality    # lint + format:check + types + test:run (frontend)
 - Estrutura modular em `app/` (Actions, Data, Enums, Events, Jobs, Models, Notifications, Observers, Policies, Queries, Rules, Services, Support) e `resources/js/` (components, composables, layouts, lib, pages, types).
 - Rotas organizadas por contexto em `routes/`: `public-site.php`, `clinic.php`, `patient-portal.php`, `platform.php`, carregadas explicitamente por `web.php`.
 - O painel Filament (`/admin`) é a única forma de administração da plataforma nesta fase; não duplique rotas dele em `platform.php`.
+- **Multiempresa (Fase 1)**: banco/schema compartilhados, `organization_id`/`unit_id` em toda tabela de negócio, IDs em ULID. Contexto ativo resolvido por `App\Support\Tenancy\TenantContext` — ver [docs/architecture/tenancy.md](docs/architecture/tenancy.md). Nunca confie em IDs de organização/unidade vindos do frontend sem revalidar o vínculo.
+- **Auditoria**: `App\Support\Auditing\AuditLogger`, chamado explicitamente nas Actions — ver [docs/architecture/auditing.md](docs/architecture/auditing.md). Nunca grave CPF/CNPJ ou segredos sem mascarar/remover.
 
 ## Regras obrigatórias
 
@@ -258,8 +260,8 @@ npm run quality    # lint + format:check + types + test:run (frontend)
 - **Sem lógica de negócio em Controllers**: delegue para Actions/Services. Controllers apenas orquestram request → Action/Service → response.
 - **Sempre use Form Requests** para validação de entrada em vez de validar diretamente no Controller.
 - **Sempre use Policies** para autorização de acesso a dados de negócio.
-- **Nunca exclusão física de dados de negócio** nas fases futuras — prefira soft delete ou arquivamento, uma vez que os módulos de negócio existam.
-- **Nunca acesse dados de outra organização** — toda query de domínio deverá respeitar o isolamento entre organizações/unidades assim que o módulo de tenancy existir (`app/Support/Tenancy`).
+- **Nunca exclusão física de dados de negócio** — soft delete/arquivamento quando necessário. Nenhum model de negócio usa `forceDelete`/rotas de exclusão.
+- **Nunca acesse dados de outra organização** — toda query de domínio deve filtrar por `organization_id`/`unit_id` explicitamente; rotas com `{organization}`/`{unit}` no path usam os middlewares `tenant.organization-membership`/`tenant.unit-membership`.
 - **Nunca compartilhe senhas** — nem em código, nem em commits, nem em logs, nem em respostas de comando (ver `app:create-platform-admin`).
 - **Nunca registre dados sensíveis em logs** (senhas, tokens, chaves, dados de pacientes).
 - **Sempre crie testes** para código novo (Pest no backend, Vitest no frontend) e rode a suíte afetada antes de considerar uma tarefa concluída.

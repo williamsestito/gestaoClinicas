@@ -3,12 +3,14 @@
 SaaS para gestão de clínicas e consultórios (estética, odontologia,
 massagens, terapias e demais estabelecimentos de atendimento).
 
-Este repositório contém, nesta fase, **apenas a fundação técnica** do
-projeto: autenticação, painel administrativo, infraestrutura Docker,
-qualidade de código e documentação. Nenhum módulo de negócio (organizações,
-unidades, profissionais, pacientes, agenda, prontuário, financeiro,
-produtos, estoque, vendas, página comercial) foi implementado ainda — ver
-[docs/architecture/overview.md](docs/architecture/overview.md).
+A fundação técnica (autenticação, painel administrativo, infraestrutura
+Docker, qualidade de código) e a **Fase 1** (organizações, entidades legais
+CPF/CNPJ, unidades, endereços, horários de funcionamento e contexto ativo
+multiempresa) estão implementadas — ver
+[docs/architecture/overview.md](docs/architecture/overview.md) e
+[docs/modules/](docs/modules/). Profissionais, pacientes, agenda,
+prontuário, financeiro, produtos, estoque, vendas e página comercial ainda
+não foram implementados.
 
 ## Stack
 
@@ -45,6 +47,9 @@ assets e executa um diagnóstico completo. Detalhes em
 | Login | http://localhost:8080/login |
 | Cadastro | http://localhost:8080/register |
 | Dashboard (autenticado) | http://localhost:8080/dashboard |
+| Onboarding de organização | http://localhost:8080/onboarding/organization |
+| Configurações da organização | http://localhost:8080/settings/organization |
+| Unidades | http://localhost:8080/settings/units |
 | Painel administrativo (Filament) | http://localhost:8080/admin |
 | Vite (dev server) | http://localhost:5173 |
 | Mailpit (e-mails locais) | http://localhost:8025 |

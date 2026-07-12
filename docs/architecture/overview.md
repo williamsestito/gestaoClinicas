@@ -2,10 +2,13 @@
 
 ## Objetivo desta fase
 
-Esta é a **fundação técnica** do SaaS de gestão de clínicas e consultórios.
-Nenhum módulo de negócio (organizações, unidades, profissionais, pacientes,
-agenda, prontuário, financeiro, produtos, estoque, vendas, página comercial)
-foi implementado ainda — apenas a infraestrutura que os suportará.
+Fundação técnica do SaaS de gestão de clínicas e consultórios, mais a
+**Fase 1** (multiempresa): organizações, entidades legais (CPF/CNPJ),
+unidades, endereços, horários de funcionamento e contexto ativo — ver
+[tenancy.md](tenancy.md), [auditing.md](auditing.md) e
+[docs/modules/](../modules/). Profissionais, pacientes, agenda,
+prontuário, financeiro, produtos, estoque, vendas e página comercial ainda
+não foram implementados.
 
 ## Stack
 

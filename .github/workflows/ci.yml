@@ -37,23 +37,6 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
-    env:
-      DB_CONNECTION: pgsql
-      DB_HOST: 127.0.0.1
-      DB_PORT: 5432
-      DB_DATABASE: gestao_clinicas_test
-      DB_USERNAME: gestao_clinicas
-      DB_PASSWORD: gestao_clinicas_ci
-      REDIS_HOST: 127.0.0.1
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: null
-      CACHE_STORE: redis
-      SESSION_DRIVER: array
-      QUEUE_CONNECTION: redis
-      MAIL_MAILER: array
-      FILESYSTEM_DISK: local
-      APP_ENV: testing
-
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -84,32 +67,67 @@ jobs:
           key: npm-${{ hashFiles('package-lock.json') }}
           restore-keys: npm-
 
+      # Gerado ANTES do composer install: alguns hooks do post-autoload-dump
+      # (ex.: filament:upgrade) inicializam o Laravel e precisam de um .env
+      # válido. Escrito do zero (nao copiado de .env.example + append) para
+      # nunca conter chaves duplicadas.
+      - name: Prepare .env.testing
+        run: |
+          cat > .env.testing <<'EOF'
+          APP_NAME="Gestão de Clínicas"
+          APP_ENV=testing
+          APP_KEY=
+          APP_DEBUG=true
+          APP_URL=http://localhost
+          APP_TIMEZONE=UTC
+          APP_LOCALE=pt_BR
+          APP_FALLBACK_LOCALE=pt_BR
+          APP_MAINTENANCE_DRIVER=file
+          BCRYPT_ROUNDS=4
+
+          LOG_CHANNEL=stack
+          LOG_STACK=single
+          LOG_LEVEL=debug
+
+          DB_CONNECTION=pgsql
+          DB_HOST=127.0.0.1
+          DB_PORT=5432
+          DB_DATABASE=gestao_clinicas_test
+          DB_USERNAME=gestao_clinicas
+          DB_PASSWORD=gestao_clinicas_ci
+
+          REDIS_CLIENT=phpredis
+          REDIS_HOST=127.0.0.1
+          REDIS_PORT=6379
+          REDIS_PASSWORD=
+
+          CACHE_STORE=redis
+          SESSION_DRIVER=array
+          QUEUE_CONNECTION=redis
+          BROADCAST_CONNECTION=null
+
+          MAIL_MAILER=array
+
+          FILESYSTEM_DISK=local
+          AWS_ACCESS_KEY_ID=
+          AWS_SECRET_ACCESS_KEY=
+          AWS_DEFAULT_REGION=us-east-1
+          AWS_BUCKET=clinical-files
+          AWS_ENDPOINT=http://127.0.0.1:9000
+          AWS_USE_PATH_STYLE_ENDPOINT=true
+
+          BUSINESS_DEFAULT_TIMEZONE=America/Sao_Paulo
+          BUSINESS_DEFAULT_CURRENCY=BRL
+          BUSINESS_DEFAULT_LOCALE=pt_BR
+
+          SEED_PLATFORM_ADMIN=false
+          EOF
+
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Install npm dependencies
         run: npm ci
-
-      - name: Prepare .env.testing
-        run: |
-          cp .env.example .env.testing
-          {
-            echo "APP_ENV=testing"
-            echo "DB_CONNECTION=pgsql"
-            echo "DB_HOST=127.0.0.1"
-            echo "DB_PORT=5432"
-            echo "DB_DATABASE=gestao_clinicas_test"
-            echo "DB_USERNAME=gestao_clinicas"
-            echo "DB_PASSWORD=gestao_clinicas_ci"
-            echo "REDIS_HOST=127.0.0.1"
-            echo "REDIS_PORT=6379"
-            echo "REDIS_PASSWORD="
-            echo "CACHE_STORE=redis"
-            echo "SESSION_DRIVER=array"
-            echo "QUEUE_CONNECTION=redis"
-            echo "MAIL_MAILER=array"
-            echo "FILESYSTEM_DISK=local"
-          } >> .env.testing
 
       - name: Generate application key
         run: php artisan key:generate --env=testing --ansi
@@ -117,9 +135,13 @@ jobs:
       - name: Wait for PostgreSQL
         run: |
           for i in $(seq 1 30); do
-            pg_isready -h 127.0.0.1 -p 5432 -U gestao_clinicas && break
+            if pg_isready -h 127.0.0.1 -p 5432 -U gestao_clinicas; then
+              exit 0
+            fi
             sleep 2
           done
+          echo "::error::PostgreSQL não ficou pronto a tempo." >&2
+          exit 1
 
       - name: Run test database migrations
         run: php artisan migrate --force --env=testing

@@ -1,7 +1,14 @@
 # Módulos
 
-Este diretório documentará cada módulo de negócio (organizações, unidades,
-profissionais, pacientes, agenda, prontuário, financeiro, produtos, estoque,
-vendas, página comercial) conforme forem implementados nas próximas fases.
+Documentação de cada módulo de negócio conforme é implementado.
 
-Nesta fase (fundação técnica), nenhum módulo de negócio existe ainda.
+## Fase 1 (implementada)
+
+- [organizations.md](organizations.md)
+- [legal-entities.md](legal-entities.md)
+- [units.md](units.md)
+
+## Próximas fases
+
+Profissionais, pacientes, agenda, prontuário, financeiro, produtos,
+estoque, vendas, página comercial — ainda não implementados.
