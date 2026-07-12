@@ -1,0 +1,46 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Support\Documents;
+
+/**
+ * As 27 unidades federativas do Brasil (26 estados + Distrito Federal),
+ * usadas para validar o campo `state` de Address.
+ */
+enum BrazilianState: string
+{
+    case AC = 'AC';
+    case AL = 'AL';
+    case AP = 'AP';
+    case AM = 'AM';
+    case BA = 'BA';
+    case CE = 'CE';
+    case DF = 'DF';
+    case ES = 'ES';
+    case GO = 'GO';
+    case MA = 'MA';
+    case MT = 'MT';
+    case MS = 'MS';
+    case MG = 'MG';
+    case PA = 'PA';
+    case PB = 'PB';
+    case PR = 'PR';
+    case PE = 'PE';
+    case PI = 'PI';
+    case RJ = 'RJ';
+    case RN = 'RN';
+    case RS = 'RS';
+    case RO = 'RO';
+    case RR = 'RR';
+    case SC = 'SC';
+    case SP = 'SP';
+    case SE = 'SE';
+    case TO = 'TO';
+
+    /** @return list<string> */
+    public static function codes(): array
+    {
+        return array_column(self::cases(), 'value');
+    }
+}

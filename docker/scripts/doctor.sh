@@ -64,10 +64,15 @@ else
 fi
 
 section "Vite (modo desenvolvimento)"
-if curl -fsS "http://127.0.0.1:${VITE_PORT}/@vite/client" >/dev/null; then
-    pass "Vite dev server respondeu"
+node_running=$(docker compose ps --status running --services 2>/dev/null | grep -x "node" || true)
+if [ -n "$node_running" ]; then
+    if curl -fsS "http://127.0.0.1:${VITE_PORT}/@vite/client" >/dev/null; then
+        pass "Vite dev server respondeu"
+    else
+        fail "container node está em execução, mas o Vite não respondeu em http://127.0.0.1:${VITE_PORT}"
+    fi
 else
-    warn "Vite dev server não respondeu em http://127.0.0.1:${VITE_PORT} (ok se node não estiver em execução)"
+    warn "container node não está em execução — verificação do Vite ignorada"
 fi
 
 echo ""

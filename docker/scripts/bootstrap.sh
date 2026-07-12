@@ -4,6 +4,11 @@
 # Pode ser executado quantas vezes forem necessarias: nunca sobrescreve um
 # .env existente, nunca roda migrate:fresh e nunca recria volumes ja
 # existentes. Chamado por `make init`.
+#
+# Rigoroso de propósito: qualquer falha (health check, instalação de
+# dependências, migrations, app:doctor, testes, build) interrompe o script
+# imediatamente com código de saída diferente de zero. Não há "|| true"
+# nem avisos que mascarem erro real.
 
 set -euo pipefail
 
@@ -11,18 +16,42 @@ cd "$(dirname "$0")/../.."
 
 log()  { echo -e "\n\033[1;36m==> $1\033[0m"; }
 ok()   { echo "  [OK] $1"; }
-warn() { echo "  [!!] $1"; }
+fail() { echo "  [FALHA] $1" >&2; }
+
+# Aguarda um serviço do compose ficar "healthy". Em caso de timeout, imprime
+# os últimos logs do serviço e encerra com erro - nunca continua em silêncio.
+wait_for_healthy() {
+    local service="$1"
+    local max_attempts="${2:-60}"
+    local attempt=0
+
+    echo -n "  aguardando ${service}..."
+    while [ "$attempt" -lt "$max_attempts" ]; do
+        status=$(docker compose ps --format '{{.Health}}' "$service" 2>/dev/null || true)
+        if [ "$status" = "healthy" ]; then
+            echo " saudável"
+            return 0
+        fi
+        sleep 2
+        attempt=$((attempt + 1))
+    done
+
+    echo " TIMEOUT"
+    fail "${service} não ficou saudável em $((max_attempts * 2))s. Últimos logs:"
+    docker compose logs "${service}" --tail=50 >&2
+    exit 1
+}
 
 # 1-2. Docker e Docker Compose
 log "Verificando Docker"
 if ! command -v docker >/dev/null 2>&1; then
-    echo "Docker não encontrado. Instale o Docker antes de continuar." >&2
+    fail "Docker não encontrado. Instale o Docker antes de continuar."
     exit 1
 fi
 ok "$(docker --version)"
 
 if ! docker compose version >/dev/null 2>&1; then
-    echo "Docker Compose (plugin) não encontrado." >&2
+    fail "Docker Compose (plugin) não encontrado."
     exit 1
 fi
 ok "$(docker compose version)"
@@ -62,8 +91,11 @@ else
 fi
 
 set -a
-# shellcheck disable=SC1091
-source .env
+# shellcheck disable=SC1090,SC1091
+# UID e uma variavel somente-leitura do bash (EUID/PPID tambem) - filtrada
+# aqui para nao quebrar o source. O Docker Compose le UID/GID diretamente
+# do .env por conta propria, entao isso nao afeta os containers.
+source <(grep -Ev '^(UID|EUID|PPID)=' .env)
 set +a
 
 # 5. Build
@@ -74,36 +106,46 @@ docker compose build
 log "Iniciando PostgreSQL, Redis, MinIO e Mailpit"
 docker compose up -d postgres redis minio mailpit
 
-log "Aguardando health checks"
-for service in postgres redis minio; do
-    echo -n "  aguardando ${service}..."
-    for _ in $(seq 1 60); do
-        status=$(docker compose ps --format '{{.Health}}' "$service" 2>/dev/null || true)
-        if [ "$status" = "healthy" ]; then
-            echo " saudável"
-            break
-        fi
-        sleep 2
-    done
-done
+log "Aguardando health checks das dependências"
+wait_for_healthy postgres
+wait_for_healthy redis
+wait_for_healthy minio
 
-# 8-10. Sobe app (composer install + APP_KEY via entrypoint) e minio-init
-log "Iniciando app (instala dependências Composer e gera APP_KEY automaticamente)"
-docker compose up -d app minio-init
+# 8. Dependências Composer - instalação única e explícita (fora do
+# entrypoint), evitando corrida entre app/queue/scheduler no volume "vendor".
+log "Instalando dependências Composer"
+docker compose run --rm app composer install --no-interaction --prefer-dist --no-progress
 
-echo -n "  aguardando app..."
-for _ in $(seq 1 60); do
-    status=$(docker compose ps --format '{{.Health}}' app 2>/dev/null || true)
-    if [ "$status" = "healthy" ]; then
-        echo " saudável"
-        break
-    fi
-    sleep 2
-done
+# 8b. APP_KEY - somente se ainda estiver vazia.
+if ! grep -q '^APP_KEY=base64:' .env; then
+    log "Gerando APP_KEY"
+    docker compose run --rm app php artisan key:generate --force
+fi
 
-# 9. Dependencias npm (via container node, idempotente)
+# 8c. .env.testing - gerado a partir do .env já com APP_KEY (mesmas
+# credenciais locais), apontando para o banco de dados de testes. Nunca
+# sobrescreve um .env.testing existente.
+if [ ! -f .env.testing ]; then
+    log "Gerando .env.testing a partir do .env"
+    DB_TEST_DATABASE_VALUE=$(grep -m1 '^DB_TEST_DATABASE=' .env | cut -d= -f2-)
+    sed \
+        -e "s/^APP_ENV=.*/APP_ENV=testing/" \
+        -e "s/^DB_DATABASE=.*/DB_DATABASE=${DB_TEST_DATABASE_VALUE:-gestao_clinicas_test}/" \
+        -e "s/^SESSION_DRIVER=.*/SESSION_DRIVER=array/" \
+        -e "s/^MAIL_MAILER=.*/MAIL_MAILER=array/" \
+        .env > .env.testing
+
+    docker compose run --rm app php artisan key:generate --env=testing --force
+fi
+
+# 9. Dependências npm - instalação única e explícita.
 log "Instalando dependências npm"
-docker compose run --rm node sh -c '[ -d node_modules/.bin ] || npm install'
+docker compose run --rm node npm ci
+
+# 10. Sobe o app (vendor e APP_KEY já prontos, healthcheck deve passar)
+log "Iniciando app"
+docker compose up -d app
+wait_for_healthy app
 
 # 11. Migrations (nunca migrate:fresh)
 log "Executando migrations pendentes"
@@ -111,23 +153,24 @@ docker compose exec -T app php artisan migrate --force
 
 # 12. storage:link
 log "Criando storage link (se necessário)"
-docker compose exec -T app php artisan storage:link || true
+docker compose exec -T app php artisan storage:link
 
 # 13. Build de assets (garante que public/build exista mesmo sem node em dev)
 log "Compilando assets"
 docker compose run --rm node npm run build
 
-# 14. Sobe os demais servicos
+# 14. Sobe os demais serviços
 log "Iniciando nginx, node, queue e scheduler"
 docker compose up -d nginx node queue scheduler
+wait_for_healthy nginx
 
-# 15. Diagnóstico
+# 15. Diagnóstico - falha aqui interrompe o bootstrap (sem "|| warn").
 log "Executando diagnóstico da infraestrutura"
-docker compose exec -T app php artisan app:doctor || warn "app:doctor reportou falhas — verifique acima"
+docker compose exec -T app php artisan app:doctor
 
-# 16. Testes basicos
+# 16. Testes básicos - falha aqui interrompe o bootstrap.
 log "Executando testes básicos"
-docker compose exec -T app php artisan test || warn "alguns testes falharam — verifique acima"
+docker compose exec -T app php artisan test
 
 # 17. URLs locais
 log "Ambiente pronto"

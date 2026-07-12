@@ -26,8 +26,8 @@ class CreatePlatformAdmin extends Command
     {
         $this->info('Criação de administrador da plataforma');
 
-        $name = (string) $this->ask('Nome completo');
-        $email = (string) $this->ask('E-mail');
+        $name = trim((string) $this->ask('Nome completo'));
+        $email = mb_strtolower(trim((string) $this->ask('E-mail')));
 
         $validator = Validator::make(
             ['name' => $name, 'email' => $email],
