@@ -22,6 +22,21 @@ class UnitResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    public static function getModelLabel(): string
+    {
+        return 'Unidade';
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'Unidades';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Clínicas';
+    }
+
     public static function form(Schema $schema): Schema
     {
         return UnitForm::configure($schema);

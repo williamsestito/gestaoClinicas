@@ -15,23 +15,29 @@ class OrganizationMembershipInfolist
                 TextEntry::make('id')
                     ->label('ID'),
                 TextEntry::make('organization.name')
-                    ->label('Organization'),
+                    ->label('Clínica'),
                 TextEntry::make('user.name')
-                    ->label('User'),
+                    ->label('Usuário'),
                 TextEntry::make('status')
+                    ->label('Status')
                     ->badge(),
                 IconEntry::make('is_owner')
+                    ->label('Proprietário')
                     ->boolean(),
                 TextEntry::make('joined_at')
+                    ->label('Vinculado em')
                     ->dateTime()
                     ->placeholder('-'),
                 TextEntry::make('created_by')
+                    ->label('Criado por')
                     ->numeric()
                     ->placeholder('-'),
                 TextEntry::make('created_at')
+                    ->label('Criado em')
                     ->dateTime()
                     ->placeholder('-'),
                 TextEntry::make('updated_at')
+                    ->label('Atualizado em')
                     ->dateTime()
                     ->placeholder('-'),
             ]);

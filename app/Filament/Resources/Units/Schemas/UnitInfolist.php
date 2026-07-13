@@ -15,28 +15,38 @@ class UnitInfolist
                 TextEntry::make('id')
                     ->label('ID'),
                 TextEntry::make('organization.name')
-                    ->label('Organization'),
+                    ->label('Clínica'),
                 TextEntry::make('legalEntity.id')
-                    ->label('Legal entity'),
-                TextEntry::make('name'),
-                TextEntry::make('code'),
-                TextEntry::make('slug'),
+                    ->label('Entidade legal'),
+                TextEntry::make('name')
+                    ->label('Nome'),
+                TextEntry::make('code')
+                    ->label('Código'),
+                TextEntry::make('slug')
+                    ->label('Slug'),
                 TextEntry::make('status')
+                    ->label('Status')
                     ->badge(),
                 IconEntry::make('is_headquarters')
+                    ->label('Matriz')
                     ->boolean(),
-                TextEntry::make('timezone'),
+                TextEntry::make('timezone')
+                    ->label('Fuso horário'),
                 TextEntry::make('email')
-                    ->label('Email address')
+                    ->label('E-mail')
                     ->placeholder('-'),
                 TextEntry::make('phone')
+                    ->label('Telefone')
                     ->placeholder('-'),
                 TextEntry::make('whatsapp')
+                    ->label('WhatsApp')
                     ->placeholder('-'),
                 TextEntry::make('created_at')
+                    ->label('Criado em')
                     ->dateTime()
                     ->placeholder('-'),
                 TextEntry::make('updated_at')
+                    ->label('Atualizado em')
                     ->dateTime()
                     ->placeholder('-'),
             ]);

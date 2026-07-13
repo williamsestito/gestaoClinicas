@@ -2,6 +2,7 @@
 import { Head, useForm } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { update } from '@/routes/context/organization';
 import type { Organization } from '@/types/organization';
 
 defineProps<{
@@ -12,7 +13,7 @@ const form = useForm({ organization_id: '' });
 
 function select(organization: Organization) {
     form.organization_id = organization.id;
-    form.put('/context/organization');
+    form.put(update().url);
 }
 </script>
 

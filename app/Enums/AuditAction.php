@@ -10,6 +10,10 @@ enum AuditAction: string
     case Updated = 'updated';
     case Activated = 'activated';
     case Deactivated = 'deactivated';
+    case Deleted = 'deleted';
+    case Restored = 'restored';
+    case PrimaryLegalEntityChanged = 'primary_legal_entity_changed';
+    case HeadquartersChanged = 'headquarters_changed';
     case OrganizationContextSwitched = 'organization_context_switched';
     case UnitContextSwitched = 'unit_context_switched';
 
@@ -20,6 +24,10 @@ enum AuditAction: string
             self::Updated => 'Atualizado',
             self::Activated => 'Ativado',
             self::Deactivated => 'Inativado',
+            self::Deleted => 'Excluído (lógico)',
+            self::Restored => 'Restaurado',
+            self::PrimaryLegalEntityChanged => 'Troca de entidade legal principal',
+            self::HeadquartersChanged => 'Troca de unidade matriz',
             self::OrganizationContextSwitched => 'Troca de organização ativa',
             self::UnitContextSwitched => 'Troca de unidade ativa',
         };

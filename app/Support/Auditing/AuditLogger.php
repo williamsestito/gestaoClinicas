@@ -20,11 +20,14 @@ use Illuminate\Support\Str;
  */
 class AuditLogger
 {
-    /** @var list<string> chaves nunca gravadas em texto puro */
-    private const SENSITIVE_KEYS = ['password', 'token', 'secret', 'remember_token', 'api_key'];
+    /** @var list<string> chaves nunca gravadas em texto puro, em qualquer profundidade */
+    private const SENSITIVE_KEYS = [
+        'password', 'password_confirmation', 'token', 'access_token', 'refresh_token',
+        'secret', 'remember_token', 'api_key', 'recovery_codes', 'authentication_code',
+    ];
 
-    /** @var list<string> chaves mascaradas (mantém os 2 últimos caracteres) */
-    private const MASKED_KEYS = ['document'];
+    /** @var list<string> chaves mascaradas (mantém os 2 últimos caracteres), em qualquer profundidade */
+    private const MASKED_KEYS = ['document', 'cpf', 'cnpj'];
 
     /**
      * @param  array<string, mixed>  $before
@@ -53,6 +56,10 @@ class AuditLogger
     }
 
     /**
+     * Sanitiza recursivamente, em qualquer profundidade (arrays aninhados
+     * também são percorridos) — nunca grava senhas/tokens/segredos em
+     * texto puro e sempre mascara documentos (CPF/CNPJ).
+     *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
@@ -69,6 +76,12 @@ class AuditLogger
 
             if (in_array($lowerKey, self::MASKED_KEYS, true) && is_string($value)) {
                 $data[$key] = str_repeat('*', max(strlen($value) - 2, 0)).substr($value, -2);
+
+                continue;
+            }
+
+            if (is_array($value)) {
+                $data[$key] = $this->sanitize($value);
             }
         }
 

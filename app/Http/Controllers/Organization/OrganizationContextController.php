@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Organization;
 
 use App\Actions\Organization\SetActiveOrganizationAction;
 use App\Enums\OrganizationMembershipStatus;
+use App\Enums\OrganizationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Organization\SetActiveOrganizationRequest;
 use App\Models\Organization;
@@ -18,12 +19,15 @@ class OrganizationContextController extends Controller
 {
     public function edit(): Response
     {
+        // Nunca lista organizações inativas/suspensas, mesmo com vínculo ativo.
         $organizations = Auth::user()
             ->organizationMemberships()
             ->with('organization')
             ->where('status', OrganizationMembershipStatus::Active)
             ->get()
-            ->pluck('organization');
+            ->pluck('organization')
+            ->filter(fn (?Organization $organization) => $organization?->status === OrganizationStatus::Active)
+            ->values();
 
         return Inertia::render('context/OrganizationSelector', [
             'organizations' => $organizations,

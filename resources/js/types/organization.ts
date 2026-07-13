@@ -39,6 +39,7 @@ export interface Unit {
     email: string | null;
     phone: string | null;
     whatsapp: string | null;
+    deleted_at: string | null;
 }
 
 export interface LegalEntity {
@@ -48,8 +49,36 @@ export interface LegalEntity {
     document: string;
     legal_name: string;
     trade_name: string | null;
+    state_registration?: string | null;
+    municipal_registration?: string | null;
+    email?: string | null;
+    phone?: string | null;
     is_primary: boolean;
     status: 'active' | 'inactive';
+    deleted_at: string | null;
+}
+
+export interface TenantOrganizationSummary {
+    id: string;
+    name: string;
+    slug: string;
+}
+
+export interface TenantUnitSummary {
+    id: string;
+    name: string;
+    code: string;
+    is_headquarters: boolean;
+}
+
+export interface TenantContext {
+    organization: (TenantOrganizationSummary & { status: string }) | null;
+    unit: (TenantUnitSummary & { status: string }) | null;
+    membership: { id: string; status: string; is_owner: boolean } | null;
+    availableOrganizations: TenantOrganizationSummary[];
+    availableUnits: TenantUnitSummary[];
+    isOwner: boolean;
+    isUnitManager: boolean;
 }
 
 export const WEEKDAYS = [

@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -16,16 +19,54 @@ defineProps<{
 
 defineOptions({
     layout: {
-        title: 'Create an account',
-        description: 'Enter your details below to create your account',
+        title: 'Criar uma conta',
+        description: 'Informe seus dados abaixo para criar sua conta',
     },
 });
+
+const accountType = ref<'clinic' | 'patient' | null>(null);
 </script>
 
 <template>
-    <Head title="Register" />
+    <Head title="Cadastro" />
+
+    <div v-if="accountType === null" class="grid gap-4">
+        <Card
+            class="cursor-pointer transition-colors hover:border-primary"
+            data-test="account-type-clinic"
+            @click="accountType = 'clinic'"
+        >
+            <CardContent class="py-4">
+                <p class="font-medium">Criar uma conta para minha clínica</p>
+                <p class="text-sm text-muted-foreground">
+                    Cadastre sua clínica, empresa ou consultório para começar a
+                    usar a plataforma.
+                </p>
+            </CardContent>
+        </Card>
+
+        <Card class="opacity-60" data-test="account-type-patient">
+            <CardContent class="py-4">
+                <div class="flex items-center gap-2">
+                    <p class="font-medium">Acessar como paciente</p>
+                    <Badge variant="secondary">Em breve</Badge>
+                </div>
+                <p class="text-sm text-muted-foreground">
+                    O acesso para pacientes ainda não está disponível.
+                </p>
+            </CardContent>
+        </Card>
+
+        <div class="text-center text-sm text-muted-foreground">
+            Já tem uma conta?
+            <TextLink :href="login()" class="underline underline-offset-4"
+                >Entrar</TextLink
+            >
+        </div>
+    </div>
 
     <Form
+        v-else
         v-bind="store.form()"
         :reset-on-success="['password', 'password_confirmation']"
         v-slot="{ errors, processing }"
@@ -33,7 +74,7 @@ defineOptions({
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="name">Name</Label>
+                <Label for="name">Nome</Label>
                 <Input
                     id="name"
                     type="text"
@@ -42,13 +83,13 @@ defineOptions({
                     :tabindex="1"
                     autocomplete="name"
                     name="name"
-                    placeholder="Full name"
+                    placeholder="Nome completo"
                 />
                 <InputError :message="errors.name" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">E-mail</Label>
                 <Input
                     id="email"
                     type="email"
@@ -62,28 +103,28 @@ defineOptions({
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">Password</Label>
+                <Label for="password">Senha</Label>
                 <PasswordInput
                     id="password"
                     required
                     :tabindex="3"
                     autocomplete="new-password"
                     name="password"
-                    placeholder="Password"
+                    placeholder="Senha"
                     :passwordrules="passwordRules"
                 />
                 <InputError :message="errors.password" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation">Confirm password</Label>
+                <Label for="password_confirmation">Confirmar senha</Label>
                 <PasswordInput
                     id="password_confirmation"
                     required
                     :tabindex="4"
                     autocomplete="new-password"
                     name="password_confirmation"
-                    placeholder="Confirm password"
+                    placeholder="Confirmar senha"
                     :passwordrules="passwordRules"
                 />
                 <InputError :message="errors.password_confirmation" />
@@ -97,17 +138,26 @@ defineOptions({
                 data-test="register-user-button"
             >
                 <Spinner v-if="processing" />
-                Create account
+                Criar conta
             </Button>
         </div>
 
-        <div class="text-center text-sm text-muted-foreground">
-            Already have an account?
+        <div
+            class="flex justify-center gap-1 text-center text-sm text-muted-foreground"
+        >
+            <button
+                type="button"
+                class="underline underline-offset-4"
+                @click="accountType = null"
+            >
+                Voltar
+            </button>
+            ·
             <TextLink
                 :href="login()"
                 class="underline underline-offset-4"
                 :tabindex="6"
-                >Log in</TextLink
+                >Já tem uma conta? Entrar</TextLink
             >
         </div>
     </Form>

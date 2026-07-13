@@ -33,6 +33,7 @@ describe('settings/units/Index', () => {
                         email: null,
                         phone: null,
                         whatsapp: null,
+                        deleted_at: null,
                     },
                 ],
             },

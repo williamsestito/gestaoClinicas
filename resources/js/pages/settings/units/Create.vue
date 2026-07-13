@@ -7,6 +7,7 @@ import OpeningHoursFields from '@/components/organization/OpeningHoursFields.vue
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { store } from '@/routes/settings/units';
 import type { AddressForm, OpeningHourForm } from '@/types/organization';
 
 defineProps<{
@@ -31,7 +32,7 @@ const form = useForm({
 });
 
 function submit() {
-    form.post('/settings/units');
+    form.post(store().url);
 }
 </script>
 

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Organization\DashboardController;
+use App\Http\Controllers\Organization\LegalEntityController;
 use App\Http\Controllers\Organization\OnboardingController;
 use App\Http\Controllers\Organization\OrganizationContextController;
 use App\Http\Controllers\Organization\OrganizationSettingsController;
@@ -7,7 +9,6 @@ use App\Http\Controllers\Organization\UnitContextController;
 use App\Http\Controllers\Organization\UnitController;
 use App\Http\Controllers\PostalCodeLookupController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,11 +24,15 @@ use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->group(function () {
 
-    // Onboarding: acessível mesmo sem organização ativa (é como ela é criada).
-    Route::get('onboarding/organization', [OnboardingController::class, 'create'])
-        ->name('onboarding.organization.create');
-    Route::post('onboarding/organization', [OnboardingController::class, 'store'])
-        ->name('onboarding.organization.store');
+    // Onboarding: acessível sem organização ativa (é como ela é criada).
+    // Bloqueado para quem já tem uma organização (evita reacesso e criação
+    // ilimitada de clínicas pela mesma rota).
+    Route::middleware('tenant.no-active-organization')->group(function () {
+        Route::get('onboarding/organization', [OnboardingController::class, 'create'])
+            ->name('onboarding.organization.create');
+        Route::post('onboarding/organization', [OnboardingController::class, 'store'])
+            ->name('onboarding.organization.store');
+    });
 
     // Seletor de organização: acessível sem organização ativa (é onde se escolhe uma).
     Route::get('context/organization', [OrganizationContextController::class, 'edit'])
@@ -36,9 +41,11 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
         ->name('context.organization.update');
 
     Route::middleware('tenant.active-organization')->group(function () {
-        Route::get('dashboard', fn () => Inertia::render('Dashboard', [
-            'appEnvironment' => app()->environment(),
-        ]))->name('dashboard');
+        // Rotas operacionais: exigem também uma unidade ativa resolvida.
+        Route::middleware('tenant.active-unit')->group(function () {
+            Route::get('dashboard', [DashboardController::class, 'index'])
+                ->name('dashboard');
+        });
 
         Route::get('context/unit', [UnitContextController::class, 'edit'])
             ->name('context.unit.edit');
@@ -56,12 +63,44 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
             ->name('settings.units.create');
         Route::post('settings/units', [UnitController::class, 'store'])
             ->name('settings.units.store');
+        // Restauração usa {unit} sem binding de Eloquent (o registro está
+        // excluído logicamente) — a checagem de organização é manual no controller.
+        Route::post('settings/units/{unit}/restore', [UnitController::class, 'restore'])
+            ->name('settings.units.restore');
 
         Route::middleware('tenant.unit-membership')->group(function () {
             Route::get('settings/units/{unit}/edit', [UnitController::class, 'edit'])
                 ->name('settings.units.edit');
             Route::put('settings/units/{unit}', [UnitController::class, 'update'])
                 ->name('settings.units.update');
+            Route::patch('settings/units/{unit}/status', [UnitController::class, 'updateStatus'])
+                ->name('settings.units.status');
+            Route::put('settings/units/{unit}/headquarters', [UnitController::class, 'makeHeadquarters'])
+                ->name('settings.units.headquarters');
+            Route::delete('settings/units/{unit}', [UnitController::class, 'destroy'])
+                ->name('settings.units.destroy');
+        });
+
+        Route::get('settings/legal-entities', [LegalEntityController::class, 'index'])
+            ->name('settings.legal-entities.index');
+        Route::get('settings/legal-entities/create', [LegalEntityController::class, 'create'])
+            ->name('settings.legal-entities.create');
+        Route::post('settings/legal-entities', [LegalEntityController::class, 'store'])
+            ->name('settings.legal-entities.store');
+        Route::post('settings/legal-entities/{legalEntity}/restore', [LegalEntityController::class, 'restore'])
+            ->name('settings.legal-entities.restore');
+
+        Route::middleware('tenant.legal-entity-membership')->group(function () {
+            Route::get('settings/legal-entities/{legalEntity}/edit', [LegalEntityController::class, 'edit'])
+                ->name('settings.legal-entities.edit');
+            Route::put('settings/legal-entities/{legalEntity}', [LegalEntityController::class, 'update'])
+                ->name('settings.legal-entities.update');
+            Route::patch('settings/legal-entities/{legalEntity}/status', [LegalEntityController::class, 'updateStatus'])
+                ->name('settings.legal-entities.status');
+            Route::put('settings/legal-entities/{legalEntity}/primary', [LegalEntityController::class, 'makePrimary'])
+                ->name('settings.legal-entities.primary');
+            Route::delete('settings/legal-entities/{legalEntity}', [LegalEntityController::class, 'destroy'])
+                ->name('settings.legal-entities.destroy');
         });
 
         // Endpoint interno (JSON) usado pelo formulário de endereço para

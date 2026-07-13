@@ -7,7 +7,6 @@ namespace App\Actions\Organization;
 use App\Data\Organization\OnboardOrganizationData;
 use App\Enums\AuditAction;
 use App\Enums\OrganizationMembershipStatus;
-use App\Enums\RecordStatus;
 use App\Models\Organization;
 use App\Models\User;
 use App\Support\Auditing\AuditLogger;
@@ -44,6 +43,14 @@ class OnboardOrganizationAction
                 isPrimary: true,
             );
 
+            $membership = $organization->memberships()->create([
+                'user_id' => $user->id,
+                'status' => OrganizationMembershipStatus::Active,
+                'is_owner' => true,
+                'joined_at' => now(),
+                'created_by' => $user->id,
+            ]);
+
             $unit = $this->createUnit->handle(
                 organization: $organization,
                 legalEntity: $legalEntity,
@@ -54,21 +61,8 @@ class OnboardOrganizationAction
                 address: $data->address,
                 openingHours: $data->openingHours,
                 isHeadquarters: true,
+                grantAccessTo: $membership,
             );
-
-            $membership = $organization->memberships()->create([
-                'user_id' => $user->id,
-                'status' => OrganizationMembershipStatus::Active,
-                'is_owner' => true,
-                'joined_at' => now(),
-                'created_by' => $user->id,
-            ]);
-
-            $membership->unitMemberships()->create([
-                'unit_id' => $unit->id,
-                'status' => RecordStatus::Active,
-                'is_manager' => true,
-            ]);
 
             $this->auditLogger->log(
                 AuditAction::Created,

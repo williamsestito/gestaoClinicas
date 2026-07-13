@@ -14,6 +14,7 @@ use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
+use App\Support\Auditing\AuditLogger;
 use Database\Factories\LegalEntityFactory;
 
 it('logs organization updates', function () {
@@ -84,6 +85,31 @@ it('masks the document in the audit log after_data', function () {
     expect($log->after_data['document'])->not->toBe($document)
         ->and($log->after_data['document'])->toEndWith(substr($document, -2))
         ->and($log->after_data['document'])->not->toContain(substr($document, 0, 5));
+});
+
+it('recursively sanitizes sensitive keys at any nesting depth', function () {
+    $organization = Organization::factory()->create();
+
+    $log = app(AuditLogger::class)->log(
+        AuditAction::Updated,
+        organization: $organization,
+        after: [
+            'name' => 'Clínica X',
+            'credentials' => [
+                'password' => 'super-secret',
+                'nested' => [
+                    'token' => 'abc123',
+                    'cnpj' => '11222333000181',
+                ],
+            ],
+        ],
+    );
+
+    expect($log->after_data['name'])->toBe('Clínica X')
+        ->and($log->after_data['credentials'])->not->toHaveKey('password')
+        ->and($log->after_data['credentials']['nested'])->not->toHaveKey('token')
+        ->and($log->after_data['credentials']['nested']['cnpj'])->not->toBe('11222333000181')
+        ->and($log->after_data['credentials']['nested']['cnpj'])->toEndWith('81');
 });
 
 it('never allows an audit log to be updated or deleted', function () {

@@ -18,19 +18,28 @@ seja fácil de rastrear até o código que o gerou. Grava:
 
 - ator (usuário autenticado), organização, unidade;
 - ação (`App\Enums\AuditAction`: created, updated, activated, deactivated,
+  deleted, restored, primary_legal_entity_changed, headquarters_changed,
   organization_context_switched, unit_context_switched);
 - `before_data`/`after_data` (snapshot dos campos alterados);
 - IP e user agent da requisição.
 
-Antes de gravar, `before_data`/`after_data` passam por sanitização:
+Antes de gravar, `before_data`/`after_data` passam por sanitização
+**recursiva** (percorre arrays aninhados em qualquer profundidade, não só
+o primeiro nível):
 
-- chaves sensíveis (`password`, `token`, `secret`, ...) são removidas;
-- `document` (CPF/CNPJ) é mascarado, mantendo só os 2 últimos dígitos.
+- chaves sensíveis (`password`, `password_confirmation`, `token`,
+  `access_token`, `refresh_token`, `secret`, `remember_token`, `api_key`,
+  `recovery_codes`, `authentication_code`) são removidas;
+- chaves de documento (`document`, `cpf`, `cnpj`) são mascaradas, mantendo
+  só os 2 últimos dígitos.
 
 ## O que é registrado nesta fase
 
-Criação/atualização de Organization, LegalEntity e Unit; mudança de status
-(ativar/inativar/suspender); troca de organização/unidade ativa.
+Criação/atualização de Organization, LegalEntity e Unit; ativação/
+inativação; exclusão lógica e restauração (LegalEntity, Unit,
+UnitMembership, OrganizationMembership); troca de entidade legal principal
+e de unidade matriz; troca de organização/unidade ativa; desativação de
+conta (`RequestAccountClosureAction`).
 
 ## Acesso
 

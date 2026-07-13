@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { update } from '@/routes/settings/units';
 import { WEEKDAYS } from '@/types/organization';
 import type { Unit } from '@/types/organization';
 
@@ -34,7 +35,7 @@ const form = useForm({
 });
 
 function submit() {
-    form.put(`/settings/units/${props.unit.id}`);
+    form.put(update(props.unit.id).url);
 }
 
 function dayLabel(day: number): string {

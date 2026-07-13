@@ -3,6 +3,7 @@ import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCepLookup } from '@/composables/useCepLookup';
+import { maskPostalCode } from '@/lib/masks';
 import type { AddressForm } from '@/types/organization';
 
 const address = defineModel<AddressForm>({ required: true });
@@ -38,11 +39,15 @@ async function onPostalCodeBlur() {
             <Label for="address-postal-code">CEP</Label>
             <Input
                 id="address-postal-code"
-                v-model="address.postal_code"
+                :model-value="address.postal_code"
                 name="address[postal_code]"
                 inputmode="numeric"
                 maxlength="9"
                 placeholder="00000-000"
+                @update:model-value="
+                    (value) =>
+                        (address.postal_code = maskPostalCode(String(value)))
+                "
                 @blur="onPostalCodeBlur"
             />
             <p v-if="isLoading" class="text-sm text-muted-foreground">

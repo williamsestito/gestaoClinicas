@@ -33,7 +33,12 @@ class UnitPolicy
 
     public function delete(User $user, Unit $unit): bool
     {
-        return false;
+        return $this->hasActiveMembership($user, $unit->organization_id, requireOwner: true);
+    }
+
+    public function restore(User $user, Unit $unit): bool
+    {
+        return $this->hasActiveMembership($user, $unit->organization_id, requireOwner: true);
     }
 
     private function hasActiveMembership(User $user, string $organizationId, bool $requireOwner = false): bool

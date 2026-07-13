@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Actions\Account\RequestAccountClosureAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
@@ -44,19 +45,20 @@ class ProfileController extends Controller
     }
 
     /**
-     * Delete the user's profile.
+     * Encerra o acesso do usuário à plataforma (desativação, nunca exclusão
+     * física — ver RequestAccountClosureAction).
      */
-    public function destroy(ProfileDeleteRequest $request): RedirectResponse
+    public function destroy(ProfileDeleteRequest $request, RequestAccountClosureAction $action): RedirectResponse
     {
         $user = $request->user();
 
-        Auth::logout();
+        $action->handle($user);
 
-        $user->delete();
+        Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/')->with('status', 'Sua conta foi desativada. Se precisar reativá-la, entre em contato com o suporte.');
     }
 }

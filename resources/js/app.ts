@@ -2,10 +2,20 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
-import SettingsLayout from '@/layouts/settings/Layout.vue';
+import ClinicSettingsLayout from '@/layouts/settings/ClinicLayout.vue';
+import AccountSettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'Gestão de Clínicas';
+
+// Páginas de configuração da clínica (dados da clínica, entidades legais,
+// unidades) usam um menu próprio — nunca o menu "Minha conta" (perfil,
+// segurança, aparência), que é exclusivamente pessoal.
+const clinicSettingsPages = [
+    'settings/Organization',
+    'settings/legal-entities/',
+    'settings/units/',
+];
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
@@ -15,8 +25,10 @@ createInertiaApp({
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
+            case clinicSettingsPages.some((page) => name.startsWith(page)):
+                return [AppLayout, ClinicSettingsLayout];
             case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
+                return [AppLayout, AccountSettingsLayout];
             default:
                 return AppLayout;
         }

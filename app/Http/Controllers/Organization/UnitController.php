@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Organization;
 
+use App\Actions\Organization\ChangeUnitStatusAction;
 use App\Actions\Organization\CreateUnitAction;
+use App\Actions\Organization\DeleteUnitAction;
+use App\Actions\Organization\RestoreUnitAction;
+use App\Actions\Organization\SetHeadquartersUnitAction;
 use App\Actions\Organization\UpdateUnitAction;
 use App\Data\Organization\AddressData;
 use App\Data\Organization\OpeningHourData;
+use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Organization\CreateUnitRequest;
 use App\Http\Requests\Organization\UpdateUnitRequest;
@@ -15,6 +20,7 @@ use App\Models\Unit;
 use App\Support\Documents\BrazilianState;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,7 +29,7 @@ class UnitController extends Controller
     public function index(TenantContext $tenant): Response
     {
         return Inertia::render('settings/units/Index', [
-            'units' => $tenant->organization()->units()->orderBy('name')->get(),
+            'units' => $tenant->organization()->units()->withTrashed()->orderBy('name')->get(),
         ]);
     }
 
@@ -56,6 +62,7 @@ class UnitController extends Controller
             whatsapp: $data['whatsapp'] ?? null,
             address: AddressData::fromArray($data['address']),
             openingHours: $openingHours,
+            grantAccessTo: $tenant->membership(),
         );
 
         return to_route('settings.units.index');
@@ -75,5 +82,50 @@ class UnitController extends Controller
         $action->handle($unit, $request->validated());
 
         return to_route('settings.units.index');
+    }
+
+    public function updateStatus(Request $request, Unit $unit, ChangeUnitStatusAction $action): RedirectResponse
+    {
+        $this->authorize('update', $unit);
+
+        $status = $request->boolean('active') ? RecordStatus::Active : RecordStatus::Inactive;
+        $action->handle($unit, $status);
+
+        return back()->with('status', $status === RecordStatus::Active
+            ? 'Unidade ativada com sucesso.'
+            : 'Unidade inativada com sucesso.');
+    }
+
+    public function makeHeadquarters(Unit $unit, SetHeadquartersUnitAction $action): RedirectResponse
+    {
+        $this->authorize('update', $unit);
+
+        $action->handle($unit);
+
+        return back()->with('status', 'Unidade definida como matriz.');
+    }
+
+    public function destroy(Unit $unit, DeleteUnitAction $action): RedirectResponse
+    {
+        $this->authorize('delete', $unit);
+
+        $action->handle($unit);
+
+        return back()->with('status', 'Unidade excluída com sucesso. Seu histórico foi preservado.');
+    }
+
+    public function restore(int|string $unit, TenantContext $tenant, RestoreUnitAction $action): RedirectResponse
+    {
+        $model = Unit::withTrashed()->findOrFail($unit);
+
+        if (! $tenant->organization() || $model->organization_id !== $tenant->organization()->id) {
+            abort(404);
+        }
+
+        $this->authorize('restore', $model);
+
+        $action->handle($model);
+
+        return back()->with('status', 'Unidade restaurada com sucesso.');
     }
 }

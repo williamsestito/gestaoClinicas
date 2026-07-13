@@ -5,10 +5,10 @@
 Fundação técnica do SaaS de gestão de clínicas e consultórios, mais a
 **Fase 1** (multiempresa): organizações, entidades legais (CPF/CNPJ),
 unidades, endereços, horários de funcionamento e contexto ativo — ver
-[tenancy.md](tenancy.md), [auditing.md](auditing.md) e
-[docs/modules/](../modules/). Profissionais, pacientes, agenda,
-prontuário, financeiro, produtos, estoque, vendas e página comercial ainda
-não foram implementados.
+[tenancy.md](tenancy.md), [auditing.md](auditing.md),
+[localization.md](localization.md) e [docs/modules/](../modules/).
+Profissionais, pacientes, agenda, prontuário, financeiro, produtos,
+estoque, vendas e página comercial ainda não foram implementados.
 
 ## Stack
 

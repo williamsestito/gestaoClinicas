@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\Unit;
 use App\Models\UnitMembership;
+use App\Models\User;
 use App\Services\PostalCodeLookup;
 use App\Services\ViaCepPostalCodeLookup;
 use App\Support\Tenancy\TenantContext;
@@ -49,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
             'unit' => Unit::class,
             'organization_membership' => OrganizationMembership::class,
             'unit_membership' => UnitMembership::class,
+            'user' => User::class,
         ]);
     }
 

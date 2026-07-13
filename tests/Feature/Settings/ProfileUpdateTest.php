@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Settings;
 
+use App\Enums\OrganizationMembershipStatus;
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -61,7 +63,7 @@ class ProfileUpdateTest extends TestCase
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
-    public function test_user_can_delete_their_account()
+    public function test_user_can_request_account_closure()
     {
         $user = User::factory()->create();
 
@@ -76,7 +78,36 @@ class ProfileUpdateTest extends TestCase
             ->assertRedirect(route('home'));
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+
+        $fresh = $user->fresh();
+        $this->assertNotNull($fresh, 'Encerrar a conta nunca deve excluir o usuário fisicamente.');
+        $this->assertFalse($fresh->is_active);
+    }
+
+    public function test_sole_active_owner_cannot_request_account_closure()
+    {
+        $user = User::factory()->create();
+        $organization = Organization::factory()->create();
+        $organization->memberships()->create([
+            'user_id' => $user->id,
+            'status' => OrganizationMembershipStatus::Active,
+            'is_owner' => true,
+            'joined_at' => now(),
+            'created_by' => $user->id,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->from(route('profile.edit'))
+            ->delete(route('profile.destroy'), [
+                'password' => 'password',
+            ]);
+
+        $response
+            ->assertSessionHasErrors('password')
+            ->assertRedirect(route('profile.edit'));
+
+        $this->assertTrue($user->fresh()->is_active);
     }
 
     public function test_correct_password_must_be_provided_to_delete_account()

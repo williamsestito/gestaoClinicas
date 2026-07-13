@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -21,11 +23,12 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  * @property string $document
  * @property bool $is_primary
  * @property RecordStatus $status
+ * @property Carbon|null $deleted_at
  */
 class LegalEntity extends Model
 {
     /** @use HasFactory<LegalEntityFactory> */
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids, SoftDeletes;
 
     protected $fillable = [
         'organization_id',

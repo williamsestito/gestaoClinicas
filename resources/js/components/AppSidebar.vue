@@ -1,14 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import {
-    BookOpen,
-    Building2,
-    FolderGit2,
-    LayoutGrid,
-    MapPin,
-} from '@lucide/vue';
+import { Building2, FileText, LayoutGrid, MapPin } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -21,36 +14,31 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as indexLegalEntities } from '@/routes/settings/legal-entities';
+import { edit as editOrganization } from '@/routes/settings/organization';
+import { index as indexUnits } from '@/routes/settings/units';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Visão geral',
         href: dashboard(),
         icon: LayoutGrid,
     },
     {
-        title: 'Organização',
-        href: '/settings/organization',
+        title: 'Dados da clínica',
+        href: editOrganization(),
         icon: Building2,
     },
     {
+        title: 'Dados legais e fiscais',
+        href: indexLegalEntities(),
+        icon: FileText,
+    },
+    {
         title: 'Unidades',
-        href: '/settings/units',
+        href: indexUnits(),
         icon: MapPin,
-    },
-];
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
     },
 ];
 </script>
@@ -74,7 +62,6 @@ const footerNavItems: NavItem[] = [
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

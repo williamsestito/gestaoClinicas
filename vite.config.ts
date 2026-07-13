@@ -3,19 +3,16 @@ import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import laravel from 'laravel-vite-plugin';
-import { bunny } from 'laravel-vite-plugin/fonts';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
     plugins: [
+        // Sem plugin de fontes: usamos a pilha de fontes do sistema
+        // operacional (ver --font-sans em resources/css/app.css), para que
+        // o build nunca dependa de acesso externo (fonts.bunny.net).
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.ts'],
             refresh: true,
-            fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
-                }),
-            ],
         }),
         inertia(),
         tailwindcss(),

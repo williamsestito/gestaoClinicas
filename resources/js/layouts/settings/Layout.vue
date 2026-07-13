@@ -12,15 +12,15 @@ import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
     {
-        title: 'Profile',
+        title: 'Meu perfil',
         href: editProfile(),
     },
     {
-        title: 'Security',
+        title: 'Segurança',
         href: editSecurity(),
     },
     {
-        title: 'Appearance',
+        title: 'Aparência',
         href: editAppearance(),
     },
 ];
@@ -31,15 +31,15 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 <template>
     <div class="px-4 py-6">
         <Heading
-            title="Settings"
-            description="Manage your profile and account settings"
+            title="Minha conta"
+            description="Gerencie seu perfil e as configurações da sua conta"
         />
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">
             <aside class="w-full max-w-xl lg:w-48">
                 <nav
                     class="flex flex-col space-y-1 space-x-0"
-                    aria-label="Settings"
+                    aria-label="Configurações da conta"
                 >
                     <Button
                         v-for="item in sidebarNavItems"

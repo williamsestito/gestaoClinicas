@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Enums\OrganizationMembershipStatus;
 use App\Models\LegalEntity;
+use App\Models\Organization;
 use App\Models\User;
 
 /**
@@ -24,9 +25,19 @@ class LegalEntityPolicy
         return $this->hasActiveMembership($user, $legalEntity->organization_id, requireOwner: true);
     }
 
+    public function create(User $user, Organization $organization): bool
+    {
+        return $this->hasActiveMembership($user, $organization->id, requireOwner: true);
+    }
+
     public function delete(User $user, LegalEntity $legalEntity): bool
     {
-        return false;
+        return $this->hasActiveMembership($user, $legalEntity->organization_id, requireOwner: true);
+    }
+
+    public function restore(User $user, LegalEntity $legalEntity): bool
+    {
+        return $this->hasActiveMembership($user, $legalEntity->organization_id, requireOwner: true);
     }
 
     private function hasActiveMembership(User $user, string $organizationId, bool $requireOwner = false): bool

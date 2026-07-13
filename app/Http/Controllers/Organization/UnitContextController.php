@@ -18,12 +18,15 @@ class UnitContextController extends Controller
 {
     public function edit(TenantContext $tenant): Response
     {
+        // Nunca lista unidades inativas ou excluídas, mesmo com vínculo ativo.
         $units = $tenant->membership()
             ?->unitMemberships()
             ->with('unit')
             ->where('status', RecordStatus::Active)
             ->get()
-            ->pluck('unit') ?? collect();
+            ->pluck('unit')
+            ->filter(fn (?Unit $unit) => $unit?->status === RecordStatus::Active)
+            ->values() ?? collect();
 
         return Inertia::render('context/UnitSelector', [
             'units' => $units,

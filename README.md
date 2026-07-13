@@ -48,7 +48,8 @@ assets e executa um diagnóstico completo. Detalhes em
 | Cadastro | http://localhost:8080/register |
 | Dashboard (autenticado) | http://localhost:8080/dashboard |
 | Onboarding de organização | http://localhost:8080/onboarding/organization |
-| Configurações da organização | http://localhost:8080/settings/organization |
+| Dados da clínica | http://localhost:8080/settings/organization |
+| Dados legais e fiscais | http://localhost:8080/settings/legal-entities |
 | Unidades | http://localhost:8080/settings/units |
 | Painel administrativo (Filament) | http://localhost:8080/admin |
 | Vite (dev server) | http://localhost:5173 |
@@ -183,6 +184,9 @@ remove também os volumes (Postgres/Redis/MinIO) — ação irreversível.
 - [docs/architecture/development.md](docs/architecture/development.md) — fluxo de desenvolvimento local.
 - [docs/architecture/testing.md](docs/architecture/testing.md) — estratégia e cobertura de testes.
 - [docs/architecture/security-baseline.md](docs/architecture/security-baseline.md) — baseline de segurança.
+- [docs/architecture/tenancy.md](docs/architecture/tenancy.md) — multiempresa, contexto ativo, integridade entre organizações.
+- [docs/architecture/auditing.md](docs/architecture/auditing.md) — auditoria, sanitização recursiva.
+- [docs/architecture/localization.md](docs/architecture/localization.md) — regra código em inglês/interface em português, vocabulário oficial.
 - [docs/decisions/](docs/decisions/) — ADRs (decisões de arquitetura).
 - [docs/modules/](docs/modules/) — documentação dos módulos de negócio (futuro).
 - [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md) — regras para agentes de IA (Claude Code, Laravel Boost).

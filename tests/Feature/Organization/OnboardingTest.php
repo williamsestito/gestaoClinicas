@@ -128,3 +128,19 @@ it('redirects a user without an organization to onboarding when visiting the das
 
     $this->actingAs($user)->get('/dashboard')->assertRedirect(route('onboarding.organization.create'));
 });
+
+it('blocks a user who already has an active organization from re-accessing onboarding', function () {
+    $organization = Organization::factory()->create();
+    $user = User::factory()->create();
+    OrganizationMembership::factory()->owner()->for($organization)->for($user)->create();
+
+    $this->actingAs($user)
+        ->get('/onboarding/organization')
+        ->assertRedirect(route('dashboard'));
+
+    $this->actingAs($user)
+        ->post('/onboarding/organization', onboardingPayload())
+        ->assertRedirect(route('dashboard'));
+
+    expect(Organization::query()->count())->toBe(1);
+});
