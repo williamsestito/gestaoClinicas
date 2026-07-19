@@ -12,9 +12,11 @@ final readonly class PostalCodeResult
         public string $neighborhood,
         public string $city,
         public string $state,
+        public string $source,
+        public ?string $ibgeCode = null,
     ) {}
 
-    /** @return array<string, string> */
+    /** @return array<string, string|null> */
     public function toArray(): array
     {
         return [
@@ -23,6 +25,8 @@ final readonly class PostalCodeResult
             'neighborhood' => $this->neighborhood,
             'city' => $this->city,
             'state' => $this->state,
+            'source' => $this->source,
+            'ibge_code' => $this->ibgeCode,
         ];
     }
 }

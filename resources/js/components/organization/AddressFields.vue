@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { Search } from '@lucide/vue';
+import { watch } from 'vue';
 import InputError from '@/components/InputError.vue';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCepLookup } from '@/composables/useCepLookup';
@@ -13,10 +16,10 @@ defineProps<{
     errors?: Partial<Record<keyof AddressForm, string>>;
 }>();
 
-const { lookup, isLoading, notFound } = useCepLookup();
+const { lookup, status } = useCepLookup();
 
-async function onPostalCodeBlur() {
-    const result = await lookup(address.value.postal_code);
+async function fillFromCep(options: { force?: boolean } = {}) {
+    const result = await lookup(address.value.postal_code, options);
 
     if (!result) {
         return;
@@ -31,30 +34,76 @@ async function onPostalCodeBlur() {
         state: result.state || address.value.state,
     };
 }
+
+// Consulta automaticamente assim que o CEP tiver 8 dígitos — sem repetir a
+// requisição a cada tecla, já que o gatilho só dispara nesse limiar exato.
+watch(
+    () => address.value.postal_code,
+    (postalCode) => {
+        if (postalCode.replace(/\D/g, '').length === 8) {
+            fillFromCep();
+        }
+    },
+);
 </script>
 
 <template>
     <div class="grid gap-4">
-        <div class="grid gap-2 sm:max-w-[200px]">
+        <div class="grid gap-2 sm:max-w-70">
             <Label for="address-postal-code">CEP</Label>
-            <Input
-                id="address-postal-code"
-                :model-value="address.postal_code"
-                name="address[postal_code]"
-                inputmode="numeric"
-                maxlength="9"
-                placeholder="00000-000"
-                @update:model-value="
-                    (value) =>
-                        (address.postal_code = maskPostalCode(String(value)))
-                "
-                @blur="onPostalCodeBlur"
-            />
-            <p v-if="isLoading" class="text-sm text-muted-foreground">
-                Consultando CEP…
+            <div class="flex gap-2">
+                <Input
+                    id="address-postal-code"
+                    :model-value="address.postal_code"
+                    name="address[postal_code]"
+                    inputmode="numeric"
+                    maxlength="9"
+                    placeholder="00000-000"
+                    class="flex-1"
+                    @update:model-value="
+                        (value) =>
+                            (address.postal_code = maskPostalCode(
+                                String(value),
+                            ))
+                    "
+                    @blur="fillFromCep()"
+                />
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    :disabled="status === 'loading'"
+                    aria-label="Buscar endereço pelo CEP"
+                    @click="fillFromCep({ force: true })"
+                >
+                    <Search class="size-4" />
+                </Button>
+            </div>
+            <p
+                v-if="status === 'loading'"
+                class="text-sm text-muted-foreground"
+            >
+                Buscando endereço…
             </p>
-            <p v-else-if="notFound" class="text-sm text-muted-foreground">
-                CEP não encontrado — preencha o endereço manualmente.
+            <p
+                v-else-if="status === 'success'"
+                class="text-sm text-muted-foreground"
+            >
+                Endereço localizado. Confira os dados antes de continuar.
+            </p>
+            <p
+                v-else-if="status === 'not-found'"
+                class="text-sm text-muted-foreground"
+            >
+                Não foi possível localizar esse CEP automaticamente. Preencha o
+                endereço manualmente.
+            </p>
+            <p
+                v-else-if="status === 'error'"
+                class="text-sm text-muted-foreground"
+            >
+                Não foi possível consultar o CEP neste momento. Você pode
+                preencher o endereço manualmente.
             </p>
             <InputError :message="errors?.postal_code" />
         </div>

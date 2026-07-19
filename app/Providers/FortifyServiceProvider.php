@@ -80,6 +80,11 @@ class FortifyServiceProvider extends ServiceProvider
 
         Fortify::requestPasswordResetLinkView(fn (Request $request) => Inertia::render('auth/ForgotPassword', [
             'status' => $request->session()->get('status'),
+            // Atalho de redefinição direta (sem e-mail), exclusivo de
+            // local/testing — ver DirectPasswordResetController.
+            'directPasswordResetEnabled' => app()->environment(['local', 'testing']),
+            'confirmedEmail' => $request->session()->get('confirmedEmail'),
+            'passwordRules' => Password::defaults()->toPasswordRulesString(),
         ]));
 
         Fortify::verifyEmailView(fn (Request $request) => Inertia::render('auth/VerifyEmail', [
@@ -114,6 +119,10 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by(
                 ($request->input('credential.id') ?: $request->session()->getId()).'|'.$request->ip(),
             );
+        });
+
+        RateLimiter::for('direct-password-reset', function (Request $request) {
+            return Limit::perMinute(20)->by($request->ip());
         });
     }
 }

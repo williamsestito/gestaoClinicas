@@ -29,7 +29,12 @@ class UnitController extends Controller
     public function index(TenantContext $tenant): Response
     {
         return Inertia::render('settings/units/Index', [
-            'units' => $tenant->organization()->units()->withTrashed()->orderBy('name')->get(),
+            'units' => $tenant->organization()->units()
+                ->with(['address', 'openingHours'])
+                ->withTrashed()
+                ->orderBy('name')
+                ->get(),
+            'states' => BrazilianState::codes(),
         ]);
     }
 
@@ -65,6 +70,8 @@ class UnitController extends Controller
             grantAccessTo: $tenant->membership(),
         );
 
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Unidade criada com sucesso.']);
+
         return to_route('settings.units.index');
     }
 
@@ -81,19 +88,30 @@ class UnitController extends Controller
     {
         $action->handle($unit, $request->validated());
 
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Unidade atualizada com sucesso.']);
+
         return to_route('settings.units.index');
     }
 
-    public function updateStatus(Request $request, Unit $unit, ChangeUnitStatusAction $action): RedirectResponse
+    public function updateStatus(Request $request, Unit $unit, TenantContext $tenant, ChangeUnitStatusAction $action): RedirectResponse
     {
+        if (! $tenant->organization() || $unit->organization_id !== $tenant->organization()->id) {
+            abort(404);
+        }
+
         $this->authorize('update', $unit);
 
         $status = $request->boolean('active') ? RecordStatus::Active : RecordStatus::Inactive;
         $action->handle($unit, $status);
 
-        return back()->with('status', $status === RecordStatus::Active
-            ? 'Unidade ativada com sucesso.'
-            : 'Unidade inativada com sucesso.');
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $status === RecordStatus::Active
+                ? 'Unidade ativada com sucesso.'
+                : 'Unidade inativada com sucesso.',
+        ]);
+
+        return back();
     }
 
     public function makeHeadquarters(Unit $unit, SetHeadquartersUnitAction $action): RedirectResponse
@@ -102,7 +120,9 @@ class UnitController extends Controller
 
         $action->handle($unit);
 
-        return back()->with('status', 'Unidade definida como matriz.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Unidade definida como matriz.']);
+
+        return back();
     }
 
     public function destroy(Unit $unit, DeleteUnitAction $action): RedirectResponse
@@ -111,7 +131,9 @@ class UnitController extends Controller
 
         $action->handle($unit);
 
-        return back()->with('status', 'Unidade excluída com sucesso. Seu histórico foi preservado.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Unidade excluída com sucesso. Seu histórico foi preservado.']);
+
+        return back();
     }
 
     public function restore(int|string $unit, TenantContext $tenant, RestoreUnitAction $action): RedirectResponse
@@ -126,6 +148,8 @@ class UnitController extends Controller
 
         $action->handle($model);
 
-        return back()->with('status', 'Unidade restaurada com sucesso.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Unidade restaurada com sucesso.']);
+
+        return back();
     }
 }

@@ -21,7 +21,13 @@ use Illuminate\Support\Carbon;
  * @property string $id
  * @property string $organization_id
  * @property string $postal_code
+ * @property string $street
+ * @property string $number
+ * @property string|null $complement
+ * @property string $neighborhood
+ * @property string $city
  * @property string $state
+ * @property string $country
  * @property Carbon|null $deleted_at
  */
 class Address extends Model

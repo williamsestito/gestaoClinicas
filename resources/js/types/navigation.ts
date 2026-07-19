@@ -3,7 +3,7 @@ import type { LucideIcon } from '@lucide/vue';
 
 export type BreadcrumbItem = {
     title: string;
-    href: NonNullable<InertiaLinkProps['href']>;
+    href?: NonNullable<InertiaLinkProps['href']>;
 };
 
 export type NavItem = {
@@ -11,4 +11,10 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon;
     isActive?: boolean;
+    disabled?: boolean;
+};
+
+export type NavGroup = {
+    title: string;
+    items: NavItem[];
 };

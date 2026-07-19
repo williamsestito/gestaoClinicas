@@ -1,5 +1,12 @@
 <?php
 
+use App\Enums\OrganizationMembershipStatus;
+use App\Models\LegalEntity;
+use App\Models\Organization;
+use App\Models\OrganizationMembership;
+use App\Models\Unit;
+use App\Models\UnitMembership;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -44,7 +51,27 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Cria uma organização com entidade legal e unidade matriz, autentica um
+ * usuário proprietário como membro ativo de ambas, e define o contexto de
+ * organização/unidade ativos na sessão. Usado por testes que exercitam
+ * rotas sob os middlewares de tenancy.
+ */
+function actingOwnerWithActiveContext(): User
 {
-    // ..
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    $unit = Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+
+    $user = User::factory()->create();
+    $membership = OrganizationMembership::factory()
+        ->owner()
+        ->for($organization)
+        ->for($user)
+        ->create(['status' => OrganizationMembershipStatus::Active]);
+    UnitMembership::factory()->for($membership, 'organizationMembership')->for($unit, 'unit')->create();
+
+    session(['active_organization_id' => $organization->id, 'active_unit_id' => $unit->id]);
+
+    return $user;
 }

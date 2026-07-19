@@ -16,7 +16,7 @@ const sidebarNavItems: NavItem[] = [
         href: editOrganization(),
     },
     {
-        title: 'Dados legais e fiscais',
+        title: 'Entidades legais',
         href: indexLegalEntities(),
     },
     {

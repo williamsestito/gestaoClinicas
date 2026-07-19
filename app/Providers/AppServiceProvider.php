@@ -8,10 +8,15 @@ use App\Models\OrganizationMembership;
 use App\Models\Unit;
 use App\Models\UnitMembership;
 use App\Models\User;
+use App\Services\ApiCepPostalCodeLookup;
+use App\Services\AwesomeApiPostalCodeLookup;
 use App\Services\PostalCodeLookup;
+use App\Services\PostalCodeLookupChain;
+use App\Services\PostalCodeProvider;
 use App\Services\ViaCepPostalCodeLookup;
 use App\Support\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -20,13 +25,30 @@ use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
+    /** @var array<string, class-string<PostalCodeProvider>> */
+    private const CEP_PROVIDER_MAP = [
+        'awesomeapi' => AwesomeApiPostalCodeLookup::class,
+        'apicep' => ApiCepPostalCodeLookup::class,
+        'viacep' => ViaCepPostalCodeLookup::class,
+    ];
+
     /**
      * Register any application services.
      */
     public function register(): void
     {
         $this->app->singleton(TenantContext::class);
-        $this->app->bind(PostalCodeLookup::class, ViaCepPostalCodeLookup::class);
+        $this->app->bind(PostalCodeLookup::class, function (Container $app): PostalCodeLookupChain {
+            /** @var array<int, string> $providerKeys */
+            $providerKeys = config('cep.providers', array_keys(self::CEP_PROVIDER_MAP));
+
+            $providers = array_map(
+                fn (string $key) => $app->make(self::CEP_PROVIDER_MAP[$key]),
+                $providerKeys,
+            );
+
+            return new PostalCodeLookupChain($providers);
+        });
     }
 
     /**

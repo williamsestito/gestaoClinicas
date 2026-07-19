@@ -113,7 +113,7 @@ const tenant = computed(() => page.props.tenant);
                 <Link
                     :href="indexLegalEntities()"
                     class="text-primary underline-offset-4 hover:underline"
-                    >Dados legais e fiscais</Link
+                    >Entidades legais</Link
                 >
                 <Link
                     :href="indexUnits()"

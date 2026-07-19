@@ -4,8 +4,20 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { update } from '@/routes/settings/legal-entities';
+import { dashboard } from '@/routes';
+import { index, update } from '@/routes/settings/legal-entities';
 import type { LegalEntity } from '@/types/organization';
+
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            { title: 'Início', href: dashboard() },
+            { title: 'Configurações da clínica' },
+            { title: 'Entidades legais', href: index() },
+            { title: 'Editar entidade legal' },
+        ],
+    },
+});
 
 const props = defineProps<{
     legalEntity: LegalEntity;

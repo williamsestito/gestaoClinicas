@@ -2,88 +2,69 @@
 
 declare(strict_types=1);
 
-use App\Enums\OrganizationMembershipStatus;
-use App\Models\LegalEntity;
-use App\Models\Organization;
-use App\Models\OrganizationMembership;
-use App\Models\Unit;
-use App\Models\UnitMembership;
-use App\Models\User;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
-function actingOwnerWithActiveContext(): User
-{
-    $organization = Organization::factory()->create();
-    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
-    $unit = Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
-
-    $user = User::factory()->create();
-    $membership = OrganizationMembership::factory()
-        ->owner()
-        ->for($organization)
-        ->for($user)
-        ->create(['status' => OrganizationMembershipStatus::Active]);
-    UnitMembership::factory()->for($membership, 'organizationMembership')->for($unit, 'unit')->create();
-
-    session(['active_organization_id' => $organization->id, 'active_unit_id' => $unit->id]);
-
-    return $user;
-}
-
 it('returns address data for a valid postal code', function () {
     Http::fake([
-        'viacep.com.br/*' => Http::response([
-            'cep' => '01310-100',
-            'logradouro' => 'Avenida Paulista',
-            'bairro' => 'Bela Vista',
-            'localidade' => 'São Paulo',
-            'uf' => 'SP',
+        'cep.awesomeapi.com.br/*' => Http::response([
+            'cep' => '01310930',
+            'address' => 'Avenida Paulista, 2100',
+            'state' => 'SP',
+            'district' => 'Bela Vista',
+            'city' => 'São Paulo',
+            'city_ibge' => '3550308',
         ]),
+        '*' => Http::response([], 500),
     ]);
 
     $user = actingOwnerWithActiveContext();
 
-    $this->actingAs($user)->getJson('/cep/01310100')
+    $this->actingAs($user)->getJson('/cep/01310930')
         ->assertOk()
-        ->assertJson(['city' => 'São Paulo', 'state' => 'SP']);
+        ->assertJson(['city' => 'São Paulo', 'state' => 'SP', 'source' => 'awesomeapi']);
 });
 
-it('returns 404 for a postal code that does not exist', function () {
+it('returns 404 when none of the providers find the postal code', function () {
     Http::fake([
+        'cep.awesomeapi.com.br/*' => Http::response(['code' => 'not_found'], 404),
+        'cdn.apicep.com/*' => Http::response(['code' => 'not_found', 'status' => 404], 404),
         'viacep.com.br/*' => Http::response(['erro' => true]),
     ]);
 
     $user = actingOwnerWithActiveContext();
 
-    $this->actingAs($user)->getJson('/cep/00000000')->assertNotFound();
+    $this->actingAs($user)->getJson('/cep/00000000')
+        ->assertNotFound()
+        ->assertJson(['message' => 'CEP não encontrado.']);
 });
 
-it('does not break when the external service times out', function () {
+it('does not break when every external provider times out', function () {
     Http::fake([
-        'viacep.com.br/*' => fn () => throw new ConnectionException('timed out'),
+        '*' => fn () => throw new ConnectionException('timed out'),
     ]);
 
     $user = actingOwnerWithActiveContext();
 
-    $this->actingAs($user)->getJson('/cep/01310100')->assertNotFound();
+    $this->actingAs($user)->getJson('/cep/01310930')->assertNotFound();
 });
 
-it('caches a successful postal code lookup', function () {
+it('caches a successful postal code lookup across all providers', function () {
     Http::fake([
-        'viacep.com.br/*' => Http::response([
-            'logradouro' => 'Avenida Paulista',
-            'bairro' => 'Bela Vista',
-            'localidade' => 'São Paulo',
-            'uf' => 'SP',
+        'cep.awesomeapi.com.br/*' => Http::response([
+            'address' => 'Avenida Paulista, 2100',
+            'state' => 'SP',
+            'district' => 'Bela Vista',
+            'city' => 'São Paulo',
         ]),
+        '*' => Http::response([], 500),
     ]);
 
     $user = actingOwnerWithActiveContext();
 
-    $this->actingAs($user)->getJson('/cep/01310100')->assertOk();
-    $this->actingAs($user)->getJson('/cep/01310100')->assertOk();
+    $this->actingAs($user)->getJson('/cep/01310930')->assertOk();
+    $this->actingAs($user)->getJson('/cep/01310930')->assertOk();
 
     Http::assertSentCount(1);
 });

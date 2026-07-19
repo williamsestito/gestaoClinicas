@@ -7,8 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { maskCpfCnpj } from '@/lib/masks';
-import { store } from '@/routes/settings/legal-entities';
+import { dashboard } from '@/routes';
+import { index, store } from '@/routes/settings/legal-entities';
 import type { AddressForm } from '@/types/organization';
+
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            { title: 'Início', href: dashboard() },
+            { title: 'Configurações da clínica' },
+            { title: 'Entidades legais', href: index() },
+            { title: 'Nova entidade legal' },
+        ],
+    },
+});
 
 const props = defineProps<{
     legalEntityTypes: { value: string; label: string }[];

@@ -14,6 +14,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { dashboard } from '@/routes';
 import {
     create,
     destroy,
@@ -23,6 +24,16 @@ import {
     status as statusRoute,
 } from '@/routes/settings/legal-entities';
 import type { LegalEntity } from '@/types/organization';
+
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            { title: 'Início', href: dashboard() },
+            { title: 'Configurações da clínica' },
+            { title: 'Entidades legais' },
+        ],
+    },
+});
 
 defineProps<{
     legalEntities: LegalEntity[];
@@ -76,13 +87,13 @@ function restore(entity: LegalEntity) {
 </script>
 
 <template>
-    <Head title="Dados legais e fiscais" />
+    <Head title="Entidades legais" />
 
     <div class="flex flex-col space-y-6">
         <div class="flex items-center justify-between">
             <Heading
                 variant="small"
-                title="Dados legais e fiscais"
+                title="Entidades legais"
                 description="Entidades legais (CPF/CNPJ) da sua clínica"
             />
             <Link :href="create()">

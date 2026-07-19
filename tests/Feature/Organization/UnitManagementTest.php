@@ -286,8 +286,114 @@ it('atomically swaps the headquarters unit', function () {
 
     $this->actingAs($ctx['user'])
         ->put("/settings/units/{$secondUnit->id}/headquarters")
-        ->assertRedirect();
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'Unidade definida como matriz.']);
 
     expect($secondUnit->fresh()->is_headquarters)->toBeTrue()
         ->and($ctx['headquarters']->fresh()->is_headquarters)->toBeFalse();
+});
+
+it('flashes a toast confirmation after creating a unit', function () {
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])->post('/settings/units', [
+        'name' => 'Unidade Oeste',
+        'address' => [
+            'postal_code' => '01310100',
+            'street' => 'Rua A',
+            'number' => '10',
+            'neighborhood' => 'Centro',
+            'city' => 'São Paulo',
+            'state' => 'SP',
+        ],
+        'opening_hours' => [],
+    ])
+        ->assertRedirect('/settings/units')
+        ->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'Unidade criada com sucesso.']);
+});
+
+it('flashes a toast confirmation after updating a unit', function () {
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->put("/settings/units/{$ctx['headquarters']->id}", [
+            'name' => 'Matriz Renomeada',
+            'phone' => '',
+            'whatsapp' => '',
+            'email' => '',
+            'timezone' => $ctx['headquarters']->timezone,
+        ])
+        ->assertRedirect('/settings/units')
+        ->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'Unidade atualizada com sucesso.']);
+});
+
+it('flashes distinct toast confirmations when activating and inactivating a unit', function () {
+    $ctx = ownerActingInOrganization();
+    $secondUnit = Unit::factory()->for($ctx['organization'])->for($ctx['legalEntity'], 'legalEntity')->create(['status' => RecordStatus::Active]);
+    UnitMembership::factory()->for($ctx['membership'], 'organizationMembership')->for($secondUnit, 'unit')->create();
+
+    $this->actingAs($ctx['user'])
+        ->patch("/settings/units/{$secondUnit->id}/status", ['active' => false])
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'Unidade inativada com sucesso.']);
+
+    $this->actingAs($ctx['user'])
+        ->patch("/settings/units/{$secondUnit->id}/status", ['active' => true])
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'Unidade ativada com sucesso.']);
+});
+
+it('flashes a toast confirmation after deleting and restoring a unit', function () {
+    $ctx = ownerActingInOrganization();
+    $secondUnit = Unit::factory()->for($ctx['organization'])->for($ctx['legalEntity'], 'legalEntity')->create();
+    UnitMembership::factory()->for($ctx['membership'], 'organizationMembership')->for($secondUnit, 'unit')->create();
+
+    $this->actingAs($ctx['user'])
+        ->delete("/settings/units/{$secondUnit->id}")
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'Unidade excluída com sucesso. Seu histórico foi preservado.']);
+
+    $this->actingAs($ctx['user'])
+        ->post("/settings/units/{$secondUnit->id}/restore")
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'Unidade restaurada com sucesso.']);
+});
+
+it('allows reactivating a unit that is currently inactive', function () {
+    $ctx = ownerActingInOrganization();
+    $secondUnit = Unit::factory()->for($ctx['organization'])->for($ctx['legalEntity'], 'legalEntity')->create(['status' => RecordStatus::Inactive]);
+
+    // Sem UnitMembership nesta unidade — só o vínculo de owner da
+    // organização é exigido pela Policy para a rota de status.
+    $this->actingAs($ctx['user'])
+        ->patch("/settings/units/{$secondUnit->id}/status", ['active' => true])
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'Unidade ativada com sucesso.']);
+
+    expect($secondUnit->fresh()->status)->toBe(RecordStatus::Active);
+});
+
+it('does not allow toggling the status of a unit belonging to another organization', function () {
+    $ctx = ownerActingInOrganization();
+
+    $otherOrganization = Organization::factory()->create();
+    $otherLegalEntity = LegalEntity::factory()->primary()->for($otherOrganization)->create();
+    $foreignUnit = Unit::factory()->for($otherOrganization)->for($otherLegalEntity, 'legalEntity')->create(['status' => RecordStatus::Active]);
+
+    $this->actingAs($ctx['user'])
+        ->patch("/settings/units/{$foreignUnit->id}/status", ['active' => false])
+        ->assertNotFound();
+
+    expect($foreignUnit->fresh()->status)->toBe(RecordStatus::Active);
+});
+
+it('eager-loads the address and opening hours so the listing can show and inline-edit a unit', function () {
+    $ctx = ownerActingInOrganization();
+
+    $response = $this->actingAs($ctx['user'])->get('/settings/units');
+
+    $response->assertInertia(fn ($page) => $page
+        ->has('units.0.address')
+        ->has('units.0.opening_hours')
+    );
 });

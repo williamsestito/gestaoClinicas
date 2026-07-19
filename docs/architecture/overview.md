@@ -6,9 +6,11 @@ Fundação técnica do SaaS de gestão de clínicas e consultórios, mais a
 **Fase 1** (multiempresa): organizações, entidades legais (CPF/CNPJ),
 unidades, endereços, horários de funcionamento e contexto ativo — ver
 [tenancy.md](tenancy.md), [auditing.md](auditing.md),
-[localization.md](localization.md) e [docs/modules/](../modules/).
+[localization.md](localization.md) e [docs/modules/](../modules/). A
+fundação de domínio próprio, SEO técnico e acessibilidade da página
+pública inicial está em [seo.md](seo.md).
 Profissionais, pacientes, agenda, prontuário, financeiro, produtos,
-estoque, vendas e página comercial ainda não foram implementados.
+estoque, vendas e demais páginas públicas ainda não foram implementados.
 
 ## Stack
 

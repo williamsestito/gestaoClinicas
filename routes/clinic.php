@@ -67,14 +67,18 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
         // excluído logicamente) — a checagem de organização é manual no controller.
         Route::post('settings/units/{unit}/restore', [UnitController::class, 'restore'])
             ->name('settings.units.restore');
+        // Fora do grupo tenant.unit-membership pelo mesmo motivo do restore:
+        // essa rota também precisa funcionar quando a unidade está inativa
+        // (é como ela volta a ficar ativa) — a checagem de organização é
+        // manual no controller, e a autorização (owner) continua via Policy.
+        Route::patch('settings/units/{unit}/status', [UnitController::class, 'updateStatus'])
+            ->name('settings.units.status');
 
         Route::middleware('tenant.unit-membership')->group(function () {
             Route::get('settings/units/{unit}/edit', [UnitController::class, 'edit'])
                 ->name('settings.units.edit');
             Route::put('settings/units/{unit}', [UnitController::class, 'update'])
                 ->name('settings.units.update');
-            Route::patch('settings/units/{unit}/status', [UnitController::class, 'updateStatus'])
-                ->name('settings.units.status');
             Route::put('settings/units/{unit}/headquarters', [UnitController::class, 'makeHeadquarters'])
                 ->name('settings.units.headquarters');
             Route::delete('settings/units/{unit}', [UnitController::class, 'destroy'])
