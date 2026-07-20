@@ -79,6 +79,9 @@ export interface TenantContext {
     availableUnits: TenantUnitSummary[];
     isOwner: boolean;
     isUnitManager: boolean;
+    isPlatformAdmin: boolean;
+    /** Só para refletir a navegação/UI — nunca a fonte de autorização real. */
+    permissions: string[];
 }
 
 export const WEEKDAYS = [

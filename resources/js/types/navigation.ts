@@ -12,6 +12,8 @@ export type NavItem = {
     icon?: LucideIcon;
     isActive?: boolean;
     disabled?: boolean;
+    /** Chave de permissão exigida para exibir o item (ver PermissionKey no backend). Omitido = sempre visível a qualquer membro ativo. */
+    permission?: string;
 };
 
 export type NavGroup = {

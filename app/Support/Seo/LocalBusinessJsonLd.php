@@ -73,6 +73,9 @@ final class LocalBusinessJsonLd
         $sameAs = array_values(array_filter([
             $siteSetting?->google_business_profile_url,
             $siteSetting?->google_reviews_url,
+            $siteSetting?->facebook_url,
+            $siteSetting?->instagram_url,
+            $siteSetting?->linkedin_url,
         ], fn (?string $url) => filled($url)));
         if ($sameAs !== []) {
             $data['sameAs'] = $sameAs;

@@ -1,0 +1,137 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Enums;
+
+/**
+ * Catálogo fechado de permissões reais do sistema. Toda checagem de
+ * autorização baseada em papel deve referenciar um destes casos — nunca
+ * uma string solta. O proprietário e o administrador técnico sempre têm
+ * acesso total independentemente do que está aqui (ver PermissionChecker).
+ */
+enum PermissionKey: string
+{
+    case DashboardView = 'dashboard.view';
+
+    case OrganizationView = 'organization.view';
+    case OrganizationUpdate = 'organization.update';
+
+    case UnitsView = 'units.view';
+    case UnitsCreate = 'units.create';
+    case UnitsUpdate = 'units.update';
+    case UnitsActivate = 'units.activate';
+    case UnitsDeactivate = 'units.deactivate';
+    case UnitsDelete = 'units.delete';
+    case UnitsRestore = 'units.restore';
+    case UnitsSetHeadquarters = 'units.set-headquarters';
+
+    case LegalEntitiesView = 'legal-entities.view';
+    case LegalEntitiesCreate = 'legal-entities.create';
+    case LegalEntitiesUpdate = 'legal-entities.update';
+    case LegalEntitiesDelete = 'legal-entities.delete';
+    case LegalEntitiesRestore = 'legal-entities.restore';
+    case LegalEntitiesSetPrimary = 'legal-entities.set-primary';
+
+    case UsersView = 'users.view';
+    case UsersCreate = 'users.create';
+    case UsersInvite = 'users.invite';
+    case UsersUpdate = 'users.update';
+    case UsersActivate = 'users.activate';
+    case UsersDeactivate = 'users.deactivate';
+    case UsersAssignRoles = 'users.assign-roles';
+    case UsersAssignUnits = 'users.assign-units';
+
+    case RolesView = 'roles.view';
+    case RolesCreate = 'roles.create';
+    case RolesUpdate = 'roles.update';
+    case RolesDelete = 'roles.delete';
+    case RolesAssignPermissions = 'roles.assign-permissions';
+
+    case SiteView = 'site.view';
+    case SiteUpdate = 'site.update';
+    case SitePublish = 'site.publish';
+    case SiteAppointmentsView = 'site.appointments.view';
+    case SiteAppointmentsManage = 'site.appointments.manage';
+
+    case SeoView = 'seo.view';
+    case SeoUpdate = 'seo.update';
+
+    case AuditView = 'audit.view';
+
+    case SettingsView = 'settings.view';
+    case SettingsUpdate = 'settings.update';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::DashboardView => 'Visualizar o painel geral',
+
+            self::OrganizationView => 'Visualizar dados da clínica',
+            self::OrganizationUpdate => 'Editar dados da clínica',
+
+            self::UnitsView => 'Visualizar unidades',
+            self::UnitsCreate => 'Criar unidades',
+            self::UnitsUpdate => 'Editar unidades',
+            self::UnitsActivate => 'Ativar unidades',
+            self::UnitsDeactivate => 'Inativar unidades',
+            self::UnitsDelete => 'Excluir unidades',
+            self::UnitsRestore => 'Restaurar unidades',
+            self::UnitsSetHeadquarters => 'Definir unidade matriz',
+
+            self::LegalEntitiesView => 'Visualizar entidades legais',
+            self::LegalEntitiesCreate => 'Criar entidades legais',
+            self::LegalEntitiesUpdate => 'Editar entidades legais',
+            self::LegalEntitiesDelete => 'Excluir entidades legais',
+            self::LegalEntitiesRestore => 'Restaurar entidades legais',
+            self::LegalEntitiesSetPrimary => 'Definir entidade legal principal',
+
+            self::UsersView => 'Visualizar usuários',
+            self::UsersCreate => 'Cadastrar usuários',
+            self::UsersInvite => 'Convidar usuários',
+            self::UsersUpdate => 'Editar usuários',
+            self::UsersActivate => 'Ativar usuários',
+            self::UsersDeactivate => 'Inativar usuários',
+            self::UsersAssignRoles => 'Atribuir papéis a usuários',
+            self::UsersAssignUnits => 'Atribuir unidades a usuários',
+
+            self::RolesView => 'Visualizar papéis e permissões',
+            self::RolesCreate => 'Criar papéis personalizados',
+            self::RolesUpdate => 'Editar papéis personalizados',
+            self::RolesDelete => 'Excluir papéis personalizados',
+            self::RolesAssignPermissions => 'Atribuir permissões a papéis',
+
+            self::SiteView => 'Visualizar o site da clínica',
+            self::SiteUpdate => 'Editar o site da clínica',
+            self::SitePublish => 'Publicar ou despublicar o site',
+            self::SiteAppointmentsView => 'Visualizar solicitações de agendamento',
+            self::SiteAppointmentsManage => 'Gerenciar solicitações de agendamento',
+
+            self::SeoView => 'Visualizar SEO e marketing',
+            self::SeoUpdate => 'Editar SEO e marketing',
+
+            self::AuditView => 'Visualizar auditoria',
+
+            self::SettingsView => 'Visualizar configurações',
+            self::SettingsUpdate => 'Editar configurações',
+        };
+    }
+
+    /** Grupo usado para organizar a tela de "Perfis e permissões" por seção. */
+    public function group(): string
+    {
+        return match (true) {
+            $this === self::DashboardView => 'Visão geral',
+            str_starts_with($this->value, 'organization.') => 'Dados da clínica',
+            str_starts_with($this->value, 'units.') => 'Unidades',
+            str_starts_with($this->value, 'legal-entities.') => 'Entidades legais',
+            str_starts_with($this->value, 'users.') => 'Usuários',
+            str_starts_with($this->value, 'roles.') => 'Papéis e permissões',
+            str_starts_with($this->value, 'site.') => 'Site da clínica',
+            str_starts_with($this->value, 'seo.') => 'SEO e marketing',
+            $this === self::AuditView => 'Auditoria',
+            str_starts_with($this->value, 'settings.') => 'Configurações',
+            default => 'Geral',
+        };
+    }
+}

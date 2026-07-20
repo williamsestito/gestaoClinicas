@@ -74,4 +74,16 @@ class Organization extends Model
     {
         return $this->hasMany(OrganizationMembership::class);
     }
+
+    /** @return HasMany<Role, $this> */
+    public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class);
+    }
+
+    /** @return HasMany<Invitation, $this> */
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(Invitation::class);
+    }
 }

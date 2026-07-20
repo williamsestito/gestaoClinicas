@@ -24,6 +24,12 @@ class SiteSettingFactory extends Factory
             'description' => $this->faker->sentence(),
             'primary_color' => '#0F766E',
             'secondary_color' => '#F59E0B',
+            'is_published' => true,
         ];
+    }
+
+    public function unpublished(): static
+    {
+        return $this->state(fn (array $attributes) => ['is_published' => false]);
     }
 }

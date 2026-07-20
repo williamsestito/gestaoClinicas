@@ -8,6 +8,7 @@ use App\Enums\OrganizationMembershipStatus;
 use App\Enums\OrganizationStatus;
 use App\Enums\RecordStatus;
 use App\Models\User;
+use App\Support\Authorization\PermissionChecker;
 
 /**
  * Formata o contexto ativo (organização/unidade) para envio ao frontend via
@@ -17,7 +18,10 @@ use App\Models\User;
  */
 class TenantContextPresenter
 {
-    public function __construct(private readonly TenantContext $tenant) {}
+    public function __construct(
+        private readonly TenantContext $tenant,
+        private readonly PermissionChecker $permissionChecker,
+    ) {}
 
     /** @return array<string, mixed>|null */
     public function toArray(?User $user): ?array
@@ -83,6 +87,10 @@ class TenantContextPresenter
             'availableUnits' => $availableUnits,
             'isOwner' => (bool) $membership?->is_owner,
             'isUnitManager' => (bool) $unitMembership?->is_manager,
+            'isPlatformAdmin' => $user->is_platform_admin,
+            // Só para refletir a navegação/UI — nunca a fonte de verdade da
+            // autorização, que é sempre revalidada no backend (Policies).
+            'permissions' => $organization ? $this->permissionChecker->effectivePermissions($user, $organization->id) : [],
         ];
     }
 }

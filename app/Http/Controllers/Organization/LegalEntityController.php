@@ -32,19 +32,32 @@ class LegalEntityController extends Controller
     {
         $legalEntities = $tenant->organization()
             ->legalEntities()
+            ->with('address')
             ->withTrashed()
             ->orderByDesc('is_primary')
             ->orderBy('legal_name')
             ->get()
             ->map(fn (LegalEntity $legalEntity) => [
-                ...$legalEntity->only(['id', 'organization_id', 'type', 'legal_name', 'trade_name', 'is_primary', 'status', 'deleted_at']),
+                ...$legalEntity->only([
+                    'id', 'organization_id', 'type', 'legal_name', 'trade_name',
+                    'email', 'phone', 'is_primary', 'status', 'deleted_at',
+                ]),
                 'type' => $legalEntity->type->value,
                 'status' => $legalEntity->status->value,
                 'document' => self::maskDocument($legalEntity),
+                'address' => $legalEntity->address ? [
+                    'city' => $legalEntity->address->city,
+                    'state' => $legalEntity->address->state,
+                ] : null,
             ]);
 
         return Inertia::render('settings/legal-entities/Index', [
             'legalEntities' => $legalEntities,
+            'legalEntityTypes' => array_map(
+                fn (LegalEntityType $type) => ['value' => $type->value, 'label' => $type->label()],
+                LegalEntityType::cases(),
+            ),
+            'states' => BrazilianState::codes(),
         ]);
     }
 
@@ -74,8 +87,9 @@ class LegalEntityController extends Controller
             address: AddressData::fromArray($data['address']),
         );
 
-        return to_route('settings.legal-entities.index')
-            ->with('status', 'Entidade legal cadastrada com sucesso.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Entidade legal cadastrada com sucesso.']);
+
+        return to_route('settings.legal-entities.index');
     }
 
     public function edit(LegalEntity $legalEntity): Response
@@ -112,8 +126,9 @@ class LegalEntityController extends Controller
     {
         $action->handle($legalEntity, $request->validated());
 
-        return to_route('settings.legal-entities.index')
-            ->with('status', 'Entidade legal atualizada com sucesso.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Entidade legal atualizada com sucesso.']);
+
+        return to_route('settings.legal-entities.index');
     }
 
     public function updateStatus(Request $request, LegalEntity $legalEntity, ChangeLegalEntityStatusAction $action): RedirectResponse
@@ -123,18 +138,25 @@ class LegalEntityController extends Controller
         $status = $request->boolean('active') ? RecordStatus::Active : RecordStatus::Inactive;
         $action->handle($legalEntity, $status);
 
-        return back()->with('status', $status === RecordStatus::Active
-            ? 'Entidade legal ativada com sucesso.'
-            : 'Entidade legal inativada com sucesso.');
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $status === RecordStatus::Active
+                ? 'Entidade legal ativada com sucesso.'
+                : 'Entidade legal inativada com sucesso.',
+        ]);
+
+        return back();
     }
 
     public function makePrimary(LegalEntity $legalEntity, SetPrimaryLegalEntityAction $action): RedirectResponse
     {
-        $this->authorize('update', $legalEntity);
+        $this->authorize('setPrimary', $legalEntity);
 
         $action->handle($legalEntity);
 
-        return back()->with('status', 'Entidade legal definida como principal.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Entidade legal definida como principal.']);
+
+        return back();
     }
 
     public function destroy(LegalEntity $legalEntity, DeleteLegalEntityAction $action): RedirectResponse
@@ -143,7 +165,9 @@ class LegalEntityController extends Controller
 
         $action->handle($legalEntity);
 
-        return back()->with('status', 'Entidade legal excluída com sucesso. Seu histórico foi preservado.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Entidade legal excluída com sucesso. Seu histórico foi preservado.']);
+
+        return back();
     }
 
     public function restore(int|string $legalEntity, TenantContext $tenant, RestoreLegalEntityAction $action): RedirectResponse
@@ -158,6 +182,8 @@ class LegalEntityController extends Controller
 
         $action->handle($entity);
 
-        return back()->with('status', 'Entidade legal restaurada com sucesso.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Entidade legal restaurada com sucesso.']);
+
+        return back();
     }
 }

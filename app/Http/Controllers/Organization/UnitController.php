@@ -99,7 +99,7 @@ class UnitController extends Controller
             abort(404);
         }
 
-        $this->authorize('update', $unit);
+        $this->authorize($request->boolean('active') ? 'activate' : 'deactivate', $unit);
 
         $status = $request->boolean('active') ? RecordStatus::Active : RecordStatus::Inactive;
         $action->handle($unit, $status);
@@ -116,7 +116,7 @@ class UnitController extends Controller
 
     public function makeHeadquarters(Unit $unit, SetHeadquartersUnitAction $action): RedirectResponse
     {
-        $this->authorize('update', $unit);
+        $this->authorize('setHeadquarters', $unit);
 
         $action->handle($unit);
 

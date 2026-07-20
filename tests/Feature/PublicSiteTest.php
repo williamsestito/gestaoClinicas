@@ -3,8 +3,16 @@
 declare(strict_types=1);
 
 use App\Enums\IndexingPolicy;
+use App\Models\LegalEntity;
 use App\Models\Organization;
+use App\Models\SiteBenefit;
+use App\Models\SiteFaq;
+use App\Models\SiteGalleryItem;
+use App\Models\SiteProfessional;
+use App\Models\SiteService;
 use App\Models\SiteSetting;
+use App\Models\SiteTestimonial;
+use App\Models\Unit;
 
 it('renders the Welcome page in the pending-setup state when no organization exists yet', function () {
     $this->get('/')
@@ -63,5 +71,61 @@ it('omits the JSON-LD block when no organization is configured', function () {
     $this->get('/')
         ->assertInertia(fn ($page) => $page
             ->where('seo.json_ld', null)
+        );
+});
+
+it('hides the administered site content while it is not published', function () {
+    Organization::factory()->create();
+    SiteSetting::factory()->unpublished()->create(['title' => 'Não deveria aparecer']);
+
+    $this->get('/')
+        ->assertInertia(fn ($page) => $page
+            ->where('organizationConfigured', true)
+            ->where('site', null)
+        );
+});
+
+it('exposes empty collections and no contact when the site is not published', function () {
+    Organization::factory()->create();
+    SiteSetting::factory()->unpublished()->create();
+    SiteBenefit::factory()->create();
+    SiteService::factory()->create();
+
+    $this->get('/')
+        ->assertInertia(fn ($page) => $page
+            ->where('sections', [])
+            ->where('benefits', [])
+            ->where('services', [])
+            ->where('contact', null)
+        );
+});
+
+it('exposes active benefits, services, professionals, gallery, testimonials and faqs once published', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create([
+        'phone' => '(47) 3222-1122',
+    ]);
+    SiteSetting::factory()->create();
+
+    SiteBenefit::factory()->create(['title' => 'Ativo', 'is_active' => true]);
+    SiteBenefit::factory()->inactive()->create(['title' => 'Inativo']);
+    SiteService::factory()->create(['name' => 'Serviço ativo', 'is_active' => true]);
+    SiteProfessional::factory()->create(['name' => 'Profissional ativo', 'is_active' => true]);
+    SiteGalleryItem::factory()->create(['caption' => 'Foto ativa', 'is_active' => true]);
+    SiteTestimonial::factory()->create(['author_name' => 'Cliente ativo', 'is_active' => true]);
+    SiteFaq::factory()->create(['question' => 'Pergunta ativa', 'is_active' => true]);
+
+    $this->get('/')
+        ->assertInertia(fn ($page) => $page
+            ->has('sections', 11)
+            ->has('benefits', 1)
+            ->where('benefits.0.title', 'Ativo')
+            ->has('services', 1)
+            ->has('professionals', 1)
+            ->has('gallery', 1)
+            ->has('testimonials', 1)
+            ->has('faqs', 1)
+            ->where('contact.phone', '(47) 3222-1122')
         );
 });

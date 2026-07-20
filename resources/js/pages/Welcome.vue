@@ -2,67 +2,80 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import LandingFooter from '@/components/landing/LandingFooter.vue';
+import LandingNavbar from '@/components/landing/LandingNavbar.vue';
+import LandingSectionRenderer from '@/components/landing/LandingSectionRenderer.vue';
 import { Button } from '@/components/ui/button';
 import { dashboard, login, register } from '@/routes';
+import type {
+    LandingSection,
+    PublicBenefit,
+    PublicContact,
+    PublicFaq,
+    PublicGalleryItem,
+    PublicProfessional,
+    PublicService,
+    PublicSiteContent,
+    PublicTestimonial,
+} from '@/types/site';
 
-type SiteContent = {
-    title: string;
-    description: string | null;
-    hero_image_url: string | null;
-    primary_color: string | null;
-    secondary_color: string | null;
-    og_image_alt?: string | null;
-};
+const props = withDefaults(
+    defineProps<{
+        site?: PublicSiteContent | null;
+        organizationConfigured: boolean;
+        sections?: LandingSection[];
+        benefits?: PublicBenefit[];
+        services?: PublicService[];
+        professionals?: PublicProfessional[];
+        gallery?: PublicGalleryItem[];
+        testimonials?: PublicTestimonial[];
+        faqs?: PublicFaq[];
+        contact?: PublicContact | null;
+    }>(),
+    {
+        site: null,
+        sections: () => [],
+        benefits: () => [],
+        services: () => [],
+        professionals: () => [],
+        gallery: () => [],
+        testimonials: () => [],
+        faqs: () => [],
+        contact: null,
+    },
+);
 
-const props = defineProps<{
-    site?: SiteContent | null;
-    organizationConfigured: boolean;
-}>();
+// Estado "fallback": organização ainda não configurada, ou site existente
+// mas ainda não publicado — em ambos os casos não há conteúdo administrado
+// para exibir, então a página mostra uma mensagem institucional mínima em
+// vez da landing completa.
+const fallbackTitle = computed(() =>
+    props.organizationConfigured
+        ? 'Gestão de Clínicas'
+        : 'Ambiente em configuração',
+);
 
-const title = computed(() => {
-    if (!props.organizationConfigured) {
-        return 'Ambiente em configuração';
-    }
-
-    return props.site?.title || 'Gestão de Clínicas';
-});
-
-const description = computed(() => {
+const fallbackDescription = computed(() => {
     if (!props.organizationConfigured) {
         return 'Esta clínica ainda não concluiu a configuração inicial. Assim que um administrador finalizar o cadastro, esta página passará a apresentar as informações da clínica.';
     }
 
-    return (
-        props.site?.description ||
-        'Esta aplicação está em desenvolvimento. A fundação técnica está ativa; os módulos de negócio serão adicionados nas próximas fases.'
-    );
+    return 'Esta aplicação está em desenvolvimento. A fundação técnica está ativa; os módulos de negócio serão adicionados nas próximas fases.';
 });
 
-const heroImageAlt = computed(
-    () => props.site?.og_image_alt || 'Imagem de destaque',
+const orderedActiveSections = computed(() =>
+    props.sections.filter((section) => section.active),
 );
 
-const primaryColor = computed(() =>
-    props.organizationConfigured ? props.site?.primary_color || null : null,
-);
-const secondaryColor = computed(() =>
-    props.organizationConfigured ? props.site?.secondary_color || null : null,
-);
-
-const brandStyle = computed(() => ({
-    '--brand-primary': primaryColor.value ?? 'var(--primary)',
-    '--brand-secondary': secondaryColor.value ?? 'var(--primary)',
-}));
-
-const ctaStyle = computed(() =>
-    primaryColor.value
-        ? { backgroundColor: 'var(--brand-primary)', color: '#fff' }
-        : undefined,
+const schedulingActive = computed(() =>
+    orderedActiveSections.value.some(
+        (section) => section.type === 'scheduling',
+    ),
 );
 </script>
 
 <template>
-    <Head :title="title" />
+    <Head :title="site?.title ?? fallbackTitle" />
 
     <a
         href="#main-content"
@@ -72,30 +85,15 @@ const ctaStyle = computed(() =>
     </a>
 
     <div
-        class="relative flex min-h-screen flex-col overflow-hidden bg-background text-foreground"
-        :style="brandStyle"
+        v-if="!site"
+        class="flex min-h-screen flex-col bg-background text-foreground"
     >
-        <div
-            class="pointer-events-none absolute inset-0 -z-10"
-            aria-hidden="true"
-        >
-            <div
-                class="absolute -top-24 -left-24 size-96 rounded-full opacity-20 blur-3xl"
-                style="background-color: var(--brand-primary)"
-            />
-            <div
-                class="absolute -right-24 -bottom-24 size-96 rounded-full opacity-20 blur-3xl"
-                style="background-color: var(--brand-secondary)"
-            />
-        </div>
-
         <header class="flex justify-center px-6 pt-10">
             <div
-                class="flex size-14 items-center justify-center rounded-2xl"
-                style="background-color: var(--brand-primary); color: #fff"
+                class="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground"
             >
                 <AppLogoIcon class="size-7 fill-current" aria-hidden="true" />
-                <span class="sr-only">{{ title }}</span>
+                <span class="sr-only">{{ fallbackTitle }}</span>
             </div>
         </header>
 
@@ -109,22 +107,14 @@ const ctaStyle = computed(() =>
                     <h1
                         class="text-3xl font-bold tracking-tight text-balance sm:text-4xl"
                     >
-                        {{ title }}
+                        {{ fallbackTitle }}
                     </h1>
                     <p
                         class="text-base text-balance text-muted-foreground sm:text-lg"
                     >
-                        {{ description }}
+                        {{ fallbackDescription }}
                     </p>
                 </div>
-
-                <img
-                    v-if="organizationConfigured && site?.hero_image_url"
-                    :src="site.hero_image_url"
-                    :alt="heroImageAlt"
-                    fetchpriority="high"
-                    class="w-full max-w-md rounded-xl border border-border object-cover shadow-sm"
-                />
 
                 <div
                     class="flex w-full max-w-xs flex-col gap-3 sm:flex-row sm:justify-center"
@@ -134,15 +124,11 @@ const ctaStyle = computed(() =>
                         :href="dashboard()"
                         class="w-full"
                     >
-                        <Button class="w-full" :style="ctaStyle">
-                            Acessar dashboard
-                        </Button>
+                        <Button class="w-full">Acessar dashboard</Button>
                     </Link>
                     <template v-else>
                         <Link :href="login()" class="w-full">
-                            <Button class="w-full" :style="ctaStyle">
-                                Entrar
-                            </Button>
+                            <Button class="w-full">Entrar</Button>
                         </Link>
                         <Link :href="register()" class="w-full">
                             <Button variant="outline" class="w-full"
@@ -155,7 +141,37 @@ const ctaStyle = computed(() =>
         </main>
 
         <footer class="px-6 pb-8 text-center text-xs text-muted-foreground">
-            <p>© {{ new Date().getFullYear() }} {{ title }}</p>
+            <p>© {{ new Date().getFullYear() }} {{ fallbackTitle }}</p>
         </footer>
+    </div>
+
+    <div
+        v-else
+        class="flex min-h-screen flex-col bg-background text-foreground"
+    >
+        <LandingNavbar
+            :title="site.title"
+            :logo-url="site.logo_url"
+            :active-types="orderedActiveSections.map((section) => section.type)"
+        />
+
+        <main id="main-content" tabindex="-1" class="outline-none">
+            <LandingSectionRenderer
+                v-for="section in orderedActiveSections"
+                :key="section.type"
+                :type="section.type"
+                :site="site"
+                :contact="contact"
+                :benefits="benefits"
+                :services="services"
+                :professionals="professionals"
+                :gallery="gallery"
+                :testimonials="testimonials"
+                :faqs="faqs"
+                :scheduling-active="schedulingActive"
+            />
+        </main>
+
+        <LandingFooter :site="site" :contact="contact" />
     </div>
 </template>

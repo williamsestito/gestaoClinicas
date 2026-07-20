@@ -2,9 +2,20 @@
 
 namespace App\Providers;
 
+use App\Models\AppointmentRequest;
+use App\Models\Invitation;
 use App\Models\LegalEntity;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\Permission;
+use App\Models\Role;
+use App\Models\SiteBenefit;
+use App\Models\SiteFaq;
+use App\Models\SiteGalleryItem;
+use App\Models\SiteProfessional;
+use App\Models\SiteService;
+use App\Models\SiteSetting;
+use App\Models\SiteTestimonial;
 use App\Models\Unit;
 use App\Models\UnitMembership;
 use App\Models\User;
@@ -16,10 +27,12 @@ use App\Services\PostalCodeProvider;
 use App\Services\ViaCepPostalCodeLookup;
 use App\Support\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -58,6 +71,18 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureMorphMap();
+        $this->configureAuthEvents();
+    }
+
+    /**
+     * Registra o horário do último acesso do usuário — exibido na página
+     * de gestão de usuários ("visualizar último acesso, caso exista").
+     */
+    protected function configureAuthEvents(): void
+    {
+        Event::listen(function (Login $event) {
+            $event->user->forceFill(['last_login_at' => now()])->saveQuietly();
+        });
     }
 
     /**
@@ -73,6 +98,17 @@ class AppServiceProvider extends ServiceProvider
             'organization_membership' => OrganizationMembership::class,
             'unit_membership' => UnitMembership::class,
             'user' => User::class,
+            'role' => Role::class,
+            'permission' => Permission::class,
+            'invitation' => Invitation::class,
+            'site_setting' => SiteSetting::class,
+            'site_benefit' => SiteBenefit::class,
+            'site_service' => SiteService::class,
+            'site_professional' => SiteProfessional::class,
+            'site_gallery_item' => SiteGalleryItem::class,
+            'site_testimonial' => SiteTestimonial::class,
+            'site_faq' => SiteFaq::class,
+            'appointment_request' => AppointmentRequest::class,
         ]);
     }
 

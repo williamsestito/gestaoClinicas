@@ -1,10 +1,15 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
+import LandingFooter from '@/components/landing/LandingFooter.vue';
+import LandingNavbar from '@/components/landing/LandingNavbar.vue';
+import LandingSectionRenderer from '@/components/landing/LandingSectionRenderer.vue';
+import type { LandingSection, PublicSiteContent } from '@/types/site';
 import Welcome from './Welcome.vue';
 
 vi.mock('@inertiajs/vue3', () => ({
     Head: { template: '<div />' },
     Link: { template: '<a><slot /></a>', props: ['href'] },
+    usePage: () => ({ props: { auth: { user: null } } }),
 }));
 
 function mountWelcome(
@@ -17,47 +22,44 @@ function mountWelcome(
             mocks: {
                 $page: { props: { auth: { user: authUser } } },
             },
+            stubs: {
+                LandingNavbar: true,
+                LandingSectionRenderer: true,
+                LandingFooter: true,
+            },
         },
     });
 }
 
-describe('Welcome', () => {
+function makeSite(
+    overrides: Partial<PublicSiteContent> = {},
+): PublicSiteContent {
+    return {
+        title: 'Clínica Essenza',
+        description: 'Cuidando de você com excelência.',
+        hero_image_url: null,
+        logo_url: null,
+        primary_color: '#0F766E',
+        secondary_color: '#F59E0B',
+        cta_text: null,
+        cta_url: null,
+        cta_secondary_text: null,
+        cta_secondary_url: null,
+        about_text: null,
+        facebook_url: null,
+        instagram_url: null,
+        linkedin_url: null,
+        footer_text: null,
+        ...overrides,
+    };
+}
+
+describe('Welcome — fallback state (no site or not published)', () => {
     it('falls back to the default title and description when no site content is configured', () => {
         const wrapper = mountWelcome({ site: null });
 
         expect(wrapper.text()).toContain('Gestão de Clínicas');
         expect(wrapper.text()).toContain('está em desenvolvimento');
-    });
-
-    it('renders the administered title and description when provided', () => {
-        const wrapper = mountWelcome({
-            site: {
-                title: 'Clínica Exemplo',
-                description: 'Cuidando de você com excelência.',
-                hero_image_url: null,
-                primary_color: '#0F766E',
-                secondary_color: '#F59E0B',
-            },
-        });
-
-        expect(wrapper.text()).toContain('Clínica Exemplo');
-        expect(wrapper.text()).toContain('Cuidando de você com excelência.');
-    });
-
-    it('renders the hero image only when a URL is provided', () => {
-        const withImage = mountWelcome({
-            site: {
-                title: 'Clínica Exemplo',
-                description: null,
-                hero_image_url: 'https://example.test/storage/hero.jpg',
-                primary_color: null,
-                secondary_color: null,
-            },
-        });
-        expect(withImage.find('img').exists()).toBe(true);
-
-        const withoutImage = mountWelcome({ site: null });
-        expect(withoutImage.find('img').exists()).toBe(false);
     });
 
     it('shows login/register links for a guest', () => {
@@ -78,29 +80,23 @@ describe('Welcome', () => {
     it('shows a distinct pending-setup state when no organization is configured yet', () => {
         const wrapper = mountWelcome({
             organizationConfigured: false,
-            site: {
-                title: 'Deveria ser ignorado',
-                description: null,
-                hero_image_url: 'https://example.test/hero.jpg',
-                primary_color: '#123456',
-                secondary_color: '#654321',
-            },
+            site: null,
         });
 
         expect(wrapper.text()).toContain('Ambiente em configuração');
-        expect(wrapper.text()).not.toContain('Deveria ser ignorado');
-        // Sem organização, não há como confiar na imagem/cores administradas.
-        expect(wrapper.find('img').exists()).toBe(false);
     });
 
     it('still offers a login link in the pending-setup state', () => {
-        const wrapper = mountWelcome({ organizationConfigured: false }, null);
+        const wrapper = mountWelcome(
+            { organizationConfigured: false, site: null },
+            null,
+        );
 
         expect(wrapper.text()).toContain('Entrar');
     });
 
     it('has exactly one h1 and the landmark structure required for accessibility', () => {
-        const wrapper = mountWelcome();
+        const wrapper = mountWelcome({ site: null });
 
         expect(wrapper.findAll('h1')).toHaveLength(1);
         expect(wrapper.find('header').exists()).toBe(true);
@@ -109,11 +105,60 @@ describe('Welcome', () => {
     });
 
     it('renders a keyboard-accessible skip link pointing at the main content', () => {
-        const wrapper = mountWelcome();
+        const wrapper = mountWelcome({ site: null });
 
         const skipLink = wrapper.find('a[href="#main-content"]');
         expect(skipLink.exists()).toBe(true);
         expect(skipLink.text()).toBe('Pular para o conteúdo principal');
         expect(wrapper.find('main#main-content').exists()).toBe(true);
+    });
+});
+
+describe('Welcome — published landing state', () => {
+    const sections: LandingSection[] = [
+        { type: 'hero', active: true },
+        { type: 'benefits', active: false },
+        { type: 'about', active: true },
+        { type: 'services', active: true },
+        { type: 'scheduling', active: true },
+    ];
+
+    it('renders the navbar, an ordered section renderer per active section, and the footer', () => {
+        const wrapper = mountWelcome({ site: makeSite(), sections });
+
+        expect(wrapper.findComponent(LandingNavbar).exists()).toBe(true);
+        expect(wrapper.findComponent(LandingFooter).exists()).toBe(true);
+
+        const renderers = wrapper.findAllComponents(LandingSectionRenderer);
+        expect(renderers.map((r) => r.props('type'))).toEqual([
+            'hero',
+            'about',
+            'services',
+            'scheduling',
+        ]);
+    });
+
+    it('never renders a section renderer for an inactive section', () => {
+        const wrapper = mountWelcome({ site: makeSite(), sections });
+
+        const types = wrapper
+            .findAllComponents(LandingSectionRenderer)
+            .map((r) => r.props('type'));
+        expect(types).not.toContain('benefits');
+    });
+
+    it('tells the navbar whether the scheduling section is active', () => {
+        const wrapper = mountWelcome({ site: makeSite(), sections });
+
+        expect(
+            wrapper.findComponent(LandingNavbar).props('activeTypes'),
+        ).toContain('scheduling');
+    });
+
+    it('does not render the fallback pending-setup markup once a site is published', () => {
+        const wrapper = mountWelcome({ site: makeSite(), sections });
+
+        expect(wrapper.text()).not.toContain('está em desenvolvimento');
+        expect(wrapper.find('a[href="#main-content"]').exists()).toBe(true);
     });
 });

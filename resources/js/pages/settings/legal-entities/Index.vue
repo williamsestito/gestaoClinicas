@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
-import Heading from '@/components/Heading.vue';
-import { Badge } from '@/components/ui/badge';
+import { Head, router } from '@inertiajs/vue3';
+import { Plus, Search } from '@lucide/vue';
+import { computed, ref } from 'vue';
+import EmptyState from '@/components/EmptyState.vue';
+import type { EditableLegalEntity } from '@/components/legal-entities/LegalEntityForm.vue';
+import LegalEntityForm from '@/components/legal-entities/LegalEntityForm.vue';
+import LegalEntityRowActions from '@/components/legal-entities/LegalEntityRowActions.vue';
+import PageHeader from '@/components/PageHeader.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -14,16 +19,21 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
 import { dashboard } from '@/routes';
 import {
-    create,
     destroy,
-    edit,
     primary as primaryRoute,
     restore as restoreRoute,
     status as statusRoute,
 } from '@/routes/settings/legal-entities';
-import type { LegalEntity } from '@/types/organization';
 
 defineOptions({
     layout: {
@@ -35,14 +45,81 @@ defineOptions({
     },
 });
 
-defineProps<{
-    legalEntities: LegalEntity[];
+const props = defineProps<{
+    legalEntities: EditableLegalEntity[];
+    legalEntityTypes: { value: string; label: string }[];
+    states: string[];
 }>();
 
-const pendingDeletion = ref<LegalEntity | null>(null);
-const processingId = ref<string | null>(null);
+const search = ref('');
+const statusFilter = ref<'all' | 'active' | 'inactive' | 'deleted'>('all');
+const onlyPrimary = ref(false);
 
-function toggleStatus(entity: LegalEntity) {
+const indicators = computed(() => ({
+    total: props.legalEntities.length,
+    active: props.legalEntities.filter(
+        (entity) => !entity.deleted_at && entity.status === 'active',
+    ).length,
+    inactive: props.legalEntities.filter(
+        (entity) => !entity.deleted_at && entity.status === 'inactive',
+    ).length,
+    deleted: props.legalEntities.filter((entity) => entity.deleted_at).length,
+}));
+
+const filteredEntities = computed(() => {
+    const term = search.value.trim().toLowerCase();
+
+    return props.legalEntities.filter((entity) => {
+        const matchesSearch =
+            term === '' ||
+            entity.legal_name.toLowerCase().includes(term) ||
+            entity.document.toLowerCase().includes(term);
+
+        const matchesStatus =
+            statusFilter.value === 'all'
+                ? true
+                : statusFilter.value === 'deleted'
+                  ? Boolean(entity.deleted_at)
+                  : !entity.deleted_at && entity.status === statusFilter.value;
+
+        const matchesPrimary = !onlyPrimary.value || entity.is_primary;
+
+        return matchesSearch && matchesStatus && matchesPrimary;
+    });
+});
+
+const hasAnyEntities = computed(() => props.legalEntities.length > 0);
+const hasFilteredResults = computed(() => filteredEntities.value.length > 0);
+const hasActiveFilters = computed(
+    () =>
+        search.value.trim() !== '' ||
+        statusFilter.value !== 'all' ||
+        onlyPrimary.value,
+);
+
+const sheetOpen = ref(false);
+const sheetMode = ref<'create' | 'edit'>('create');
+const editingEntity = ref<EditableLegalEntity | null>(null);
+const processingId = ref<string | null>(null);
+const entityPendingDeletion = ref<EditableLegalEntity | null>(null);
+
+function openCreateSheet() {
+    sheetMode.value = 'create';
+    editingEntity.value = null;
+    sheetOpen.value = true;
+}
+
+function openEditSheet(entity: EditableLegalEntity) {
+    sheetMode.value = 'edit';
+    editingEntity.value = entity;
+    sheetOpen.value = true;
+}
+
+function onFormSuccess() {
+    sheetOpen.value = false;
+}
+
+function toggleStatus(entity: EditableLegalEntity) {
     processingId.value = entity.id;
     router.patch(
         statusRoute(entity.id).url,
@@ -51,7 +128,7 @@ function toggleStatus(entity: LegalEntity) {
     );
 }
 
-function makePrimary(entity: LegalEntity) {
+function makePrimary(entity: EditableLegalEntity) {
     processingId.value = entity.id;
     router.put(
         primaryRoute(entity.id).url,
@@ -61,22 +138,22 @@ function makePrimary(entity: LegalEntity) {
 }
 
 function confirmDelete() {
-    if (!pendingDeletion.value) {
+    if (!entityPendingDeletion.value) {
         return;
     }
 
-    const id = pendingDeletion.value.id;
+    const id = entityPendingDeletion.value.id;
     processingId.value = id;
     router.delete(destroy(id).url, {
         preserveScroll: true,
         onFinish: () => {
             processingId.value = null;
-            pendingDeletion.value = null;
+            entityPendingDeletion.value = null;
         },
     });
 }
 
-function restore(entity: LegalEntity) {
+function restore(entity: EditableLegalEntity) {
     processingId.value = entity.id;
     router.post(
         restoreRoute(entity.id).url,
@@ -90,126 +167,279 @@ function restore(entity: LegalEntity) {
     <Head title="Entidades legais" />
 
     <div class="flex flex-col space-y-6">
-        <div class="flex items-center justify-between">
-            <Heading
-                variant="small"
-                title="Entidades legais"
-                description="Entidades legais (CPF/CNPJ) da sua clínica"
-            />
-            <Link :href="create()">
-                <Button>Nova entidade legal</Button>
-            </Link>
-        </div>
+        <PageHeader
+            title="Entidades legais"
+            description="Gerencie as entidades legais (CPF/CNPJ) da sua clínica."
+        >
+            <template #actions>
+                <Button @click="openCreateSheet">
+                    <Plus class="size-4" />
+                    Nova entidade legal
+                </Button>
+            </template>
+        </PageHeader>
 
-        <Card v-if="legalEntities.length === 0">
-            <CardContent
-                class="py-10 text-center text-sm text-muted-foreground"
-            >
-                Nenhuma entidade legal cadastrada ainda.
-            </CardContent>
-        </Card>
-
-        <div v-else class="grid gap-3">
-            <Card v-for="entity in legalEntities" :key="entity.id">
-                <CardContent
-                    class="flex flex-wrap items-center justify-between gap-3 py-4"
-                >
-                    <div>
-                        <p class="font-medium">
-                            {{ entity.legal_name }}
-                            <Badge
-                                v-if="entity.is_primary"
-                                variant="secondary"
-                                class="ml-2"
-                                >Principal</Badge
-                            >
-                            <Badge
-                                v-if="entity.deleted_at"
-                                variant="destructive"
-                                class="ml-2"
-                                >Excluída</Badge
-                            >
-                            <Badge
-                                v-else
-                                :variant="
-                                    entity.status === 'active'
-                                        ? 'default'
-                                        : 'destructive'
-                                "
-                                class="ml-2"
-                            >
-                                {{
-                                    entity.status === 'active'
-                                        ? 'Ativa'
-                                        : 'Inativa'
-                                }}
-                            </Badge>
-                        </p>
-                        <p class="text-sm text-muted-foreground">
-                            {{ entity.document }}
-                        </p>
-                    </div>
-
-                    <div class="flex flex-wrap items-center gap-2">
-                        <template v-if="entity.deleted_at">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                :disabled="processingId === entity.id"
-                                @click="restore(entity)"
-                            >
-                                Restaurar
-                            </Button>
-                        </template>
-                        <template v-else>
-                            <Link :href="edit(entity.id)">
-                                <Button variant="outline" size="sm"
-                                    >Editar</Button
-                                >
-                            </Link>
-                            <Button
-                                v-if="!entity.is_primary"
-                                variant="outline"
-                                size="sm"
-                                :disabled="processingId === entity.id"
-                                @click="toggleStatus(entity)"
-                            >
-                                {{
-                                    entity.status === 'active'
-                                        ? 'Inativar'
-                                        : 'Ativar'
-                                }}
-                            </Button>
-                            <Button
-                                v-if="
-                                    !entity.is_primary &&
-                                    entity.status === 'active'
-                                "
-                                variant="outline"
-                                size="sm"
-                                :disabled="processingId === entity.id"
-                                @click="makePrimary(entity)"
-                            >
-                                Definir como principal
-                            </Button>
-                            <Button
-                                v-if="!entity.is_primary"
-                                variant="destructive"
-                                size="sm"
-                                :disabled="processingId === entity.id"
-                                @click="pendingDeletion = entity"
-                            >
-                                Excluir
-                            </Button>
-                        </template>
-                    </div>
+        <div
+            v-if="hasAnyEntities"
+            class="grid grid-cols-2 gap-3 sm:grid-cols-4"
+        >
+            <Card>
+                <CardContent class="py-4">
+                    <p class="text-sm text-muted-foreground">Total</p>
+                    <p class="text-2xl font-semibold">{{ indicators.total }}</p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardContent class="py-4">
+                    <p class="text-sm text-muted-foreground">Ativas</p>
+                    <p class="text-2xl font-semibold">
+                        {{ indicators.active }}
+                    </p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardContent class="py-4">
+                    <p class="text-sm text-muted-foreground">Inativas</p>
+                    <p class="text-2xl font-semibold">
+                        {{ indicators.inactive }}
+                    </p>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardContent class="py-4">
+                    <p class="text-sm text-muted-foreground">Removidas</p>
+                    <p class="text-2xl font-semibold">
+                        {{ indicators.deleted }}
+                    </p>
                 </CardContent>
             </Card>
         </div>
 
+        <div
+            v-if="hasAnyEntities"
+            class="flex flex-col gap-3 sm:flex-row sm:items-center"
+        >
+            <div class="relative sm:max-w-xs sm:flex-1">
+                <Search
+                    class="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground"
+                />
+                <Input
+                    v-model="search"
+                    placeholder="Buscar por nome ou documento"
+                    aria-label="Buscar entidades legais por nome ou documento"
+                    class="pl-8"
+                />
+            </div>
+
+            <select
+                v-model="statusFilter"
+                aria-label="Filtrar entidades legais por status"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+                <option value="all">Todas</option>
+                <option value="active">Ativas</option>
+                <option value="inactive">Inativas</option>
+                <option value="deleted">Excluídas</option>
+            </select>
+
+            <label
+                class="flex items-center gap-2 text-sm text-muted-foreground"
+            >
+                <input
+                    v-model="onlyPrimary"
+                    type="checkbox"
+                    class="size-4 rounded border-input"
+                />
+                Somente principal
+            </label>
+        </div>
+
+        <EmptyState
+            v-if="!hasAnyEntities"
+            title="Nenhuma entidade legal cadastrada ainda."
+            description="Cadastre a primeira entidade legal da sua clínica para começar."
+        >
+            <template #action>
+                <Button @click="openCreateSheet">
+                    <Plus class="size-4" />
+                    Cadastrar primeira entidade legal
+                </Button>
+            </template>
+        </EmptyState>
+
+        <EmptyState
+            v-else-if="!hasFilteredResults"
+            title="Nenhuma entidade legal corresponde aos filtros informados."
+        />
+
+        <template v-else>
+            <div class="hidden overflow-x-auto rounded-md border md:block">
+                <table class="w-full text-sm">
+                    <thead
+                        class="border-b bg-muted/50 text-left text-muted-foreground"
+                    >
+                        <tr>
+                            <th class="px-4 py-2 font-medium">
+                                Entidade legal
+                            </th>
+                            <th class="px-4 py-2 font-medium">Documento</th>
+                            <th class="px-4 py-2 font-medium">Cidade/UF</th>
+                            <th class="px-4 py-2 font-medium">Contato</th>
+                            <th class="px-4 py-2 font-medium">Status</th>
+                            <th class="px-4 py-2 font-medium">
+                                <span class="sr-only">Ações</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="entity in filteredEntities"
+                            :key="entity.id"
+                            class="border-b last:border-0"
+                        >
+                            <td class="px-4 py-3 font-medium">
+                                {{ entity.legal_name }}
+                            </td>
+                            <td class="px-4 py-3 text-muted-foreground">
+                                {{ entity.document }}
+                            </td>
+                            <td class="px-4 py-3 text-muted-foreground">
+                                <template v-if="entity.address">
+                                    {{ entity.address.city }}/{{
+                                        entity.address.state
+                                    }}
+                                </template>
+                                <template v-else>—</template>
+                            </td>
+                            <td class="px-4 py-3 text-muted-foreground">
+                                {{ entity.phone || entity.email || '—' }}
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex flex-wrap gap-1">
+                                    <StatusBadge
+                                        :status="entity.status"
+                                        :deleted-at="entity.deleted_at"
+                                        :highlight-label="
+                                            entity.is_primary
+                                                ? 'Principal'
+                                                : undefined
+                                        "
+                                    />
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <LegalEntityRowActions
+                                    :legal-entity="entity"
+                                    :disabled="processingId === entity.id"
+                                    @edit="openEditSheet(entity)"
+                                    @toggle-status="toggleStatus(entity)"
+                                    @make-primary="makePrimary(entity)"
+                                    @delete="entityPendingDeletion = entity"
+                                    @restore="restore(entity)"
+                                />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grid gap-3 md:hidden">
+                <Card v-for="entity in filteredEntities" :key="entity.id">
+                    <CardContent class="flex flex-col gap-2 py-4">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <p class="font-medium">
+                                    {{ entity.legal_name }}
+                                </p>
+                                <p class="text-sm text-muted-foreground">
+                                    {{ entity.document }}
+                                </p>
+                            </div>
+                            <LegalEntityRowActions
+                                :legal-entity="entity"
+                                :disabled="processingId === entity.id"
+                                @edit="openEditSheet(entity)"
+                                @toggle-status="toggleStatus(entity)"
+                                @make-primary="makePrimary(entity)"
+                                @delete="entityPendingDeletion = entity"
+                                @restore="restore(entity)"
+                            />
+                        </div>
+
+                        <div class="flex flex-wrap gap-1">
+                            <StatusBadge
+                                :status="entity.status"
+                                :deleted-at="entity.deleted_at"
+                                :highlight-label="
+                                    entity.is_primary ? 'Principal' : undefined
+                                "
+                            />
+                        </div>
+
+                        <p class="text-sm text-muted-foreground">
+                            <template v-if="entity.address"
+                                >{{ entity.address.city }}/{{
+                                    entity.address.state
+                                }}</template
+                            >
+                            <template v-if="entity.phone || entity.email">
+                                {{ entity.address ? ' · ' : ''
+                                }}{{ entity.phone || entity.email }}
+                            </template>
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+        </template>
+
+        <p
+            v-if="hasAnyEntities && hasActiveFilters"
+            class="text-sm text-muted-foreground"
+        >
+            {{ filteredEntities.length }} de {{ indicators.total }} entidades
+            legais
+        </p>
+
+        <Sheet v-model:open="sheetOpen">
+            <SheetContent
+                side="right"
+                class="w-full gap-0 overflow-y-auto sm:max-w-xl"
+            >
+                <SheetHeader>
+                    <SheetTitle>
+                        {{
+                            sheetMode === 'create'
+                                ? 'Nova entidade legal'
+                                : 'Editar entidade legal'
+                        }}
+                    </SheetTitle>
+                    <SheetDescription>
+                        {{
+                            sheetMode === 'create'
+                                ? 'Cadastre uma nova entidade legal da organização.'
+                                : `Atualize os dados de ${editingEntity?.legal_name ?? 'entidade legal'}.`
+                        }}
+                    </SheetDescription>
+                </SheetHeader>
+
+                <div class="px-4 pb-6">
+                    <LegalEntityForm
+                        v-if="sheetOpen"
+                        :key="editingEntity?.id ?? 'create'"
+                        :mode="sheetMode"
+                        :legal-entity="editingEntity ?? undefined"
+                        :legal-entity-types="legalEntityTypes"
+                        :states="states"
+                        @success="onFormSuccess"
+                        @cancel="sheetOpen = false"
+                    />
+                </div>
+            </SheetContent>
+        </Sheet>
+
         <Dialog
-            :open="pendingDeletion !== null"
-            @update:open="(open) => !open && (pendingDeletion = null)"
+            :open="entityPendingDeletion !== null"
+            @update:open="(open) => !open && (entityPendingDeletion = null)"
         >
             <DialogContent>
                 <DialogHeader class="space-y-3">
@@ -224,9 +454,9 @@ function restore(entity: LegalEntity) {
                     <DialogClose as-child>
                         <Button variant="secondary">Cancelar</Button>
                     </DialogClose>
-                    <Button variant="destructive" @click="confirmDelete"
-                        >Excluir</Button
-                    >
+                    <Button variant="destructive" @click="confirmDelete">
+                        Excluir
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

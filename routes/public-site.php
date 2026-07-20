@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PublicAppointmentRequestController;
 use App\Http\Controllers\PublicSiteController;
 use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Route;
@@ -9,14 +10,19 @@ use Illuminate\Support\Facades\Route;
 | Public Site Routes
 |--------------------------------------------------------------------------
 |
-| Rotas publicas do site institucional. Nesta fase, apenas a pagina inicial,
-| cujo conteudo (titulo, descricao, imagem, cores, SEO) e administrado via o
-| painel Filament (App\Filament\Pages\ManageSiteContent). A futura pagina
-| comercial completa sera implementada em fase propria.
+| Rotas publicas do site institucional (landing page), cujo conteudo e
+| administrado inteiramente pelas paginas Vue em resources/js/pages/settings/site
+| (secoes, beneficios, servicos, equipe, galeria, depoimentos, FAQ, SEO).
 |
 */
 
 Route::get('/', [PublicSiteController::class, 'home'])->name('home');
+
+// Formulario de solicitacao de agendamento (lead) — throttle curto evita
+// envios duplicados/spam sem exigir autenticacao.
+Route::post('agendamento', [PublicAppointmentRequestController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('appointment-requests.store');
 
 // robots.txt e sitemap.xml sao gerados dinamicamente (nunca arquivos
 // estaticos) para respeitar o ambiente e a politica de indexacao

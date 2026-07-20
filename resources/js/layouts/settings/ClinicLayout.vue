@@ -5,9 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { toUrl } from '@/lib/utils';
+import { index as indexAudit } from '@/routes/settings/audit';
 import { index as indexLegalEntities } from '@/routes/settings/legal-entities';
 import { edit as editOrganization } from '@/routes/settings/organization';
+import { index as indexRoles } from '@/routes/settings/roles';
+import { edit as editSeo } from '@/routes/settings/seo';
+import { edit as editSite } from '@/routes/settings/site';
 import { index as indexUnits } from '@/routes/settings/units';
+import { index as indexUsers } from '@/routes/settings/users';
 import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
@@ -22,6 +27,26 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Unidades',
         href: indexUnits(),
+    },
+    {
+        title: 'Usuários',
+        href: indexUsers(),
+    },
+    {
+        title: 'Perfis e permissões',
+        href: indexRoles(),
+    },
+    {
+        title: 'Site da clínica',
+        href: editSite(),
+    },
+    {
+        title: 'SEO e marketing',
+        href: editSeo(),
+    },
+    {
+        title: 'Auditoria',
+        href: indexAudit(),
     },
 ];
 

@@ -1,12 +1,26 @@
 <?php
 
+use App\Http\Controllers\Organization\AppointmentRequestController;
+use App\Http\Controllers\Organization\AuditLogController;
 use App\Http\Controllers\Organization\DashboardController;
+use App\Http\Controllers\Organization\InvitationController;
 use App\Http\Controllers\Organization\LegalEntityController;
 use App\Http\Controllers\Organization\OnboardingController;
 use App\Http\Controllers\Organization\OrganizationContextController;
 use App\Http\Controllers\Organization\OrganizationSettingsController;
+use App\Http\Controllers\Organization\RoleController;
+use App\Http\Controllers\Organization\SeoMarketingController;
+use App\Http\Controllers\Organization\SiteBenefitController;
+use App\Http\Controllers\Organization\SiteContentController;
+use App\Http\Controllers\Organization\SiteFaqController;
+use App\Http\Controllers\Organization\SiteGalleryItemController;
+use App\Http\Controllers\Organization\SiteProfessionalController;
+use App\Http\Controllers\Organization\SiteSectionsController;
+use App\Http\Controllers\Organization\SiteServiceController;
+use App\Http\Controllers\Organization\SiteTestimonialController;
 use App\Http\Controllers\Organization\UnitContextController;
 use App\Http\Controllers\Organization\UnitController;
+use App\Http\Controllers\Organization\UserManagementController;
 use App\Http\Controllers\PostalCodeLookupController;
 use Illuminate\Support\Facades\Route;
 
@@ -106,6 +120,89 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
             Route::delete('settings/legal-entities/{legalEntity}', [LegalEntityController::class, 'destroy'])
                 ->name('settings.legal-entities.destroy');
         });
+
+        Route::get('settings/roles', [RoleController::class, 'index'])
+            ->name('settings.roles.index');
+        Route::post('settings/roles', [RoleController::class, 'store'])
+            ->name('settings.roles.store');
+        Route::put('settings/roles/{role}', [RoleController::class, 'update'])
+            ->name('settings.roles.update');
+        Route::put('settings/roles/{role}/permissions', [RoleController::class, 'assignPermissions'])
+            ->name('settings.roles.permissions');
+        Route::post('settings/roles/{role}/duplicate', [RoleController::class, 'duplicate'])
+            ->name('settings.roles.duplicate');
+        Route::delete('settings/roles/{role}', [RoleController::class, 'destroy'])
+            ->name('settings.roles.destroy');
+
+        Route::get('settings/users', [UserManagementController::class, 'index'])
+            ->name('settings.users.index');
+        Route::post('settings/users/invite', [UserManagementController::class, 'invite'])
+            ->name('settings.users.invite');
+        Route::put('settings/users/{membership}', [UserManagementController::class, 'updateMembership'])
+            ->name('settings.users.update');
+        Route::patch('settings/users/{membership}/activate', [UserManagementController::class, 'activate'])
+            ->name('settings.users.activate');
+        Route::patch('settings/users/{membership}/deactivate', [UserManagementController::class, 'deactivate'])
+            ->name('settings.users.deactivate');
+
+        Route::post('settings/invitations/{invitation}/cancel', [InvitationController::class, 'cancel'])
+            ->name('settings.invitations.cancel');
+        Route::post('settings/invitations/{invitation}/resend', [InvitationController::class, 'resend'])
+            ->name('settings.invitations.resend');
+
+        Route::get('settings/site', [SiteContentController::class, 'edit'])
+            ->name('settings.site.edit');
+        Route::put('settings/site', [SiteContentController::class, 'update'])
+            ->name('settings.site.update');
+        Route::patch('settings/site/publish', [SiteContentController::class, 'publish'])
+            ->name('settings.site.publish');
+        Route::patch('settings/site/unpublish', [SiteContentController::class, 'unpublish'])
+            ->name('settings.site.unpublish');
+
+        Route::get('settings/seo', [SeoMarketingController::class, 'edit'])
+            ->name('settings.seo.edit');
+        Route::put('settings/seo', [SeoMarketingController::class, 'update'])
+            ->name('settings.seo.update');
+
+        Route::get('settings/site/sections', [SiteSectionsController::class, 'edit'])
+            ->name('settings.site.sections.edit');
+        Route::put('settings/site/sections', [SiteSectionsController::class, 'update'])
+            ->name('settings.site.sections.update');
+
+        // Coleções de conteúdo da landing pública (benefícios, serviços,
+        // profissionais, galeria, depoimentos, FAQ) — mesmo padrão de
+        // rotas em todas, ver App\Http\Controllers\Organization\Site*Controller.
+        // $param precisa bater com o nome do argumento tipado no Controller
+        // (route-model-binding implícito do Laravel resolve pelo nome).
+        foreach ([
+            'benefits' => [SiteBenefitController::class, 'siteBenefit'],
+            'services' => [SiteServiceController::class, 'siteService'],
+            'professionals' => [SiteProfessionalController::class, 'siteProfessional'],
+            'gallery' => [SiteGalleryItemController::class, 'siteGalleryItem'],
+            'testimonials' => [SiteTestimonialController::class, 'siteTestimonial'],
+            'faq' => [SiteFaqController::class, 'siteFaq'],
+        ] as $segment => [$controller, $param]) {
+            Route::get("settings/site/{$segment}", [$controller, 'index'])
+                ->name("settings.site.{$segment}.index");
+            Route::post("settings/site/{$segment}", [$controller, 'store'])
+                ->name("settings.site.{$segment}.store");
+            Route::patch("settings/site/{$segment}/reorder", [$controller, 'reorder'])
+                ->name("settings.site.{$segment}.reorder");
+            Route::put("settings/site/{$segment}/{{$param}}", [$controller, 'update'])
+                ->name("settings.site.{$segment}.update");
+            Route::patch("settings/site/{$segment}/{{$param}}/toggle", [$controller, 'toggle'])
+                ->name("settings.site.{$segment}.toggle");
+            Route::delete("settings/site/{$segment}/{{$param}}", [$controller, 'destroy'])
+                ->name("settings.site.{$segment}.destroy");
+        }
+
+        Route::get('settings/site/appointment-requests', [AppointmentRequestController::class, 'index'])
+            ->name('settings.site.appointment-requests.index');
+        Route::patch('settings/site/appointment-requests/{appointmentRequest}/status', [AppointmentRequestController::class, 'updateStatus'])
+            ->name('settings.site.appointment-requests.status');
+
+        Route::get('settings/audit', [AuditLogController::class, 'index'])
+            ->name('settings.audit.index');
 
         // Endpoint interno (JSON) usado pelo formulário de endereço para
         // preencher rua/bairro/cidade/UF a partir do CEP. Não é uma API pública.

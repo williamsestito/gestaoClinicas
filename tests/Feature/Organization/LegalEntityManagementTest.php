@@ -147,3 +147,41 @@ it('never sends the unmasked document in the index or edit inertia props', funct
     $editResponse->assertInertia(fn ($page) => $page
         ->where('legalEntity.document', fn ($document) => ! str_contains((string) $document, $rawDocumentPrefix)));
 });
+
+it('exposes address, types and states on the index page for the unified create/edit panel', function () {
+    $ctx = ownerActingInOrganizationWithLegalEntity();
+
+    $this->actingAs($ctx['user'])
+        ->get('/settings/legal-entities')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('settings/legal-entities/Index')
+            ->has('legalEntityTypes')
+            ->has('states')
+            ->has('legalEntities.0.address')
+        );
+});
+
+it('flashes a toast confirmation after creating and updating a legal entity', function () {
+    $ctx = ownerActingInOrganizationWithLegalEntity();
+
+    $this->actingAs($ctx['user'])->post('/settings/legal-entities', [
+        'type' => 'individual',
+        'document' => '52998224725',
+        'legal_name' => 'Consultório Individual',
+        'address' => [
+            'postal_code' => '01310100',
+            'street' => 'Rua B',
+            'number' => '20',
+            'neighborhood' => 'Centro',
+            'city' => 'São Paulo',
+            'state' => 'SP',
+        ],
+    ])->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'Entidade legal cadastrada com sucesso.']);
+
+    $entity = LegalEntity::query()->where('legal_name', 'Consultório Individual')->firstOrFail();
+
+    $this->actingAs($ctx['user'])
+        ->put("/settings/legal-entities/{$entity->id}", ['legal_name' => 'Consultório Renomeado'])
+        ->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'Entidade legal atualizada com sucesso.']);
+});

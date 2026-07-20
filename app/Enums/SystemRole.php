@@ -1,0 +1,155 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Enums;
+
+/**
+ * Os 7 papéis padrão criados automaticamente para toda organização
+ * (ver RolesAndPermissionsSeeder). São papéis de sistema (`is_system`) —
+ * não podem ser excluídos, mas nada impede o administrador de criar
+ * papéis personalizados adicionais.
+ */
+enum SystemRole: string
+{
+    case Owner = 'proprietario';
+    case ClinicAdmin = 'administrador-clinica';
+    case UnitManager = 'gerente-unidade';
+    case Reception = 'recepcao';
+    case Professional = 'profissional';
+    case Finance = 'financeiro';
+    case Auditor = 'auditor';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Owner => 'Proprietário',
+            self::ClinicAdmin => 'Administrador da clínica',
+            self::UnitManager => 'Gerente de unidade',
+            self::Reception => 'Recepção',
+            self::Professional => 'Profissional',
+            self::Finance => 'Financeiro',
+            self::Auditor => 'Auditor',
+        };
+    }
+
+    public function description(): string
+    {
+        return match ($this) {
+            self::Owner => 'Acesso total à clínica. Não pode ser removido enquanto for o único proprietário ativo.',
+            self::ClinicAdmin => 'Gerencia a operação da clínica: unidades, entidades legais, usuários, site e SEO.',
+            self::UnitManager => 'Gerencia a unidade sob sua responsabilidade.',
+            self::Reception => 'Acesso operacional de recepção.',
+            self::Professional => 'Acesso de profissional da clínica.',
+            self::Finance => 'Acesso à área financeira da clínica.',
+            self::Auditor => 'Acesso somente leitura para fins de auditoria.',
+        };
+    }
+
+    /**
+     * Permissões concedidas por padrão a este papel de sistema. O
+     * proprietário não depende disto (tem acesso total via `is_owner`),
+     * mas ainda recebe o conjunto completo para consistência quando o
+     * papel é exibido/reatribuído.
+     *
+     * @return array<int, PermissionKey>
+     */
+    public function defaultPermissions(): array
+    {
+        return match ($this) {
+            self::Owner => PermissionKey::cases(),
+
+            self::ClinicAdmin => [
+                PermissionKey::DashboardView,
+                PermissionKey::OrganizationView,
+                PermissionKey::OrganizationUpdate,
+                PermissionKey::UnitsView,
+                PermissionKey::UnitsCreate,
+                PermissionKey::UnitsUpdate,
+                PermissionKey::UnitsActivate,
+                PermissionKey::UnitsDeactivate,
+                PermissionKey::UnitsDelete,
+                PermissionKey::UnitsRestore,
+                PermissionKey::UnitsSetHeadquarters,
+                PermissionKey::LegalEntitiesView,
+                PermissionKey::LegalEntitiesCreate,
+                PermissionKey::LegalEntitiesUpdate,
+                PermissionKey::LegalEntitiesDelete,
+                PermissionKey::LegalEntitiesRestore,
+                PermissionKey::LegalEntitiesSetPrimary,
+                PermissionKey::UsersView,
+                PermissionKey::UsersCreate,
+                PermissionKey::UsersInvite,
+                PermissionKey::UsersUpdate,
+                PermissionKey::UsersActivate,
+                PermissionKey::UsersDeactivate,
+                PermissionKey::UsersAssignRoles,
+                PermissionKey::UsersAssignUnits,
+                PermissionKey::RolesView,
+                PermissionKey::RolesCreate,
+                PermissionKey::RolesUpdate,
+                PermissionKey::RolesDelete,
+                PermissionKey::RolesAssignPermissions,
+                PermissionKey::SiteView,
+                PermissionKey::SiteUpdate,
+                PermissionKey::SitePublish,
+                PermissionKey::SiteAppointmentsView,
+                PermissionKey::SiteAppointmentsManage,
+                PermissionKey::SeoView,
+                PermissionKey::SeoUpdate,
+                PermissionKey::AuditView,
+                PermissionKey::SettingsView,
+                PermissionKey::SettingsUpdate,
+            ],
+
+            self::UnitManager => [
+                PermissionKey::DashboardView,
+                PermissionKey::UnitsView,
+                PermissionKey::UnitsUpdate,
+                PermissionKey::UnitsActivate,
+                PermissionKey::UnitsDeactivate,
+                PermissionKey::LegalEntitiesView,
+                PermissionKey::UsersView,
+                PermissionKey::SiteView,
+                PermissionKey::SiteAppointmentsView,
+                PermissionKey::SeoView,
+                PermissionKey::AuditView,
+                PermissionKey::SettingsView,
+            ],
+
+            self::Reception => [
+                PermissionKey::DashboardView,
+                PermissionKey::UnitsView,
+                PermissionKey::LegalEntitiesView,
+                PermissionKey::SiteAppointmentsView,
+                PermissionKey::SiteAppointmentsManage,
+                PermissionKey::SettingsView,
+            ],
+
+            self::Professional => [
+                PermissionKey::DashboardView,
+                PermissionKey::UnitsView,
+                PermissionKey::SettingsView,
+            ],
+
+            self::Finance => [
+                PermissionKey::DashboardView,
+                PermissionKey::UnitsView,
+                PermissionKey::LegalEntitiesView,
+                PermissionKey::SettingsView,
+            ],
+
+            self::Auditor => [
+                PermissionKey::DashboardView,
+                PermissionKey::UnitsView,
+                PermissionKey::LegalEntitiesView,
+                PermissionKey::UsersView,
+                PermissionKey::SiteView,
+                PermissionKey::SiteAppointmentsView,
+                PermissionKey::SeoView,
+                PermissionKey::AuditView,
+                PermissionKey::SettingsView,
+            ],
+        };
+    }
+}

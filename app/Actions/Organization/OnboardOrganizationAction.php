@@ -7,7 +7,9 @@ namespace App\Actions\Organization;
 use App\Data\Organization\OnboardOrganizationData;
 use App\Enums\AuditAction;
 use App\Enums\OrganizationMembershipStatus;
+use App\Enums\SystemRole;
 use App\Models\Organization;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\Auditing\AuditLogger;
 use Illuminate\Http\Request;
@@ -16,8 +18,9 @@ use Illuminate\Support\Facades\DB;
 /**
  * Orquestra, em uma única transação, a criação completa de uma organização
  * a partir do onboarding: organização, entidade legal principal, unidade
- * matriz (com endereço e horários), vínculo de proprietário e contexto
- * ativo. Se qualquer etapa falhar, nada é persistido.
+ * matriz (com endereço e horários), papéis de sistema, vínculo de
+ * proprietário e contexto ativo. Se qualquer etapa falhar, nada é
+ * persistido.
  */
 class OnboardOrganizationAction
 {
@@ -25,6 +28,7 @@ class OnboardOrganizationAction
         private readonly CreateOrganizationAction $createOrganization,
         private readonly CreateLegalEntityAction $createLegalEntity,
         private readonly CreateUnitAction $createUnit,
+        private readonly SeedSystemRolesAction $seedSystemRoles,
         private readonly AuditLogger $auditLogger,
     ) {}
 
@@ -43,10 +47,18 @@ class OnboardOrganizationAction
                 isPrimary: true,
             );
 
+            $this->seedSystemRoles->handle($organization);
+
+            $ownerRole = Role::query()
+                ->where('organization_id', $organization->id)
+                ->where('slug', SystemRole::Owner->value)
+                ->first();
+
             $membership = $organization->memberships()->create([
                 'user_id' => $user->id,
                 'status' => OrganizationMembershipStatus::Active,
                 'is_owner' => true,
+                'role_id' => $ownerRole?->id,
                 'joined_at' => now(),
                 'created_by' => $user->id,
             ]);

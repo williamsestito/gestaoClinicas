@@ -4,6 +4,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import ClinicSettingsLayout from '@/layouts/settings/ClinicLayout.vue';
 import AccountSettingsLayout from '@/layouts/settings/Layout.vue';
+import SiteSettingsLayout from '@/layouts/settings/SiteLayout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Gestão de Clínicas';
@@ -15,6 +16,11 @@ const clinicSettingsPages = [
     'settings/Organization',
     'settings/legal-entities/',
     'settings/units/',
+    'settings/roles/',
+    'settings/users/',
+    'settings/site/',
+    'settings/seo/',
+    'settings/audit/',
 ];
 
 createInertiaApp({
@@ -25,6 +31,11 @@ createInertiaApp({
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
+            // Sub-área "Site da clínica" tem navegação própria (seções,
+            // benefícios, serviços, equipe, galeria, depoimentos, FAQ,
+            // agendamentos) — precisa vir antes do case geral abaixo.
+            case name.startsWith('settings/site/'):
+                return [AppLayout, ClinicSettingsLayout, SiteSettingsLayout];
             case clinicSettingsPages.some((page) => name.startsWith(page)):
                 return [AppLayout, ClinicSettingsLayout];
             case name.startsWith('settings/'):
