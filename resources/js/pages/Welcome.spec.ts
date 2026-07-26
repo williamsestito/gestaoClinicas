@@ -162,3 +162,42 @@ describe('Welcome — published landing state', () => {
         expect(wrapper.find('a[href="#main-content"]').exists()).toBe(true);
     });
 });
+
+describe('Welcome — FAQ section requires actual content', () => {
+    const sectionsWithFaqActive: LandingSection[] = [
+        { type: 'hero', active: true },
+        { type: 'faq', active: true },
+    ];
+
+    it('never links or renders the faq section when it is active but has no faqs', () => {
+        const wrapper = mountWelcome({
+            site: makeSite(),
+            sections: sectionsWithFaqActive,
+            faqs: [],
+        });
+
+        const types = wrapper
+            .findAllComponents(LandingSectionRenderer)
+            .map((r) => r.props('type'));
+        expect(types).not.toContain('faq');
+        expect(
+            wrapper.findComponent(LandingNavbar).props('activeTypes'),
+        ).not.toContain('faq');
+    });
+
+    it('links and renders the faq section once it is active and has faqs', () => {
+        const wrapper = mountWelcome({
+            site: makeSite(),
+            sections: sectionsWithFaqActive,
+            faqs: [{ id: 1, question: 'Q?', answer: 'A.', category: null }],
+        });
+
+        const types = wrapper
+            .findAllComponents(LandingSectionRenderer)
+            .map((r) => r.props('type'));
+        expect(types).toContain('faq');
+        expect(
+            wrapper.findComponent(LandingNavbar).props('activeTypes'),
+        ).toContain('faq');
+    });
+});

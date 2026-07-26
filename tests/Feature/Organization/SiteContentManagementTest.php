@@ -5,6 +5,29 @@ declare(strict_types=1);
 use App\Models\OrganizationMembership;
 use App\Models\SiteSetting;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+
+it('lets the owner upload a hero image (banner) for the site', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.site.update'), [
+            '_method' => 'put',
+            'title' => 'Clínica Exemplo',
+            'hero_image' => UploadedFile::fake()->image('hero.jpg'),
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertStatus(302);
+
+    $site = SiteSetting::query()->first();
+
+    expect($site)->not->toBeNull()
+        ->and($site->hero_image_path)->not->toBeNull();
+
+    Storage::disk('public')->assertExists($site->hero_image_path);
+});
 
 it('lets the owner update the site content', function () {
     $ctx = ownerActingInOrganization();

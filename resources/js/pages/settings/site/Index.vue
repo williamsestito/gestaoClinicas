@@ -165,6 +165,7 @@ function togglePublish() {
                 :current-url="site?.hero_image_url"
                 helperText="Exibida no topo da página pública."
             />
+            <InputError :message="form.errors.hero_image" />
 
             <ImageUploadField
                 id="logo"
@@ -172,6 +173,7 @@ function togglePublish() {
                 label="Logotipo"
                 :current-url="site?.logo_url"
             />
+            <InputError :message="form.errors.logo" />
 
             <ImageUploadField
                 id="favicon"
@@ -179,6 +181,7 @@ function togglePublish() {
                 label="Favicon"
                 :current-url="site?.favicon_url"
             />
+            <InputError :message="form.errors.favicon" />
 
             <div class="grid grid-cols-2 gap-4">
                 <div class="grid gap-2">

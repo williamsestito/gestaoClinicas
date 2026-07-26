@@ -17,6 +17,9 @@
 .env.production
 .phpactor.json
 .phpunit.result.cache
+.phpstan.cache
+.php-cs-fixer.cache
+coverage/
 Homestead.json
 Homestead.yaml
 npm-debug.log
@@ -27,6 +30,12 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/.agents
+/.codex
+
+# Arquivos de indexacao/OS indevidos
+__MACOSX/
+Thumbs.db
 
 # Docker Compose local overrides e segredos
 .env.testing

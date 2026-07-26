@@ -63,8 +63,23 @@ const fallbackDescription = computed(() => {
     return 'Esta aplicação está em desenvolvimento. A fundação técnica está ativa; os módulos de negócio serão adicionados nas próximas fases.';
 });
 
+// Seções cujo tipo depende de haver conteúdo cadastrado (ex.: FAQ) só
+// aparecem — inclusive na navbar, que deriva seus links diretamente
+// destas seções — quando existe algo de fato para mostrar. Uma seção
+// "ativa" sem itens geraria um link para uma âncora inexistente na
+// página.
 const orderedActiveSections = computed(() =>
-    props.sections.filter((section) => section.active),
+    props.sections.filter((section) => {
+        if (!section.active) {
+            return false;
+        }
+
+        if (section.type === 'faq') {
+            return props.faqs.length > 0;
+        }
+
+        return true;
+    }),
 );
 
 const schedulingActive = computed(() =>

@@ -16,7 +16,10 @@ class HandleAppearance
      */
     public function handle(Request $request, Closure $next): Response
     {
-        View::share('appearance', $request->cookie('appearance') ?? 'system');
+        // O padrao para visitantes sem cookie e sempre claro — nunca segue o
+        // tema do sistema operacional automaticamente. "system" so e usado
+        // quando o proprio usuario escolhe essa opcao explicitamente.
+        View::share('appearance', $request->cookie('appearance') ?? 'light');
 
         return $next($request);
     }
