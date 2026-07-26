@@ -6,6 +6,7 @@ namespace App\Http\Requests\Organization;
 
 use App\Models\OrganizationMembership;
 use App\Models\Role;
+use App\Rules\NotOwnerRoleRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -32,6 +33,7 @@ class UpdateUserMembershipRequest extends FormRequest
                 'nullable',
                 'string',
                 Rule::exists(Role::class, 'id')->where('organization_id', $organizationId),
+                new NotOwnerRoleRule,
             ],
             'admin_note' => ['sometimes', 'nullable', 'string', 'max:255'],
             'unit_ids' => ['sometimes', 'array'],

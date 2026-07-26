@@ -6,7 +6,6 @@ namespace App\Policies;
 
 use App\Enums\OrganizationMembershipStatus;
 use App\Enums\PermissionKey;
-use App\Enums\SystemRole;
 use App\Models\Organization;
 use App\Models\Role;
 use App\Models\User;
@@ -41,7 +40,7 @@ class RolePolicy
 
     public function update(User $user, Role $role): bool
     {
-        if ($this->isOwnerRole($role)) {
+        if ($role->isOwnerRole()) {
             return false;
         }
 
@@ -59,16 +58,11 @@ class RolePolicy
 
     public function assignPermissions(User $user, Role $role): bool
     {
-        if ($this->isOwnerRole($role)) {
+        if ($role->isOwnerRole()) {
             return false;
         }
 
         return $this->hasAccess($user, $role->organization_id, PermissionKey::RolesAssignPermissions);
-    }
-
-    private function isOwnerRole(Role $role): bool
-    {
-        return $role->is_system && $role->slug === SystemRole::Owner->value;
     }
 
     private function hasAccess(User $user, string $organizationId, PermissionKey $permission): bool

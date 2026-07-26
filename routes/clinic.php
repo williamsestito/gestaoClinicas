@@ -148,6 +148,7 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
         Route::post('settings/invitations/{invitation}/cancel', [InvitationController::class, 'cancel'])
             ->name('settings.invitations.cancel');
         Route::post('settings/invitations/{invitation}/resend', [InvitationController::class, 'resend'])
+            ->middleware('throttle:6,1')
             ->name('settings.invitations.resend');
 
         Route::get('settings/site', [SiteContentController::class, 'edit'])

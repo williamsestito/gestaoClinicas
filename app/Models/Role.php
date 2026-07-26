@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\SystemRole;
 use Database\Factories\RoleFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -61,5 +62,19 @@ class Role extends Model
     public function organizationMemberships(): HasMany
     {
         return $this->hasMany(OrganizationMembership::class);
+    }
+
+    /**
+     * O papel "Proprietário" nunca concede acesso por si só — o acesso
+     * total vem de `organization_membership.is_owner`. Reatribuir este
+     * papel a outro vínculo daria a ele todas as permissões
+     * (`SystemRole::Owner->defaultPermissions()` retorna todas) sem
+     * nunca tocar `is_owner`, contornando a proteção do último
+     * proprietário — por isso nunca é atribuível diretamente (ver
+     * App\Rules\NotOwnerRoleRule).
+     */
+    public function isOwnerRole(): bool
+    {
+        return $this->is_system && $this->slug === SystemRole::Owner->value;
     }
 }

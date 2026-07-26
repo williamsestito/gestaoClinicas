@@ -151,6 +151,116 @@ it('lets the owner assign a role and units to a member in one update', function 
         ->and($unitMembership->is_primary)->toBeTrue();
 });
 
+it('blocks assigning the Proprietário role to another member, even for the owner', function () {
+    $ctx = ownerActingInOrganization();
+    seedSystemRoles($ctx['organization']);
+    $ownerRole = Role::query()->where('organization_id', $ctx['organization']->id)->where('slug', SystemRole::Owner->value)->firstOrFail();
+
+    $member = User::factory()->create();
+    $membership = OrganizationMembership::factory()->for($ctx['organization'])->for($member)->create();
+
+    $this->actingAs($ctx['user'])
+        ->put(route('settings.users.update', $membership), [
+            'role_id' => $ownerRole->id,
+        ])
+        ->assertSessionHasErrors('role_id');
+
+    expect($membership->fresh()->role_id)->toBeNull()
+        ->and($membership->fresh()->is_owner)->toBeFalse();
+});
+
+it('blocks a non-owner administrator from assigning the Proprietário role to someone else', function () {
+    $ctx = ownerActingInOrganization();
+    $nonOwner = nonOwnerActingWithRole($ctx['organization'], SystemRole::ClinicAdmin);
+    $ownerRole = Role::query()->where('organization_id', $ctx['organization']->id)->where('slug', SystemRole::Owner->value)->firstOrFail();
+
+    $member = User::factory()->create();
+    $membership = OrganizationMembership::factory()->for($ctx['organization'])->for($member)->create();
+
+    $this->actingAs($nonOwner['user'])
+        ->put(route('settings.users.update', $membership), [
+            'role_id' => $ownerRole->id,
+        ])
+        ->assertSessionHasErrors('role_id');
+
+    expect($membership->fresh()->role_id)->toBeNull();
+});
+
+it('blocks a non-owner administrator from assigning the Proprietário role to themselves', function () {
+    $ctx = ownerActingInOrganization();
+    $nonOwner = nonOwnerActingWithRole($ctx['organization'], SystemRole::ClinicAdmin);
+    $ownerRole = Role::query()->where('organization_id', $ctx['organization']->id)->where('slug', SystemRole::Owner->value)->firstOrFail();
+
+    $this->actingAs($nonOwner['user'])
+        ->put(route('settings.users.update', $nonOwner['membership']), [
+            'role_id' => $ownerRole->id,
+        ])
+        ->assertSessionHasErrors('role_id');
+
+    expect($nonOwner['membership']->fresh()->is_owner)->toBeFalse();
+});
+
+it('blocks inviting a new user directly with the Proprietário role', function () {
+    $ctx = ownerActingInOrganization();
+    seedSystemRoles($ctx['organization']);
+    $ownerRole = Role::query()->where('organization_id', $ctx['organization']->id)->where('slug', SystemRole::Owner->value)->firstOrFail();
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.users.invite'), [
+            'email' => 'novo-dono@example.com',
+            'role_id' => $ownerRole->id,
+        ])
+        ->assertSessionHasErrors('role_id');
+
+    expect(Invitation::query()->where('email', 'novo-dono@example.com')->exists())->toBeFalse();
+});
+
+it('rejects a second pending invitation for the same email in the same organization', function () {
+    $ctx = ownerActingInOrganization();
+    Invitation::factory()->for($ctx['organization'])->create([
+        'email' => 'ja-convidado@example.com',
+        'invited_by' => $ctx['user']->id,
+    ]);
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.users.invite'), [
+            'email' => 'ja-convidado@example.com',
+        ])
+        ->assertSessionHasErrors('email');
+
+    expect(Invitation::query()->where('email', 'ja-convidado@example.com')->count())->toBe(1);
+});
+
+it('allows a new invitation for the same email once the previous one is no longer pending', function () {
+    $ctx = ownerActingInOrganization();
+    Invitation::factory()->for($ctx['organization'])->create([
+        'email' => 'convite-cancelado@example.com',
+        'invited_by' => $ctx['user']->id,
+        'status' => InvitationStatus::Cancelled,
+    ]);
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.users.invite'), [
+            'email' => 'convite-cancelado@example.com',
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect(Invitation::query()->where('email', 'convite-cancelado@example.com')->count())->toBe(2);
+});
+
+it('rate limits invitation resend attempts', function () {
+    $ctx = ownerActingInOrganization();
+    $invitation = Invitation::factory()->for($ctx['organization'])->create(['invited_by' => $ctx['user']->id]);
+
+    for ($i = 0; $i < 6; $i++) {
+        $this->actingAs($ctx['user'])->post(route('settings.invitations.resend', $invitation));
+    }
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.invitations.resend', $invitation))
+        ->assertStatus(429);
+});
+
 it('records the last login timestamp on successful authentication', function () {
     $user = User::factory()->create(['password' => bcrypt('senha12345')]);
 
