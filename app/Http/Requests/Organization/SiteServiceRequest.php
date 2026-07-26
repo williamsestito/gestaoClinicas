@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Organization;
 
 use App\Models\SiteSetting;
+use App\Rules\ValidImageContentRule;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -27,7 +28,7 @@ class SiteServiceRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'short_description' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'image' => ['nullable', 'image', 'max:2048'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048', new ValidImageContentRule],
             'icon' => ['nullable', 'string', 'max:60'],
             'category' => ['nullable', 'string', 'max:100'],
             'duration_minutes' => ['nullable', 'integer', 'min:1', 'max:600'],

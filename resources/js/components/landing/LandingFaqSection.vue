@@ -16,7 +16,7 @@ defineProps<{
     <section
         v-if="faqs.length > 0"
         id="faq"
-        class="mx-auto max-w-3xl px-4 py-16 sm:px-6"
+        class="mx-auto max-w-3xl scroll-mt-16 px-4 py-16 sm:px-6"
     >
         <div class="mx-auto mb-10 max-w-2xl text-center">
             <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -33,7 +33,7 @@ defineProps<{
                 class="px-5"
             >
                 <CollapsibleTrigger
-                    class="flex w-full items-center justify-between gap-4 py-4 text-left font-medium"
+                    class="flex w-full items-center justify-between gap-4 rounded-sm py-4 text-left font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                     {{ faq.question }}
                     <ChevronDown
@@ -41,7 +41,9 @@ defineProps<{
                         :class="{ 'rotate-180': open }"
                     />
                 </CollapsibleTrigger>
-                <CollapsibleContent class="pb-4 text-sm text-muted-foreground">
+                <CollapsibleContent
+                    class="pb-4 text-sm whitespace-pre-line text-muted-foreground"
+                >
                     {{ faq.answer }}
                 </CollapsibleContent>
             </Collapsible>

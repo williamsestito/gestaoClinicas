@@ -25,6 +25,7 @@ class SiteBenefitController extends Controller
         return Inertia::render('settings/site/benefits/Index', [
             'benefits' => SiteBenefit::query()
                 ->orderBy('order')
+                ->orderBy('id')
                 ->get()
                 ->map(fn (SiteBenefit $benefit) => [
                     'id' => $benefit->id,

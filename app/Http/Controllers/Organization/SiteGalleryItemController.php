@@ -26,6 +26,7 @@ class SiteGalleryItemController extends Controller
         return Inertia::render('settings/site/gallery/Index', [
             'items' => SiteGalleryItem::query()
                 ->orderBy('order')
+                ->orderBy('id')
                 ->get()
                 ->map(fn (SiteGalleryItem $item) => [
                     'id' => $item->id,
@@ -66,7 +67,7 @@ class SiteGalleryItemController extends Controller
     {
         $this->authorize('update', [SiteSetting::class, $tenant->organization()]);
 
-        $action->delete($siteGalleryItem);
+        $action->delete($siteGalleryItem, 'image_path');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Imagem removida da galeria.']);
 

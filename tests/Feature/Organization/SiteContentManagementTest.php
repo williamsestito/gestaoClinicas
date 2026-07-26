@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Organization\UpdateSiteContentAction;
+use App\Models\AuditLog;
 use App\Models\OrganizationMembership;
 use App\Models\SiteSetting;
 use App\Models\User;
@@ -27,6 +29,216 @@ it('lets the owner upload a hero image (banner) for the site', function () {
         ->and($site->hero_image_path)->not->toBeNull();
 
     Storage::disk('public')->assertExists($site->hero_image_path);
+});
+
+it('accepts JPEG, PNG and WebP hero images', function (string $file) {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.site.update'), [
+            '_method' => 'put',
+            'title' => 'Clínica Exemplo',
+            'hero_image' => UploadedFile::fake()->image($file),
+        ])
+        ->assertSessionHasNoErrors();
+})->with([
+    'hero.jpg',
+    'hero.png',
+    'hero.webp',
+]);
+
+it('rejects hero image formats other than JPEG, PNG and WebP', function (string $file) {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.site.update'), [
+            '_method' => 'put',
+            'title' => 'Clínica Exemplo',
+            'hero_image' => UploadedFile::fake()->image($file),
+        ])
+        ->assertSessionHasErrors('hero_image');
+
+    expect(SiteSetting::query()->first())->toBeNull();
+})->with([
+    'hero.gif',
+    'hero.bmp',
+]);
+
+it('rejects an SVG file as the hero image', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $svg = UploadedFile::fake()->createWithContent(
+        'hero.svg',
+        '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+    );
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.site.update'), [
+            '_method' => 'put',
+            'title' => 'Clínica Exemplo',
+            'hero_image' => $svg,
+        ])
+        ->assertSessionHasErrors('hero_image');
+});
+
+it('rejects a hero image above the size limit', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.site.update'), [
+            '_method' => 'put',
+            'title' => 'Clínica Exemplo',
+            'hero_image' => UploadedFile::fake()->image('hero.jpg')->size(6000),
+        ])
+        ->assertSessionHasErrors('hero_image');
+});
+
+it('rejects a malformed file disguised as an image', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.site.update'), [
+            '_method' => 'put',
+            'title' => 'Clínica Exemplo',
+            'hero_image' => UploadedFile::fake()->create('hero.jpg', 100, 'image/jpeg'),
+        ])
+        ->assertSessionHasErrors('hero_image');
+});
+
+it('replaces the previous hero image and removes the old file from storage', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])->post(route('settings.site.update'), [
+        '_method' => 'put',
+        'title' => 'Clínica Exemplo',
+        'hero_image' => UploadedFile::fake()->image('first.jpg'),
+    ]);
+
+    $firstPath = SiteSetting::query()->first()->hero_image_path;
+    Storage::disk('public')->assertExists($firstPath);
+
+    $this->actingAs($ctx['user'])->post(route('settings.site.update'), [
+        '_method' => 'put',
+        'title' => 'Clínica Exemplo',
+        'hero_image' => UploadedFile::fake()->image('second.jpg'),
+    ]);
+
+    $secondPath = SiteSetting::query()->first()->hero_image_path;
+
+    expect($secondPath)->not->toBe($firstPath);
+    Storage::disk('public')->assertExists($secondPath);
+    Storage::disk('public')->assertMissing($firstPath);
+});
+
+it('keeps the previous hero image untouched when persisting the new one fails', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])->post(route('settings.site.update'), [
+        '_method' => 'put',
+        'title' => 'Clínica Exemplo',
+        'hero_image' => UploadedFile::fake()->image('first.jpg'),
+    ]);
+
+    $site = SiteSetting::query()->first();
+    $originalPath = $site->hero_image_path;
+
+    SiteSetting::saving(function () {
+        throw new RuntimeException('Simulated database failure.');
+    });
+
+    try {
+        $this->expectException(RuntimeException::class);
+
+        app(UpdateSiteContentAction::class)->handle(
+            siteSetting: $site,
+            data: ['title' => 'Clínica Exemplo'],
+            files: ['hero_image' => UploadedFile::fake()->image('second.jpg')],
+        );
+    } finally {
+        SiteSetting::unsetEventDispatcher();
+    }
+
+    expect($site->fresh()->hero_image_path)->toBe($originalPath);
+    Storage::disk('public')->assertExists($originalPath);
+    Storage::disk('public')->allFiles('site-content')->each(
+        fn (string $path) => expect($path)->toBe($originalPath),
+    );
+});
+
+it('lets the owner remove the hero image, clearing the field and the file without touching other data', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])->post(route('settings.site.update'), [
+        '_method' => 'put',
+        'title' => 'Clínica Exemplo',
+        'cta_text' => 'Agende sua consulta',
+        'hero_image' => UploadedFile::fake()->image('hero.jpg'),
+    ]);
+
+    $path = SiteSetting::query()->first()->hero_image_path;
+    Storage::disk('public')->assertExists($path);
+
+    $this->actingAs($ctx['user'])
+        ->delete(route('settings.site.hero-image.destroy'))
+        ->assertSessionHasNoErrors()
+        ->assertStatus(302);
+
+    $site = SiteSetting::query()->first();
+
+    expect($site->hero_image_path)->toBeNull()
+        ->and($site->title)->toBe('Clínica Exemplo')
+        ->and($site->cta_text)->toBe('Agende sua consulta');
+
+    Storage::disk('public')->assertMissing($path);
+});
+
+it('does nothing when removing a hero image that was never set', function () {
+    $ctx = ownerActingInOrganization();
+    SiteSetting::factory()->create(['hero_image_path' => null]);
+
+    $this->actingAs($ctx['user'])
+        ->delete(route('settings.site.hero-image.destroy'))
+        ->assertSessionHasNoErrors();
+
+    expect(SiteSetting::query()->first()->hero_image_path)->toBeNull();
+});
+
+it('refuses to remove a hero image when no site content exists yet', function () {
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->delete(route('settings.site.hero-image.destroy'))
+        ->assertSessionHasErrors('hero_image');
+});
+
+it('blocks a non-owner without site.update permission from removing the hero image', function () {
+    $ctx = ownerActingInOrganization();
+    SiteSetting::factory()->create(['hero_image_path' => 'site-content/hero.jpg']);
+    $member = User::factory()->create();
+    OrganizationMembership::factory()->for($ctx['organization'])->for($member)->create();
+
+    $this->actingAs($member)
+        ->delete(route('settings.site.hero-image.destroy'))
+        ->assertForbidden();
+});
+
+it('rejects a javascript: scheme in cta_url', function () {
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->put(route('settings.site.update'), [
+            'title' => 'Clínica Exemplo',
+            'cta_url' => 'javascript:alert(1)',
+        ])
+        ->assertSessionHasErrors('cta_url');
 });
 
 it('lets the owner update the site content', function () {
@@ -86,4 +298,206 @@ it('refuses to publish when no site content exists yet', function () {
     $this->actingAs($ctx['user'])
         ->patch(route('settings.site.publish'))
         ->assertSessionHasErrors('site');
+});
+
+it('lets the owner upload a logo and a favicon for the site', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.site.update'), [
+            '_method' => 'put',
+            'title' => 'Clínica Exemplo',
+            'logo' => UploadedFile::fake()->image('logo.png'),
+            'favicon' => UploadedFile::fake()->image('favicon.png'),
+        ])
+        ->assertSessionHasNoErrors();
+
+    $site = SiteSetting::query()->first();
+
+    expect($site->logo_path)->not->toBeNull()
+        ->and($site->favicon_path)->not->toBeNull();
+
+    Storage::disk('public')->assertExists($site->logo_path);
+    Storage::disk('public')->assertExists($site->favicon_path);
+});
+
+it('rejects logo and favicon formats other than JPEG, PNG and WebP', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.site.update'), [
+            '_method' => 'put',
+            'title' => 'Clínica Exemplo',
+            'logo' => UploadedFile::fake()->image('logo.gif'),
+            'favicon' => UploadedFile::fake()->image('favicon.bmp'),
+        ])
+        ->assertSessionHasErrors(['logo', 'favicon']);
+
+    expect(SiteSetting::query()->first())->toBeNull();
+});
+
+it('replaces the previous logo and favicon, removing the old files from storage', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])->post(route('settings.site.update'), [
+        '_method' => 'put',
+        'title' => 'Clínica Exemplo',
+        'logo' => UploadedFile::fake()->image('first-logo.png'),
+        'favicon' => UploadedFile::fake()->image('first-favicon.png'),
+    ]);
+
+    $site = SiteSetting::query()->first();
+    $firstLogoPath = $site->logo_path;
+    $firstFaviconPath = $site->favicon_path;
+
+    $this->actingAs($ctx['user'])->post(route('settings.site.update'), [
+        '_method' => 'put',
+        'title' => 'Clínica Exemplo',
+        'logo' => UploadedFile::fake()->image('second-logo.png'),
+        'favicon' => UploadedFile::fake()->image('second-favicon.png'),
+    ]);
+
+    $site->refresh();
+
+    expect($site->logo_path)->not->toBe($firstLogoPath)
+        ->and($site->favicon_path)->not->toBe($firstFaviconPath);
+
+    Storage::disk('public')->assertExists($site->logo_path);
+    Storage::disk('public')->assertExists($site->favicon_path);
+    Storage::disk('public')->assertMissing($firstLogoPath);
+    Storage::disk('public')->assertMissing($firstFaviconPath);
+});
+
+it('keeps the previous logo untouched when persisting the new one fails', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])->post(route('settings.site.update'), [
+        '_method' => 'put',
+        'title' => 'Clínica Exemplo',
+        'logo' => UploadedFile::fake()->image('first-logo.png'),
+    ]);
+
+    $site = SiteSetting::query()->first();
+    $originalPath = $site->logo_path;
+
+    SiteSetting::saving(function () {
+        throw new RuntimeException('Simulated database failure.');
+    });
+
+    try {
+        $this->expectException(RuntimeException::class);
+
+        app(UpdateSiteContentAction::class)->handle(
+            siteSetting: $site,
+            data: ['title' => 'Clínica Exemplo'],
+            files: ['logo' => UploadedFile::fake()->image('second-logo.png')],
+        );
+    } finally {
+        SiteSetting::unsetEventDispatcher();
+    }
+
+    expect($site->fresh()->logo_path)->toBe($originalPath);
+    Storage::disk('public')->assertExists($originalPath);
+});
+
+it('lets the owner remove the logo and the favicon independently, preserving other data', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])->post(route('settings.site.update'), [
+        '_method' => 'put',
+        'title' => 'Clínica Exemplo',
+        'cta_text' => 'Agende sua consulta',
+        'logo' => UploadedFile::fake()->image('logo.png'),
+        'favicon' => UploadedFile::fake()->image('favicon.png'),
+    ]);
+
+    $site = SiteSetting::query()->first();
+    $logoPath = $site->logo_path;
+    $faviconPath = $site->favicon_path;
+
+    $this->actingAs($ctx['user'])
+        ->delete(route('settings.site.logo.destroy'))
+        ->assertSessionHasNoErrors();
+
+    $site->refresh();
+
+    expect($site->logo_path)->toBeNull()
+        ->and($site->favicon_path)->not->toBeNull()
+        ->and($site->title)->toBe('Clínica Exemplo')
+        ->and($site->cta_text)->toBe('Agende sua consulta');
+
+    Storage::disk('public')->assertMissing($logoPath);
+    Storage::disk('public')->assertExists($faviconPath);
+
+    $this->actingAs($ctx['user'])
+        ->delete(route('settings.site.favicon.destroy'))
+        ->assertSessionHasNoErrors();
+
+    $site->refresh();
+
+    expect($site->favicon_path)->toBeNull();
+    Storage::disk('public')->assertMissing($faviconPath);
+});
+
+it('blocks a non-owner without site.update permission from removing the logo or the favicon', function () {
+    $ctx = ownerActingInOrganization();
+    SiteSetting::factory()->create([
+        'logo_path' => 'site-content/logo.png',
+        'favicon_path' => 'site-content/favicon.png',
+    ]);
+    $member = User::factory()->create();
+    OrganizationMembership::factory()->for($ctx['organization'])->for($member)->create();
+
+    $this->actingAs($member)->delete(route('settings.site.logo.destroy'))->assertForbidden();
+    $this->actingAs($member)->delete(route('settings.site.favicon.destroy'))->assertForbidden();
+});
+
+it('audits hero image, logo and favicon changes with before/after paths, never binary content', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])->post(route('settings.site.update'), [
+        '_method' => 'put',
+        'title' => 'Clínica Exemplo',
+        'hero_image' => UploadedFile::fake()->image('hero.jpg'),
+        'logo' => UploadedFile::fake()->image('logo.png'),
+        'favicon' => UploadedFile::fake()->image('favicon.png'),
+    ]);
+
+    $site = SiteSetting::query()->first();
+
+    $uploadLog = AuditLog::query()
+        ->where('auditable_id', $site->id)
+        ->latest('id')
+        ->firstOrFail();
+
+    expect(array_key_exists('hero_image_path', $uploadLog->before_data))->toBeTrue()
+        ->and($uploadLog->before_data['hero_image_path'])->toBeNull()
+        ->and($uploadLog->after_data['hero_image_path'])->toBe($site->hero_image_path)
+        ->and($uploadLog->after_data['logo_path'])->toBe($site->logo_path)
+        ->and($uploadLog->after_data['favicon_path'])->toBe($site->favicon_path);
+
+    foreach ([$uploadLog->before_data, $uploadLog->after_data] as $data) {
+        foreach ($data as $value) {
+            if (is_string($value)) {
+                expect($value)->not->toContain('data:image')
+                    ->and(strlen($value))->toBeLessThan(255);
+            }
+        }
+    }
+
+    $this->actingAs($ctx['user'])->delete(route('settings.site.logo.destroy'));
+
+    $removalLog = AuditLog::query()
+        ->where('auditable_id', $site->id)
+        ->latest('id')
+        ->firstOrFail();
+
+    expect($removalLog->before_data['logo_path'])->toBe($site->logo_path)
+        ->and($removalLog->after_data['logo_path'])->toBeNull();
 });

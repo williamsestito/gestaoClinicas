@@ -129,3 +129,49 @@ it('exposes active benefits, services, professionals, gallery, testimonials and 
             ->where('contact.phone', '(47) 3222-1122')
         );
 });
+
+it('orders public benefits by the order field, breaking ties by id', function () {
+    Organization::factory()->create();
+    SiteSetting::factory()->create();
+
+    $second = SiteBenefit::factory()->create(['title' => 'Segundo', 'order' => 1]);
+    $first = SiteBenefit::factory()->create(['title' => 'Primeiro', 'order' => 0]);
+    $tieBreakerOlder = SiteBenefit::factory()->create(['title' => 'Empate mais antigo', 'order' => 1]);
+
+    $this->get('/')
+        ->assertInertia(fn ($page) => $page
+            ->where('benefits.0.title', $first->title)
+            ->where('benefits.1.title', $second->title)
+            ->where('benefits.2.title', $tieBreakerOlder->title)
+        );
+});
+
+it('excludes inactive faqs from the public payload', function () {
+    Organization::factory()->create();
+    SiteSetting::factory()->create();
+
+    SiteFaq::factory()->create(['question' => 'Ativa', 'is_active' => true]);
+    SiteFaq::factory()->inactive()->create(['question' => 'Inativa']);
+
+    $this->get('/')
+        ->assertInertia(fn ($page) => $page
+            ->has('faqs', 1)
+            ->where('faqs.0.question', 'Ativa')
+        );
+});
+
+it('orders public faqs by the order field, breaking ties by id', function () {
+    Organization::factory()->create();
+    SiteSetting::factory()->create();
+
+    $second = SiteFaq::factory()->create(['question' => 'Segunda', 'order' => 1]);
+    $first = SiteFaq::factory()->create(['question' => 'Primeira', 'order' => 0]);
+    $tieBreakerOlder = SiteFaq::factory()->create(['question' => 'Empate mais antiga', 'order' => 1]);
+
+    $this->get('/')
+        ->assertInertia(fn ($page) => $page
+            ->where('faqs.0.question', $first->question)
+            ->where('faqs.1.question', $second->question)
+            ->where('faqs.2.question', $tieBreakerOlder->question)
+        );
+});

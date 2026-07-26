@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Organization;
 
 use App\Models\SiteSetting;
+use App\Rules\ValidImageContentRule;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -25,7 +26,7 @@ class SiteTestimonialRequest extends FormRequest
     {
         return [
             'author_name' => ['required', 'string', 'max:150'],
-            'photo' => ['nullable', 'image', 'max:2048'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048', new ValidImageContentRule],
             'rating' => ['nullable', 'integer', 'min:1', 'max:5'],
             'content' => ['required', 'string', 'max:1000'],
             'related_service_id' => ['nullable', 'integer', 'exists:site_services,id'],

@@ -101,6 +101,7 @@ class PublicSiteController extends Controller
         return SiteBenefit::query()
             ->where('is_active', true)
             ->orderBy('order')
+            ->orderBy('id')
             ->get()
             ->map(fn (SiteBenefit $benefit) => [
                 'id' => $benefit->id,
@@ -119,6 +120,7 @@ class PublicSiteController extends Controller
         return SiteService::query()
             ->where('is_active', true)
             ->orderBy('order')
+            ->orderBy('id')
             ->get()
             ->map(fn (SiteService $service) => [
                 'id' => $service->id,
@@ -144,6 +146,7 @@ class PublicSiteController extends Controller
         return SiteProfessional::query()
             ->where('is_active', true)
             ->orderBy('order')
+            ->orderBy('id')
             ->get()
             ->map(fn (SiteProfessional $professional) => [
                 'id' => $professional->id,
@@ -168,6 +171,7 @@ class PublicSiteController extends Controller
         return SiteGalleryItem::query()
             ->where('is_active', true)
             ->orderBy('order')
+            ->orderBy('id')
             ->get()
             ->map(fn (SiteGalleryItem $item) => [
                 'id' => $item->id,
@@ -188,6 +192,7 @@ class PublicSiteController extends Controller
         return SiteTestimonial::query()
             ->where('is_active', true)
             ->orderBy('order')
+            ->orderBy('id')
             ->with('relatedService:id,name')
             ->get()
             ->map(fn (SiteTestimonial $testimonial) => [
@@ -210,6 +215,7 @@ class PublicSiteController extends Controller
         return SiteFaq::query()
             ->where('is_active', true)
             ->orderBy('order')
+            ->orderBy('id')
             ->get()
             ->map(fn (SiteFaq $faq) => [
                 'id' => $faq->id,

@@ -2,6 +2,7 @@
 import { Mail, MapPin, MessageCircle, Phone } from '@lucide/vue';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
 import type { PublicContact } from '@/types/site';
 
 const props = defineProps<{
@@ -31,17 +32,14 @@ const mapsSearchUrl = computed(() => {
     return `https://www.google.com/maps/search/?api=1&query=${query}`;
 });
 
-const whatsappUrl = computed(() => {
-    if (!props.contact.whatsapp) {
-        return null;
-    }
-
-    return `https://wa.me/55${props.contact.whatsapp.replace(/\D/g, '')}`;
-});
+const whatsappUrl = computed(() => buildWhatsAppUrl(props.contact.whatsapp));
 </script>
 
 <template>
-    <section id="contact" class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+    <section
+        id="contact"
+        class="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6"
+    >
         <div class="mx-auto mb-10 max-w-2xl text-center">
             <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
                 Contato e localização

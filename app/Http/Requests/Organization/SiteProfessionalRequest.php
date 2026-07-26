@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Organization;
 
 use App\Models\SiteSetting;
+use App\Rules\ValidImageContentRule;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -29,10 +30,10 @@ class SiteProfessionalRequest extends FormRequest
             'specialty' => ['nullable', 'string', 'max:150'],
             'professional_register' => ['nullable', 'string', 'max:100'],
             'bio' => ['nullable', 'string', 'max:2000'],
-            'photo' => ['nullable', 'image', 'max:2048'],
-            'facebook_url' => ['nullable', 'url', 'max:255'],
-            'instagram_url' => ['nullable', 'url', 'max:255'],
-            'linkedin_url' => ['nullable', 'url', 'max:255'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048', new ValidImageContentRule],
+            'facebook_url' => ['nullable', 'url:http,https', 'max:255'],
+            'instagram_url' => ['nullable', 'url:http,https', 'max:255'],
+            'linkedin_url' => ['nullable', 'url:http,https', 'max:255'],
         ];
     }
 }

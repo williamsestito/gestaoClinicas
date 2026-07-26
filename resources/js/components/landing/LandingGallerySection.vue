@@ -46,7 +46,11 @@ function previous() {
 </script>
 
 <template>
-    <section v-if="items.length > 0" id="gallery" class="bg-muted/40 py-16">
+    <section
+        v-if="items.length > 0"
+        id="gallery"
+        class="scroll-mt-16 bg-muted/40 py-16"
+    >
         <div class="mx-auto max-w-6xl px-4 sm:px-6">
             <div class="mx-auto mb-10 max-w-2xl text-center">
                 <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">

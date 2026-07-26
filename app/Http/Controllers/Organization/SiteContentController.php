@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Organization;
 
+use App\Actions\Organization\RemoveSiteAssetAction;
 use App\Actions\Organization\SetSitePublishedStatusAction;
 use App\Actions\Organization\UpdateSiteContentAction;
 use App\Http\Controllers\Controller;
@@ -76,6 +77,63 @@ class SiteContentController extends Controller
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Site atualizado com sucesso.']);
+
+        return back();
+    }
+
+    public function destroyHeroImage(TenantContext $tenant, RemoveSiteAssetAction $action): RedirectResponse
+    {
+        $organization = $tenant->organization();
+
+        $this->authorize('update', [SiteSetting::class, $organization]);
+
+        $action->handle(
+            siteSetting: SiteSetting::query()->first(),
+            column: 'hero_image_path',
+            errorKey: 'hero_image',
+            missingContentMessage: 'Configure o conteúdo do site antes de remover o banner.',
+            organization: $organization,
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Banner removido.']);
+
+        return back();
+    }
+
+    public function destroyLogo(TenantContext $tenant, RemoveSiteAssetAction $action): RedirectResponse
+    {
+        $organization = $tenant->organization();
+
+        $this->authorize('update', [SiteSetting::class, $organization]);
+
+        $action->handle(
+            siteSetting: SiteSetting::query()->first(),
+            column: 'logo_path',
+            errorKey: 'logo',
+            missingContentMessage: 'Configure o conteúdo do site antes de remover o logotipo.',
+            organization: $organization,
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Logotipo removido.']);
+
+        return back();
+    }
+
+    public function destroyFavicon(TenantContext $tenant, RemoveSiteAssetAction $action): RedirectResponse
+    {
+        $organization = $tenant->organization();
+
+        $this->authorize('update', [SiteSetting::class, $organization]);
+
+        $action->handle(
+            siteSetting: SiteSetting::query()->first(),
+            column: 'favicon_path',
+            errorKey: 'favicon',
+            missingContentMessage: 'Configure o conteúdo do site antes de remover o favicon.',
+            organization: $organization,
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Favicon removido.']);
 
         return back();
     }

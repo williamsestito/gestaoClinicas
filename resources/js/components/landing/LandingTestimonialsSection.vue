@@ -11,7 +11,7 @@ defineProps<{
     <section
         v-if="testimonials.length > 0"
         id="testimonials"
-        class="mx-auto max-w-6xl px-4 py-16 sm:px-6"
+        class="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6"
     >
         <div class="mx-auto mb-10 max-w-2xl text-center">
             <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">

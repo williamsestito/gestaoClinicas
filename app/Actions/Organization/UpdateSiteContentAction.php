@@ -8,8 +8,9 @@ use App\Enums\AuditAction;
 use App\Models\Organization;
 use App\Models\SiteSetting;
 use App\Support\Auditing\AuditLogger;
+use App\Support\Site\SafeFileReplacer;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class UpdateSiteContentAction
 {
@@ -24,40 +25,39 @@ class UpdateSiteContentAction
         $record = $siteSetting ?? new SiteSetting;
         $before = $record->exists ? $record->only(array_keys($data)) : [];
 
-        if ($files['hero_image'] ?? null) {
-            $this->replaceFile($record, 'hero_image_path', $files['hero_image']);
-        }
+        // Os três arquivos institucionais (banner, logo, favicon) usam a
+        // mesma sequência segura: o arquivo novo é salvo e a coluna
+        // atualizada em memória (stage), o registro é persistido, e só
+        // então o arquivo antigo é removido (commit) — nunca o contrário,
+        // para nunca perder a referência ao arquivo atual se o save()
+        // falhar (ver Fase 0, Etapas 0.3 e 0.4).
+        $replacer = new SafeFileReplacer;
+        $replacer->stage($record, 'hero_image_path', $files['hero_image'] ?? null, 'site-content');
+        $replacer->stage($record, 'logo_path', $files['logo'] ?? null, 'site-content');
+        $replacer->stage($record, 'favicon_path', $files['favicon'] ?? null, 'site-content');
 
-        if ($files['logo'] ?? null) {
-            $this->replaceFile($record, 'logo_path', $files['logo']);
-        }
-
-        if ($files['favicon'] ?? null) {
-            $this->replaceFile($record, 'favicon_path', $files['favicon']);
-        }
+        $before = [...$before, ...$replacer->previousPaths()];
 
         $record->fill($data);
-        $record->save();
+
+        try {
+            $record->save();
+        } catch (Throwable $e) {
+            $replacer->rollback();
+
+            throw $e;
+        }
+
+        $replacer->commit();
 
         $this->auditLogger->log(
             AuditAction::Updated,
             auditable: $record,
             before: $before,
-            after: $record->only(array_keys($data)),
+            after: $record->only(array_keys($before)),
             organization: $organization,
         );
 
         return $record;
-    }
-
-    private function replaceFile(SiteSetting $record, string $column, UploadedFile $file): void
-    {
-        $existingPath = $record->getAttribute($column);
-
-        if ($existingPath && Storage::disk('public')->exists($existingPath)) {
-            Storage::disk('public')->delete($existingPath);
-        }
-
-        $record->setAttribute($column, $file->store('site-content', 'public'));
     }
 }

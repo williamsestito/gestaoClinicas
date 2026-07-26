@@ -27,6 +27,7 @@ class SiteTestimonialController extends Controller
         return Inertia::render('settings/site/testimonials/Index', [
             'testimonials' => SiteTestimonial::query()
                 ->orderBy('order')
+                ->orderBy('id')
                 ->with('relatedService:id,name')
                 ->get()
                 ->map(fn (SiteTestimonial $testimonial) => [
@@ -71,7 +72,7 @@ class SiteTestimonialController extends Controller
     {
         $this->authorize('update', [SiteSetting::class, $tenant->organization()]);
 
-        $action->delete($siteTestimonial);
+        $action->delete($siteTestimonial, 'author_photo_path');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Depoimento excluído.']);
 

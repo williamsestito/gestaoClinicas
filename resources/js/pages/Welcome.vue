@@ -63,22 +63,49 @@ const fallbackDescription = computed(() => {
     return 'Esta aplicação está em desenvolvimento. A fundação técnica está ativa; os módulos de negócio serão adicionados nas próximas fases.';
 });
 
-// Seções cujo tipo depende de haver conteúdo cadastrado (ex.: FAQ) só
-// aparecem — inclusive na navbar, que deriva seus links diretamente
-// destas seções — quando existe algo de fato para mostrar. Uma seção
-// "ativa" sem itens geraria um link para uma âncora inexistente na
-// página.
+// Seções cujo conteúdo pode estar vazio (ex.: nenhum benefício ativo, sem
+// texto "sobre", sem endereço/telefone/e-mail cadastrados) só aparecem —
+// inclusive na navbar, que deriva seus links diretamente destas seções —
+// quando existe algo de fato para mostrar. Uma seção "ativa" sem conteúdo
+// geraria um link para uma âncora vazia ou inexistente na página. Fonte
+// única: cada componente de seção já se autoguarda com a mesma condição
+// (ver Landing*Section.vue), então isso apenas evita que a navbar fique
+// dessincronizada do que realmente é renderizado.
 const orderedActiveSections = computed(() =>
     props.sections.filter((section) => {
         if (!section.active) {
             return false;
         }
 
-        if (section.type === 'faq') {
-            return props.faqs.length > 0;
+        switch (section.type) {
+            case 'about':
+                return Boolean(props.site?.about_text);
+            case 'benefits':
+                return props.benefits.length > 0;
+            case 'services':
+                return props.services.length > 0;
+            case 'professionals':
+                return props.professionals.length > 0;
+            case 'gallery':
+                return props.gallery.length > 0;
+            case 'testimonials':
+                return props.testimonials.length > 0;
+            case 'faq':
+                return props.faqs.length > 0;
+            case 'contact':
+                return (
+                    props.contact !== null &&
+                    Boolean(
+                        props.contact.phone ||
+                            props.contact.email ||
+                            props.contact.address ||
+                            props.contact.opening_hours.length > 0 ||
+                            props.contact.map_url,
+                    )
+                );
+            default:
+                return true;
         }
-
-        return true;
     }),
 );
 

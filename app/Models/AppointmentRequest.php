@@ -26,7 +26,10 @@ use Illuminate\Support\Carbon;
  * @property string $phone
  * @property string|null $email
  * @property string|null $preferred_period
+ * @property Carbon|null $preferred_date
  * @property string|null $notes
+ * @property string|null $internal_notes
+ * @property array<string, string>|null $utm_data
  * @property AppointmentRequestStatus $status
  * @property Carbon $terms_accepted_at
  */
@@ -43,7 +46,10 @@ class AppointmentRequest extends Model
         'phone',
         'email',
         'preferred_period',
+        'preferred_date',
         'notes',
+        'internal_notes',
+        'utm_data',
         'status',
         'terms_accepted_at',
     ];
@@ -53,6 +59,8 @@ class AppointmentRequest extends Model
         return [
             'status' => AppointmentRequestStatus::class,
             'terms_accepted_at' => 'datetime',
+            'preferred_date' => 'date',
+            'utm_data' => 'array',
         ];
     }
 

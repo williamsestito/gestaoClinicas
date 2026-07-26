@@ -17,11 +17,20 @@ const previewUrl = ref<string | null>(null);
 
 function onChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+
+    if (previewUrl.value) {
+        URL.revokeObjectURL(previewUrl.value);
+    }
+
     model.value = file;
     previewUrl.value = file ? URL.createObjectURL(file) : null;
 }
 
 function clear() {
+    if (previewUrl.value) {
+        URL.revokeObjectURL(previewUrl.value);
+    }
+
     model.value = null;
     previewUrl.value = null;
 

@@ -154,6 +154,12 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
             ->name('settings.site.edit');
         Route::put('settings/site', [SiteContentController::class, 'update'])
             ->name('settings.site.update');
+        Route::delete('settings/site/hero-image', [SiteContentController::class, 'destroyHeroImage'])
+            ->name('settings.site.hero-image.destroy');
+        Route::delete('settings/site/logo', [SiteContentController::class, 'destroyLogo'])
+            ->name('settings.site.logo.destroy');
+        Route::delete('settings/site/favicon', [SiteContentController::class, 'destroyFavicon'])
+            ->name('settings.site.favicon.destroy');
         Route::patch('settings/site/publish', [SiteContentController::class, 'publish'])
             ->name('settings.site.publish');
         Route::patch('settings/site/unpublish', [SiteContentController::class, 'unpublish'])
@@ -200,6 +206,8 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
             ->name('settings.site.appointment-requests.index');
         Route::patch('settings/site/appointment-requests/{appointmentRequest}/status', [AppointmentRequestController::class, 'updateStatus'])
             ->name('settings.site.appointment-requests.status');
+        Route::patch('settings/site/appointment-requests/{appointmentRequest}/notes', [AppointmentRequestController::class, 'updateNotes'])
+            ->name('settings.site.appointment-requests.notes');
 
         Route::get('settings/audit', [AuditLogController::class, 'index'])
             ->name('settings.audit.index');

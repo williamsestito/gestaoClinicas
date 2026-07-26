@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { dashboard, login, register } from '@/routes';
 import type { PublicSiteContent } from '@/types/site';
@@ -10,6 +11,11 @@ const props = defineProps<{
 
 const page = usePage();
 
+// Se o arquivo referenciado no banco não existir mais no storage (arquivo
+// removido manualmente, disco trocado etc.), esconde a imagem em vez de
+// exibir o ícone de imagem quebrada.
+const heroImageFailedToLoad = ref(false);
+
 const brandStyle = {
     '--brand-primary': props.site.primary_color ?? 'var(--primary)',
     '--brand-secondary': props.site.secondary_color ?? 'var(--primary)',
@@ -19,7 +25,7 @@ const brandStyle = {
 <template>
     <section
         id="hero"
-        class="relative overflow-hidden py-16 sm:py-24"
+        class="relative scroll-mt-16 overflow-hidden py-16 sm:py-24"
         :style="brandStyle"
     >
         <div
@@ -99,12 +105,16 @@ const brandStyle = {
                 </div>
             </div>
 
-            <div v-if="site.hero_image_url" class="relative">
+            <div
+                v-if="site.hero_image_url && !heroImageFailedToLoad"
+                class="relative"
+            >
                 <img
                     :src="site.hero_image_url"
                     :alt="site.title"
                     fetchpriority="high"
                     class="aspect-4/3 w-full rounded-2xl border border-border object-cover shadow-lg"
+                    @error="heroImageFailedToLoad = true"
                 />
             </div>
         </div>

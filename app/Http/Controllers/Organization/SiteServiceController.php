@@ -26,6 +26,7 @@ class SiteServiceController extends Controller
         return Inertia::render('settings/site/services/Index', [
             'services' => SiteService::query()
                 ->orderBy('order')
+                ->orderBy('id')
                 ->get()
                 ->map(fn (SiteService $service) => [
                     'id' => $service->id,
@@ -71,7 +72,7 @@ class SiteServiceController extends Controller
     {
         $this->authorize('update', [SiteSetting::class, $tenant->organization()]);
 
-        $action->delete($siteService);
+        $action->delete($siteService, 'image_path');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Serviço excluído.']);
 

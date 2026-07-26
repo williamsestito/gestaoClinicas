@@ -1,17 +1,30 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ExternalLink } from '@lucide/vue';
+import { ref } from 'vue';
 import ImageUploadField from '@/components/ImageUploadField.vue';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { dashboard } from '@/routes';
 import { publish, unpublish, update } from '@/routes/settings/site';
+import { destroy as destroyFavicon } from '@/routes/settings/site/favicon';
+import { destroy as destroyHeroImage } from '@/routes/settings/site/hero-image';
+import { destroy as destroyLogo } from '@/routes/settings/site/logo';
 
 type SiteContent = {
     title: string;
@@ -90,6 +103,52 @@ function togglePublish() {
     const action = props.site?.is_published ? unpublish : publish;
     router.patch(action().url, {}, { preserveScroll: true });
 }
+
+type RemovableAsset = 'hero_image' | 'logo' | 'favicon';
+
+const ASSET_REMOVAL_CONFIG: Record<
+    RemovableAsset,
+    { destroyUrl: () => { url: string }; title: string; description: string }
+> = {
+    hero_image: {
+        destroyUrl: destroyHeroImage,
+        title: 'Remover banner?',
+        description:
+            'O banner deixará de aparecer na página pública até que um novo seja enviado.',
+    },
+    logo: {
+        destroyUrl: destroyLogo,
+        title: 'Remover logotipo?',
+        description:
+            'O logotipo deixará de aparecer até que um novo seja enviado.',
+    },
+    favicon: {
+        destroyUrl: destroyFavicon,
+        title: 'Remover favicon?',
+        description:
+            'O favicon deixará de aparecer até que um novo seja enviado.',
+    },
+};
+
+const assetPendingRemoval = ref<RemovableAsset | null>(null);
+const removingAsset = ref(false);
+
+function confirmAssetRemoval() {
+    const asset = assetPendingRemoval.value;
+
+    if (!asset) {
+        return;
+    }
+
+    removingAsset.value = true;
+    router.delete(ASSET_REMOVAL_CONFIG[asset].destroyUrl().url, {
+        preserveScroll: true,
+        onFinish: () => {
+            removingAsset.value = false;
+            assetPendingRemoval.value = null;
+        },
+    });
+}
 </script>
 
 <template>
@@ -161,27 +220,59 @@ function togglePublish() {
             <ImageUploadField
                 id="hero_image"
                 v-model="form.hero_image"
-                label="Imagem principal"
+                label="Banner principal"
                 :current-url="site?.hero_image_url"
-                helperText="Exibida no topo da página pública."
+                helperText="Exibido no topo da página pública. Formato recomendado: WebP ou JPG. Proporção recomendada: 16:9 (ex.: 1920 × 1080 px). Formatos aceitos: JPEG, PNG ou WebP. Tamanho máximo: 5 MB."
             />
             <InputError :message="form.errors.hero_image" />
+            <Button
+                v-if="site?.hero_image_url && !form.hero_image"
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="-mt-4 w-fit text-destructive hover:text-destructive"
+                @click="assetPendingRemoval = 'hero_image'"
+            >
+                Remover banner atual
+            </Button>
 
             <ImageUploadField
                 id="logo"
                 v-model="form.logo"
                 label="Logotipo"
                 :current-url="site?.logo_url"
+                helperText="Formatos aceitos: JPEG, PNG ou WebP. Tamanho máximo: 1 MB."
             />
             <InputError :message="form.errors.logo" />
+            <Button
+                v-if="site?.logo_url && !form.logo"
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="-mt-4 w-fit text-destructive hover:text-destructive"
+                @click="assetPendingRemoval = 'logo'"
+            >
+                Remover logotipo atual
+            </Button>
 
             <ImageUploadField
                 id="favicon"
                 v-model="form.favicon"
                 label="Favicon"
                 :current-url="site?.favicon_url"
+                helperText="Formatos aceitos: JPEG, PNG ou WebP. Tamanho máximo: 256 KB."
             />
             <InputError :message="form.errors.favicon" />
+            <Button
+                v-if="site?.favicon_url && !form.favicon"
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="-mt-4 w-fit text-destructive hover:text-destructive"
+                @click="assetPendingRemoval = 'favicon'"
+            >
+                Remover favicon atual
+            </Button>
 
             <div class="grid grid-cols-2 gap-4">
                 <div class="grid gap-2">
@@ -287,5 +378,37 @@ function togglePublish() {
                 Salvar
             </Button>
         </form>
+
+        <Dialog
+            :open="assetPendingRemoval !== null"
+            @update:open="(open) => !open && (assetPendingRemoval = null)"
+        >
+            <DialogContent v-if="assetPendingRemoval">
+                <DialogHeader class="space-y-3">
+                    <DialogTitle>{{
+                        ASSET_REMOVAL_CONFIG[assetPendingRemoval].title
+                    }}</DialogTitle>
+                    <DialogDescription>
+                        {{
+                            ASSET_REMOVAL_CONFIG[assetPendingRemoval]
+                                .description
+                        }}
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter class="gap-2">
+                    <DialogClose as-child>
+                        <Button variant="secondary">Cancelar</Button>
+                    </DialogClose>
+                    <Button
+                        variant="destructive"
+                        :disabled="removingAsset"
+                        @click="confirmAssetRemoval"
+                    >
+                        <Spinner v-if="removingAsset" />
+                        Remover
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>

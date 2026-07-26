@@ -2,6 +2,7 @@
 import { MessageCircle } from '@lucide/vue';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
 import type { PublicContact, PublicSiteContent } from '@/types/site';
 
 const props = defineProps<{
@@ -10,19 +11,14 @@ const props = defineProps<{
     showScheduling: boolean;
 }>();
 
-const whatsappUrl = computed(() => {
-    if (!props.contact?.whatsapp) {
-        return null;
-    }
-
-    const digits = props.contact.whatsapp.replace(/\D/g, '');
-
-    return `https://wa.me/55${digits}`;
-});
+const whatsappUrl = computed(() => buildWhatsAppUrl(props.contact?.whatsapp));
 </script>
 
 <template>
-    <section id="cta" class="bg-primary py-14 text-primary-foreground">
+    <section
+        id="cta"
+        class="scroll-mt-16 bg-primary py-14 text-primary-foreground"
+    >
         <div
             class="mx-auto flex max-w-4xl flex-col items-center gap-4 px-4 text-center sm:px-6"
         >

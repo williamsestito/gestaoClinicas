@@ -109,10 +109,14 @@ export interface AppointmentRequestSummary {
     email: string | null;
     service_name: string | null;
     preferred_period: string | null;
+    preferred_date: string | null;
     notes: string | null;
+    internal_notes: string | null;
+    utm_data: Record<string, string> | null;
     status: AppointmentRequestStatus;
     status_label: string;
     created_at: string | null;
+    updated_at: string | null;
 }
 
 export interface SiteContactAddress {

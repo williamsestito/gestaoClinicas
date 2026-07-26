@@ -39,9 +39,9 @@ class UpdateSeoMarketingRequest extends FormRequest
             'indexing_policy' => ['required', Rule::enum(IndexingPolicy::class)],
             'google_search_console_verification' => ['nullable', 'string', 'max:255'],
             'bing_webmaster_verification' => ['nullable', 'string', 'max:255'],
-            'google_business_profile_url' => ['nullable', 'url', 'max:255'],
-            'google_reviews_url' => ['nullable', 'url', 'max:255'],
-            'google_maps_url' => ['nullable', 'url', 'max:255'],
+            'google_business_profile_url' => ['nullable', 'url:http,https', 'max:255'],
+            'google_reviews_url' => ['nullable', 'url:http,https', 'max:255'],
+            'google_maps_url' => ['nullable', 'url:http,https', 'max:255'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
 

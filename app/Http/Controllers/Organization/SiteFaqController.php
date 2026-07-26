@@ -25,6 +25,7 @@ class SiteFaqController extends Controller
         return Inertia::render('settings/site/faq/Index', [
             'faqs' => SiteFaq::query()
                 ->orderBy('order')
+                ->orderBy('id')
                 ->get()
                 ->map(fn (SiteFaq $faq) => [
                     'id' => $faq->id,

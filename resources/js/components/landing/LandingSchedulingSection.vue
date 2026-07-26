@@ -28,14 +28,70 @@ const { selectedServiceId } = useLandingScheduling();
 
 const PERIOD_OPTIONS = ['Manhã', 'Tarde', 'Noite'];
 
+const today = new Date();
+const minPreferredDate = today.toISOString().slice(0, 10);
+const maxPreferredDateValue = new Date(today);
+maxPreferredDateValue.setDate(maxPreferredDateValue.getDate() + 90);
+const maxPreferredDate = maxPreferredDateValue.toISOString().slice(0, 10);
+
+/**
+ * Parâmetros de origem (utm_*, ref, referrer, URL da página) capturados uma
+ * única vez ao montar o formulário — apenas para análise de origem no
+ * administrativo, nunca usados para autorização ou execução de código.
+ */
+function captureUtm(): Record<string, string> {
+    if (typeof window === 'undefined') {
+        return {};
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const utm: Record<string, string> = {};
+
+    for (const key of [
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_content',
+        'utm_term',
+        'utm_id',
+        'utm_source_platform',
+    ]) {
+        const value = params.get(key);
+
+        if (value) {
+            utm[key] = value;
+        }
+    }
+
+    const ref = params.get('ref');
+
+    if (ref) {
+        utm.ref = ref;
+    }
+
+    if (document.referrer) {
+        utm.referrer = document.referrer;
+    }
+
+    utm.page_url = window.location.href;
+
+    return utm;
+}
+
 const form = useForm({
     service_id: null as number | null,
     name: '',
     phone: '',
     email: '',
     preferred_period: '',
+    preferred_date: '',
     notes: '',
     terms_accepted: false,
+    // Honeypot: campo escondido da navegação real; um preenchimento aqui só
+    // acontece por automação (ver PublicAppointmentRequestController).
+    website: '',
+    form_rendered_at: Date.now(),
+    utm: captureUtm(),
 });
 
 watch(
@@ -59,7 +115,10 @@ function submit() {
 </script>
 
 <template>
-    <section id="scheduling" class="mx-auto max-w-2xl px-4 py-16 sm:px-6">
+    <section
+        id="scheduling"
+        class="mx-auto max-w-2xl scroll-mt-16 px-4 py-16 sm:px-6"
+    >
         <div class="mb-8 text-center">
             <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
                 Agende sua avaliação
@@ -147,23 +206,36 @@ function submit() {
                 </div>
             </div>
 
-            <div class="grid gap-2">
-                <Label for="preferred_period">Preferência de período</Label>
-                <Select v-model="form.preferred_period">
-                    <SelectTrigger id="preferred_period" class="w-full">
-                        <SelectValue placeholder="Sem preferência" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem
-                            v-for="period in PERIOD_OPTIONS"
-                            :key="period"
-                            :value="period"
-                        >
-                            {{ period }}
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
-                <InputError :message="form.errors.preferred_period" />
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div class="grid gap-2">
+                    <Label for="preferred_date">Data preferencial (opcional)</Label>
+                    <Input
+                        id="preferred_date"
+                        v-model="form.preferred_date"
+                        type="date"
+                        :min="minPreferredDate"
+                        :max="maxPreferredDate"
+                    />
+                    <InputError :message="form.errors.preferred_date" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="preferred_period">Preferência de período</Label>
+                    <Select v-model="form.preferred_period">
+                        <SelectTrigger id="preferred_period" class="w-full">
+                            <SelectValue placeholder="Sem preferência" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem
+                                v-for="period in PERIOD_OPTIONS"
+                                :key="period"
+                                :value="period"
+                            >
+                                {{ period }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <InputError :message="form.errors.preferred_period" />
+                </div>
             </div>
 
             <div class="grid gap-2">
@@ -186,10 +258,31 @@ function submit() {
                 <InputError :message="form.errors.terms_accepted" />
             </div>
 
+            <!--
+                Honeypot: invisível e inalcançável por teclado/leitor de tela
+                para uma pessoa real, mas presente no DOM para bots de
+                preenchimento automático — ver PublicAppointmentRequestController.
+            -->
+            <div class="absolute left-[-9999px]" aria-hidden="true">
+                <label for="website">Não preencha este campo</label>
+                <input
+                    id="website"
+                    v-model="form.website"
+                    type="text"
+                    tabindex="-1"
+                    autocomplete="off"
+                />
+            </div>
+
             <Button type="submit" size="lg" :disabled="form.processing">
                 <Spinner v-if="form.processing" />
                 Solicitar agendamento
             </Button>
+            <p class="text-center text-xs text-muted-foreground">
+                O envio não garante reserva do horário — nossa equipe
+                confirmará a disponibilidade pelo telefone ou WhatsApp
+                informado.
+            </p>
         </form>
     </section>
 </template>

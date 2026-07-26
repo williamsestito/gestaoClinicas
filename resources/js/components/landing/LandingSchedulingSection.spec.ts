@@ -12,8 +12,12 @@ const { formState, postMock } = vi.hoisted(() => ({
         phone: '',
         email: '',
         preferred_period: '',
+        preferred_date: '',
         notes: '',
         terms_accepted: false,
+        website: '',
+        form_rendered_at: 0,
+        utm: {} as Record<string, string>,
         errors: {} as Record<string, string>,
         processing: false,
         recentlySuccessful: false,
@@ -26,10 +30,17 @@ const { formState, postMock } = vi.hoisted(() => ({
 formState.post = postMock;
 
 vi.mock('@inertiajs/vue3', () => ({
-    // Retorna o MESMO objeto reativo em todas as chamadas — as mutações
-    // feitas pelo componente (ex.: pré-seleção de serviço) precisam ficar
-    // visíveis para as asserções do teste, que leem `formState` diretamente.
-    useForm: () => reactive(formState),
+    // Aplica os valores iniciais reais do componente (inclusive os
+    // calculados no momento da montagem, como `utm`/`form_rendered_at`)
+    // sobre o MESMO objeto reativo compartilhado entre chamadas — as
+    // mutações feitas pelo componente (ex.: pré-seleção de serviço)
+    // precisam ficar visíveis para as asserções do teste, que leem
+    // `formState` diretamente.
+    useForm: (initial: Record<string, unknown> = {}) => {
+        Object.assign(formState, initial);
+
+        return reactive(formState);
+    },
 }));
 
 const services: PublicService[] = [
@@ -94,5 +105,62 @@ describe('LandingSchedulingSection', () => {
         mount(LandingSchedulingSection, { props: { services } });
 
         expect(formState.service_id).toBe(1);
+    });
+
+    it('renders an optional preferred date field bounded to a sensible window', () => {
+        const wrapper = mount(LandingSchedulingSection, {
+            props: { services: [] },
+        });
+
+        const dateInput = wrapper.find('#preferred_date');
+        expect(dateInput.exists()).toBe(true);
+        expect(dateInput.attributes('type')).toBe('date');
+        expect(dateInput.attributes('min')).toBeTruthy();
+        expect(dateInput.attributes('max')).toBeTruthy();
+    });
+
+    it('keeps the honeypot field unreachable by keyboard and hidden from screen readers', () => {
+        const wrapper = mount(LandingSchedulingSection, {
+            props: { services: [] },
+        });
+
+        const honeypot = wrapper.find('#website');
+        expect(honeypot.exists()).toBe(true);
+        expect(honeypot.attributes('tabindex')).toBe('-1');
+        expect(
+            honeypot.element.closest('[aria-hidden="true"]'),
+        ).not.toBeNull();
+    });
+
+    it('clarifies that submitting the form does not guarantee a reservation', () => {
+        const wrapper = mount(LandingSchedulingSection, {
+            props: { services: [] },
+        });
+
+        expect(wrapper.text()).toContain('não garante reserva');
+    });
+
+    it('captures utm parameters and the referrer when the form is submitted', () => {
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: {
+                ...originalLocation,
+                search: '?utm_source=google&utm_medium=cpc',
+                href: 'https://example.test/?utm_source=google&utm_medium=cpc',
+            },
+        });
+
+        mount(LandingSchedulingSection, { props: { services: [] } });
+
+        expect(formState.utm).toMatchObject({
+            utm_source: 'google',
+            utm_medium: 'cpc',
+        });
+
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: originalLocation,
+        });
     });
 });

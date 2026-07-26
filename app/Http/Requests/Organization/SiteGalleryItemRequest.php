@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Organization;
 
 use App\Models\SiteSetting;
+use App\Rules\ValidImageContentRule;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -25,7 +26,7 @@ class SiteGalleryItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'image' => [Rule::requiredIf(fn () => $this->route('siteGalleryItem') === null), 'nullable', 'image', 'max:4096'],
+            'image' => [Rule::requiredIf(fn () => $this->route('siteGalleryItem') === null), 'nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:4096', new ValidImageContentRule],
             'caption' => ['nullable', 'string', 'max:150'],
             'alt_text' => ['nullable', 'string', 'max:150'],
             'category' => ['nullable', 'string', 'max:100'],

@@ -122,9 +122,29 @@ describe('Welcome — published landing state', () => {
         { type: 'services', active: true },
         { type: 'scheduling', active: true },
     ];
+    const siteWithAbout = makeSite({ about_text: 'Sobre a clínica.' });
+    const oneService = [
+        {
+            id: 1,
+            name: 'Limpeza de pele',
+            short_description: null,
+            description: null,
+            image_url: null,
+            icon: null,
+            category: null,
+            duration_minutes: null,
+            starting_price_cents: null,
+            cta_text: null,
+            is_featured: false,
+        },
+    ];
 
     it('renders the navbar, an ordered section renderer per active section, and the footer', () => {
-        const wrapper = mountWelcome({ site: makeSite(), sections });
+        const wrapper = mountWelcome({
+            site: siteWithAbout,
+            sections,
+            services: oneService,
+        });
 
         expect(wrapper.findComponent(LandingNavbar).exists()).toBe(true);
         expect(wrapper.findComponent(LandingFooter).exists()).toBe(true);
@@ -139,7 +159,11 @@ describe('Welcome — published landing state', () => {
     });
 
     it('never renders a section renderer for an inactive section', () => {
-        const wrapper = mountWelcome({ site: makeSite(), sections });
+        const wrapper = mountWelcome({
+            site: siteWithAbout,
+            sections,
+            services: oneService,
+        });
 
         const types = wrapper
             .findAllComponents(LandingSectionRenderer)
@@ -148,7 +172,11 @@ describe('Welcome — published landing state', () => {
     });
 
     it('tells the navbar whether the scheduling section is active', () => {
-        const wrapper = mountWelcome({ site: makeSite(), sections });
+        const wrapper = mountWelcome({
+            site: siteWithAbout,
+            sections,
+            services: oneService,
+        });
 
         expect(
             wrapper.findComponent(LandingNavbar).props('activeTypes'),
@@ -156,10 +184,145 @@ describe('Welcome — published landing state', () => {
     });
 
     it('does not render the fallback pending-setup markup once a site is published', () => {
-        const wrapper = mountWelcome({ site: makeSite(), sections });
+        const wrapper = mountWelcome({
+            site: siteWithAbout,
+            sections,
+            services: oneService,
+        });
 
         expect(wrapper.text()).not.toContain('está em desenvolvimento');
         expect(wrapper.find('a[href="#main-content"]').exists()).toBe(true);
+    });
+});
+
+describe('Welcome — sections with possibly-empty content require actual content', () => {
+    it('never links or renders about/benefits/services/professionals/gallery/testimonials when their content is empty', () => {
+        const sections: LandingSection[] = [
+            { type: 'hero', active: true },
+            { type: 'about', active: true },
+            { type: 'benefits', active: true },
+            { type: 'services', active: true },
+            { type: 'professionals', active: true },
+            { type: 'gallery', active: true },
+            { type: 'testimonials', active: true },
+        ];
+
+        const wrapper = mountWelcome({
+            site: makeSite({ about_text: null }),
+            sections,
+            benefits: [],
+            services: [],
+            professionals: [],
+            gallery: [],
+            testimonials: [],
+        });
+
+        const types = wrapper
+            .findAllComponents(LandingSectionRenderer)
+            .map((r) => r.props('type'));
+        const activeTypes = wrapper
+            .findComponent(LandingNavbar)
+            .props('activeTypes') as string[];
+
+        for (const emptyType of [
+            'about',
+            'benefits',
+            'services',
+            'professionals',
+            'gallery',
+            'testimonials',
+        ]) {
+            expect(types).not.toContain(emptyType);
+            expect(activeTypes).not.toContain(emptyType);
+        }
+    });
+
+    it('links and renders those sections once each has actual content', () => {
+        const sections: LandingSection[] = [
+            { type: 'hero', active: true },
+            { type: 'about', active: true },
+            { type: 'services', active: true },
+        ];
+
+        const wrapper = mountWelcome({
+            site: makeSite({ about_text: 'Sobre a clínica.' }),
+            sections,
+            services: [
+                {
+                    id: 1,
+                    name: 'Serviço',
+                    short_description: null,
+                    description: null,
+                    image_url: null,
+                    icon: null,
+                    category: null,
+                    duration_minutes: null,
+                    starting_price_cents: null,
+                    cta_text: null,
+                    is_featured: false,
+                },
+            ],
+        });
+
+        const types = wrapper
+            .findAllComponents(LandingSectionRenderer)
+            .map((r) => r.props('type'));
+        expect(types).toContain('about');
+        expect(types).toContain('services');
+    });
+
+    it('never links or renders the contact section when there is no contact info at all', () => {
+        const wrapper = mountWelcome({
+            site: makeSite(),
+            sections: [
+                { type: 'hero', active: true },
+                { type: 'contact', active: true },
+            ],
+            contact: {
+                name: 'Clínica Exemplo',
+                phone: null,
+                whatsapp: null,
+                email: null,
+                address: null,
+                opening_hours: [],
+                map_url: null,
+            },
+        });
+
+        const types = wrapper
+            .findAllComponents(LandingSectionRenderer)
+            .map((r) => r.props('type'));
+        expect(types).not.toContain('contact');
+        expect(
+            wrapper.findComponent(LandingNavbar).props('activeTypes'),
+        ).not.toContain('contact');
+    });
+
+    it('links and renders the contact section once there is at least a phone number', () => {
+        const wrapper = mountWelcome({
+            site: makeSite(),
+            sections: [
+                { type: 'hero', active: true },
+                { type: 'contact', active: true },
+            ],
+            contact: {
+                name: 'Clínica Exemplo',
+                phone: '(47) 3222-1122',
+                whatsapp: null,
+                email: null,
+                address: null,
+                opening_hours: [],
+                map_url: null,
+            },
+        });
+
+        const types = wrapper
+            .findAllComponents(LandingSectionRenderer)
+            .map((r) => r.props('type'));
+        expect(types).toContain('contact');
+        expect(
+            wrapper.findComponent(LandingNavbar).props('activeTypes'),
+        ).toContain('contact');
     });
 });
 

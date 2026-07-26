@@ -26,6 +26,7 @@ class SiteProfessionalController extends Controller
         return Inertia::render('settings/site/professionals/Index', [
             'professionals' => SiteProfessional::query()
                 ->orderBy('order')
+                ->orderBy('id')
                 ->get()
                 ->map(fn (SiteProfessional $professional) => [
                     'id' => $professional->id,
@@ -70,7 +71,7 @@ class SiteProfessionalController extends Controller
     {
         $this->authorize('update', [SiteSetting::class, $tenant->organization()]);
 
-        $action->delete($siteProfessional);
+        $action->delete($siteProfessional, 'photo_path');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Profissional excluído.']);
 

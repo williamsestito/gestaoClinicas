@@ -43,6 +43,29 @@ it('replaces the previous image and deletes the old file when updating', functio
     Storage::disk('public')->assertExists($service->image_path);
 });
 
+it('rejects a service image format other than JPEG, PNG and WebP', function () {
+    Storage::fake('public');
+    $user = actingOwnerWithActiveContext();
+
+    $this->actingAs($user)->post('/settings/site/services', [
+        'name' => 'Imagem inválida',
+        'image' => UploadedFile::fake()->image('servico.bmp'),
+    ])->assertSessionHasErrors('image');
+
+    expect(SiteService::query()->where('name', 'Imagem inválida')->exists())->toBeFalse();
+});
+
+it('removes the image file from storage when a service is deleted', function () {
+    Storage::fake('public');
+    $user = actingOwnerWithActiveContext();
+    $service = SiteService::factory()->create(['image_path' => 'site-services/servico.jpg']);
+    Storage::disk('public')->put('site-services/servico.jpg', 'fake-content');
+
+    $this->actingAs($user)->delete("/settings/site/services/{$service->id}")->assertRedirect();
+
+    Storage::disk('public')->assertMissing('site-services/servico.jpg');
+});
+
 it('rejects a negative starting price', function () {
     $user = actingOwnerWithActiveContext();
 
