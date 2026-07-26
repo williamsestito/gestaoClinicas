@@ -159,6 +159,8 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
             ->name('settings.site.update');
         Route::delete('settings/site/hero-image', [SiteContentController::class, 'destroyHeroImage'])
             ->name('settings.site.hero-image.destroy');
+        Route::delete('settings/site/hero-image-mobile', [SiteContentController::class, 'destroyHeroImageMobile'])
+            ->name('settings.site.hero-image-mobile.destroy');
         Route::delete('settings/site/logo', [SiteContentController::class, 'destroyLogo'])
             ->name('settings.site.logo.destroy');
         Route::delete('settings/site/favicon', [SiteContentController::class, 'destroyFavicon'])

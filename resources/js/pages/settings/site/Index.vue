@@ -24,12 +24,14 @@ import { dashboard } from '@/routes';
 import { publish, unpublish, update } from '@/routes/settings/site';
 import { destroy as destroyFavicon } from '@/routes/settings/site/favicon';
 import { destroy as destroyHeroImage } from '@/routes/settings/site/hero-image';
+import { destroy as destroyHeroImageMobile } from '@/routes/settings/site/hero-image-mobile';
 import { destroy as destroyLogo } from '@/routes/settings/site/logo';
 
 type SiteContent = {
     title: string;
     description: string | null;
     hero_image_url: string | null;
+    hero_image_mobile_url: string | null;
     logo_url: string | null;
     favicon_url: string | null;
     primary_color: string | null;
@@ -88,6 +90,7 @@ const form = useForm({
     linkedin_url: props.site?.linkedin_url ?? '',
     footer_text: props.site?.footer_text ?? '',
     hero_image: null as File | null,
+    hero_image_mobile: null as File | null,
     logo: null as File | null,
     favicon: null as File | null,
 });
@@ -104,7 +107,7 @@ function togglePublish() {
     router.patch(action().url, {}, { preserveScroll: true });
 }
 
-type RemovableAsset = 'hero_image' | 'logo' | 'favicon';
+type RemovableAsset = 'hero_image' | 'hero_image_mobile' | 'logo' | 'favicon';
 
 const ASSET_REMOVAL_CONFIG: Record<
     RemovableAsset,
@@ -112,9 +115,15 @@ const ASSET_REMOVAL_CONFIG: Record<
 > = {
     hero_image: {
         destroyUrl: destroyHeroImage,
-        title: 'Remover banner?',
+        title: 'Remover banner desktop?',
         description:
-            'O banner deixará de aparecer na página pública até que um novo seja enviado.',
+            'O banner desktop deixará de aparecer na página pública até que um novo seja enviado.',
+    },
+    hero_image_mobile: {
+        destroyUrl: destroyHeroImageMobile,
+        title: 'Remover banner mobile?',
+        description:
+            'A versão mobile deixará de existir — em telas pequenas, a página voltará a usar o banner desktop até que um novo banner mobile seja enviado.',
     },
     logo: {
         destroyUrl: destroyLogo,
@@ -220,9 +229,9 @@ function confirmAssetRemoval() {
             <ImageUploadField
                 id="hero_image"
                 v-model="form.hero_image"
-                label="Banner principal"
+                label="Banner desktop"
                 :current-url="site?.hero_image_url"
-                helperText="Exibido no topo da página pública. Formato recomendado: WebP ou JPG. Proporção recomendada: 16:9 (ex.: 1920 × 1080 px). Formatos aceitos: JPEG, PNG ou WebP. Tamanho máximo: 5 MB."
+                helperText="Exibido no topo da página pública em telas largas, ocupando toda a área disponível. Formato recomendado: WebP ou JPG. Proporção recomendada: 16:9 (ex.: 1920 × 1080 px). Formatos aceitos: JPEG, PNG ou WebP. Tamanho máximo: 5 MB."
             />
             <InputError :message="form.errors.hero_image" />
             <Button
@@ -233,7 +242,26 @@ function confirmAssetRemoval() {
                 class="-mt-4 w-fit text-destructive hover:text-destructive"
                 @click="assetPendingRemoval = 'hero_image'"
             >
-                Remover banner atual
+                Remover banner desktop atual
+            </Button>
+
+            <ImageUploadField
+                id="hero_image_mobile"
+                v-model="form.hero_image_mobile"
+                label="Banner mobile (opcional)"
+                :current-url="site?.hero_image_mobile_url"
+                helperText="Exibido no lugar do banner desktop quando a página é aberta em um celular. Se não for enviado, o banner desktop também é usado no mobile. Proporção recomendada: 1:1 ou 4:5 (ex.: 1080 × 1350 px). Formatos aceitos: JPEG, PNG ou WebP. Tamanho máximo: 5 MB."
+            />
+            <InputError :message="form.errors.hero_image_mobile" />
+            <Button
+                v-if="site?.hero_image_mobile_url && !form.hero_image_mobile"
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="-mt-4 w-fit text-destructive hover:text-destructive"
+                @click="assetPendingRemoval = 'hero_image_mobile'"
+            >
+                Remover banner mobile atual
             </Button>
 
             <ImageUploadField
@@ -260,7 +288,7 @@ function confirmAssetRemoval() {
                 v-model="form.favicon"
                 label="Favicon"
                 :current-url="site?.favicon_url"
-                helperText="Formatos aceitos: JPEG, PNG ou WebP. Tamanho máximo: 256 KB."
+                helperText="Qualquer imagem comum serve — o sistema recorta ao centro, redimensiona e gera os tamanhos necessários automaticamente. Formatos aceitos: JPEG, PNG ou WebP. Tamanho máximo: 256 KB."
             />
             <InputError :message="form.errors.favicon" />
             <Button

@@ -4,9 +4,7 @@ import { ArrowDown, ArrowUp } from '@lucide/vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { dashboard } from '@/routes';
 import { update } from '@/routes/settings/site/sections';
@@ -64,55 +62,73 @@ function submit() {
             description="Escolha a ordem e quais seções aparecem na página pública."
         />
 
-        <div class="grid max-w-2xl gap-3">
-            <Card v-for="(section, index) in form.sections" :key="section.type">
-                <CardContent
-                    class="flex items-center justify-between gap-4 py-4"
+        <div class="max-w-2xl overflow-x-auto rounded-md border">
+            <table class="w-full text-sm">
+                <thead
+                    class="border-b bg-muted/50 text-left text-muted-foreground"
                 >
-                    <div class="flex items-center gap-3">
-                        <div class="flex flex-col">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                class="size-6"
-                                :disabled="index === 0"
-                                :aria-label="`Mover ${LANDING_SECTION_LABELS[section.type]} para cima`"
-                                @click="moveUp(index)"
-                            >
-                                <ArrowUp class="size-3.5" />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                class="size-6"
-                                :disabled="index === form.sections.length - 1"
-                                :aria-label="`Mover ${LANDING_SECTION_LABELS[section.type]} para baixo`"
-                                @click="moveDown(index)"
-                            >
-                                <ArrowDown class="size-3.5" />
-                            </Button>
-                        </div>
-                        <div>
-                            <p class="font-medium">
-                                {{ LANDING_SECTION_LABELS[section.type] }}
-                            </p>
+                    <tr>
+                        <th class="px-3 py-2 font-medium">
+                            <span class="sr-only">Ordem</span>
+                        </th>
+                        <th class="px-3 py-2 font-medium">Seção</th>
+                        <th class="px-3 py-2 font-medium">Status</th>
+                        <th class="px-3 py-2 font-medium">Ativa na navbar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr
+                        v-for="(section, index) in form.sections"
+                        :key="section.type"
+                        class="border-b last:border-0"
+                    >
+                        <td class="px-3 py-1.5">
+                            <div class="flex gap-0.5">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    class="size-6"
+                                    :disabled="index === 0"
+                                    :aria-label="`Mover ${LANDING_SECTION_LABELS[section.type]} para cima`"
+                                    @click="moveUp(index)"
+                                >
+                                    <ArrowUp class="size-3.5" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    class="size-6"
+                                    :disabled="
+                                        index === form.sections.length - 1
+                                    "
+                                    :aria-label="`Mover ${LANDING_SECTION_LABELS[section.type]} para baixo`"
+                                    @click="moveDown(index)"
+                                >
+                                    <ArrowDown class="size-3.5" />
+                                </Button>
+                            </div>
+                        </td>
+                        <td class="px-3 py-1.5 font-medium">
+                            {{ LANDING_SECTION_LABELS[section.type] }}
+                        </td>
+                        <td class="px-3 py-1.5">
                             <Badge
                                 :variant="
                                     section.active ? 'default' : 'secondary'
                                 "
-                                class="mt-1"
                             >
                                 {{ section.active ? 'Ativa' : 'Inativa' }}
                             </Badge>
-                        </div>
-                    </div>
-
-                    <Label class="flex items-center gap-2 font-normal">
-                        <Checkbox v-model:model-value="section.active" />
-                        Ativa
-                    </Label>
-                </CardContent>
-            </Card>
+                        </td>
+                        <td class="px-3 py-1.5">
+                            <Checkbox
+                                v-model:model-value="section.active"
+                                :aria-label="`Ativar/inativar ${LANDING_SECTION_LABELS[section.type]}`"
+                            />
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         <Button class="w-fit" :disabled="form.processing" @click="submit">

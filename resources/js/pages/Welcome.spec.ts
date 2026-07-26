@@ -38,6 +38,7 @@ function makeSite(
         title: 'Clínica Essenza',
         description: 'Cuidando de você com excelência.',
         hero_image_url: null,
+        hero_image_mobile_url: null,
         logo_url: null,
         primary_color: '#0F766E',
         secondary_color: '#F59E0B',

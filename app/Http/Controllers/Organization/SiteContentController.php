@@ -32,8 +32,10 @@ class SiteContentController extends Controller
                 'title' => $siteSetting->title,
                 'description' => $siteSetting->description,
                 'hero_image_url' => $siteSetting->hero_image_path ? Storage::disk('public')->url($siteSetting->hero_image_path) : null,
+                'hero_image_mobile_url' => $siteSetting->hero_image_mobile_path ? Storage::disk('public')->url($siteSetting->hero_image_mobile_path) : null,
                 'logo_url' => $siteSetting->logo_path ? Storage::disk('public')->url($siteSetting->logo_path) : null,
                 'favicon_url' => $siteSetting->favicon_path ? Storage::disk('public')->url($siteSetting->favicon_path) : null,
+                'favicon_urls' => $siteSetting->faviconUrls(),
                 'primary_color' => $siteSetting->primary_color,
                 'secondary_color' => $siteSetting->secondary_color,
                 'cta_text' => $siteSetting->cta_text,
@@ -63,13 +65,14 @@ class SiteContentController extends Controller
 
     public function update(UpdateSiteContentRequest $request, TenantContext $tenant, UpdateSiteContentAction $action): RedirectResponse
     {
-        $data = $request->safe()->except(['hero_image', 'logo', 'favicon']);
+        $data = $request->safe()->except(['hero_image', 'hero_image_mobile', 'logo', 'favicon']);
 
         $action->handle(
             siteSetting: SiteSetting::query()->first(),
             data: $data,
             files: [
                 'hero_image' => $request->file('hero_image'),
+                'hero_image_mobile' => $request->file('hero_image_mobile'),
                 'logo' => $request->file('logo'),
                 'favicon' => $request->file('favicon'),
             ],
@@ -96,6 +99,25 @@ class SiteContentController extends Controller
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Banner removido.']);
+
+        return back();
+    }
+
+    public function destroyHeroImageMobile(TenantContext $tenant, RemoveSiteAssetAction $action): RedirectResponse
+    {
+        $organization = $tenant->organization();
+
+        $this->authorize('update', [SiteSetting::class, $organization]);
+
+        $action->handle(
+            siteSetting: SiteSetting::query()->first(),
+            column: 'hero_image_mobile_path',
+            errorKey: 'hero_image_mobile',
+            missingContentMessage: 'Configure o conteúdo do site antes de remover o banner mobile.',
+            organization: $organization,
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Banner mobile removido.']);
 
         return back();
     }
@@ -131,6 +153,7 @@ class SiteContentController extends Controller
             errorKey: 'favicon',
             missingContentMessage: 'Configure o conteúdo do site antes de remover o favicon.',
             organization: $organization,
+            variantsColumn: 'favicon_variants',
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Favicon removido.']);

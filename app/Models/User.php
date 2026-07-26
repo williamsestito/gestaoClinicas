@@ -21,6 +21,16 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property string|null $phone
+ * @property string|null $cpf dígitos apenas, sem máscara (ver App\Support\Documents\Document)
+ * @property string|null $photo_path
+ * @property string|null $address_postal_code
+ * @property string|null $address_street
+ * @property string|null $address_number
+ * @property string|null $address_complement
+ * @property string|null $address_neighborhood
+ * @property string|null $address_city
+ * @property string|null $address_state
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property bool $is_active
@@ -33,8 +43,12 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Fillable([
+    'name', 'email', 'password', 'phone', 'cpf', 'photo_path',
+    'address_postal_code', 'address_street', 'address_number', 'address_complement',
+    'address_neighborhood', 'address_city', 'address_state',
+])]
+#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'photo_path'])]
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */

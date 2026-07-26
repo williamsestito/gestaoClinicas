@@ -21,7 +21,7 @@ defineOptions({
 
 const props = defineProps<{
     organization: Organization;
-    isOwner: boolean;
+    canUpdate: boolean;
 }>();
 
 const form = useForm({
@@ -48,14 +48,14 @@ function submit() {
             description="Dados gerais da sua organização"
         />
 
-        <p v-if="!isOwner" class="text-sm text-muted-foreground">
-            Somente o proprietário da organização pode alterar estes dados.
+        <p v-if="!canUpdate" class="text-sm text-muted-foreground">
+            Você não tem permissão para alterar estes dados.
         </p>
 
         <form class="grid max-w-xl gap-6" @submit.prevent="submit">
             <div class="grid gap-2">
                 <Label for="org-name">Nome</Label>
-                <Input id="org-name" v-model="form.name" :disabled="!isOwner" />
+                <Input id="org-name" v-model="form.name" :disabled="!canUpdate" />
                 <InputError :message="form.errors.name" />
             </div>
 
@@ -64,7 +64,7 @@ function submit() {
                 <Input
                     id="org-timezone"
                     v-model="form.default_timezone"
-                    :disabled="!isOwner"
+                    :disabled="!canUpdate"
                 />
                 <InputError :message="form.errors.default_timezone" />
             </div>
@@ -75,7 +75,7 @@ function submit() {
                     id="org-currency"
                     v-model="form.default_currency"
                     maxlength="3"
-                    :disabled="!isOwner"
+                    :disabled="!canUpdate"
                 />
                 <InputError :message="form.errors.default_currency" />
             </div>
@@ -85,13 +85,13 @@ function submit() {
                 <Input
                     id="org-locale"
                     v-model="form.locale"
-                    :disabled="!isOwner"
+                    :disabled="!canUpdate"
                 />
                 <InputError :message="form.errors.locale" />
             </div>
 
             <Button
-                v-if="isOwner"
+                v-if="canUpdate"
                 type="submit"
                 class="w-fit"
                 :disabled="form.processing"

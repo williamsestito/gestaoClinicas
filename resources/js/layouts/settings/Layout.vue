@@ -61,8 +61,14 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 
             <Separator class="my-6 lg:hidden" />
 
-            <div class="flex-1 md:max-w-2xl">
-                <section class="max-w-xl space-y-12">
+            <!--
+                Perfil/Segurança/Aparência são formulários pessoais simples
+                — um teto de largura aqui é aceitável e desejado (evita
+                linhas de texto/campo excessivamente longas), diferente do
+                ClinicLayout que também hospeda páginas de tabela.
+            -->
+            <div class="min-w-0 flex-1 md:max-w-2xl">
+                <section class="space-y-12">
                     <slot />
                 </section>
             </div>

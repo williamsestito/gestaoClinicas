@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PublicAppointmentRequestController;
+use App\Http\Controllers\PublicGalleryController;
 use App\Http\Controllers\PublicSiteController;
 use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Route;
@@ -17,6 +18,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', [PublicSiteController::class, 'home'])->name('home');
+
+// Página "Ver todas" da galeria pública (botão na landing).
+Route::get('galeria', [PublicGalleryController::class, 'index'])->name('gallery.index');
 
 // Formulario de solicitacao de agendamento (lead) — throttle curto evita
 // envios duplicados/spam sem exigir autenticacao.

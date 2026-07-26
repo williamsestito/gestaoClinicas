@@ -23,10 +23,14 @@ class EnsureActiveOrganization
         $tenant = app(TenantContext::class);
 
         if (! $tenant->hasOrganization()) {
-            $hasAnyMembership = $request->user()
-                ?->organizationMemberships()
-                ->where('status', OrganizationMembershipStatus::Active)
-                ->exists() ?? false;
+            // Superadmin nunca é levado para "criar uma clínica nova" — ele
+            // sempre tem organizações existentes para escolher (acesso
+            // global), mesmo sem vínculo ainda em nenhuma.
+            $hasAnyMembership = $request->user()->is_platform_admin
+                || $request->user()
+                    ->organizationMemberships()
+                    ->where('status', OrganizationMembershipStatus::Active)
+                    ->exists();
 
             return redirect()->route(
                 $hasAnyMembership ? 'context.organization.edit' : 'onboarding.organization.create',

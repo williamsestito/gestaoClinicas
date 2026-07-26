@@ -501,3 +501,131 @@ it('audits hero image, logo and favicon changes with before/after paths, never b
     expect($removalLog->before_data['logo_path'])->toBe($site->logo_path)
         ->and($removalLog->after_data['logo_path'])->toBeNull();
 });
+
+it('generates real favicon variants from an uploaded image, without adding any new dependency', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.site.update'), [
+            '_method' => 'put',
+            'title' => 'Clínica Exemplo',
+            'favicon' => UploadedFile::fake()->image('favicon.png', 512, 512),
+        ])
+        ->assertSessionHasNoErrors();
+
+    $site = SiteSetting::query()->first();
+
+    expect($site->favicon_variants)->not->toBeNull()
+        ->and($site->favicon_variants)->toHaveKeys(['16', '32', '48', '180', '192']);
+
+    foreach ($site->favicon_variants as $size => $path) {
+        Storage::disk('public')->assertExists($path);
+        [$width, $height] = getimagesize(Storage::disk('public')->path($path));
+        expect($width)->toBe((int) $size)->and($height)->toBe((int) $size);
+    }
+});
+
+it('renders the generated favicon as real <link> tags on the public landing page', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])->post(route('settings.site.update'), [
+        '_method' => 'put',
+        'title' => 'Clínica Exemplo',
+        'favicon' => UploadedFile::fake()->image('favicon.png', 512, 512),
+    ]);
+
+    $site = SiteSetting::query()->first();
+    $urls = $site->faviconUrls();
+
+    $html = $this->get('/')->getContent();
+
+    expect($html)->toContain('rel="icon" type="image/png" sizes="32x32" href="'.$urls['32'])
+        ->and($html)->toContain('rel="icon" type="image/png" sizes="16x16" href="'.$urls['16'])
+        ->and($html)->toContain('rel="apple-touch-icon" sizes="180x180" href="'.$urls['180']);
+});
+
+it('falls back to the static default favicon tags when none was uploaded, never an empty tag', function () {
+    $html = $this->get('/')->getContent();
+
+    expect($html)->toContain('href="/favicon.ico"')
+        ->and($html)->not->toContain('href=""');
+});
+
+it('replaces favicon variants when a new favicon is uploaded, removing the old files', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])->post(route('settings.site.update'), [
+        '_method' => 'put',
+        'title' => 'Clínica Exemplo',
+        'favicon' => UploadedFile::fake()->image('first-favicon.png'),
+    ]);
+
+    $firstVariants = SiteSetting::query()->first()->favicon_variants;
+
+    $this->actingAs($ctx['user'])->post(route('settings.site.update'), [
+        '_method' => 'put',
+        'title' => 'Clínica Exemplo',
+        'favicon' => UploadedFile::fake()->image('second-favicon.png'),
+    ]);
+
+    $secondVariants = SiteSetting::query()->first()->favicon_variants;
+
+    expect($secondVariants)->not->toBe($firstVariants);
+
+    foreach ($firstVariants as $path) {
+        Storage::disk('public')->assertMissing($path);
+    }
+    foreach ($secondVariants as $path) {
+        Storage::disk('public')->assertExists($path);
+    }
+});
+
+it('removes favicon variants when the favicon is deleted', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])->post(route('settings.site.update'), [
+        '_method' => 'put',
+        'title' => 'Clínica Exemplo',
+        'favicon' => UploadedFile::fake()->image('favicon.png'),
+    ]);
+
+    $variants = SiteSetting::query()->first()->favicon_variants;
+
+    $this->actingAs($ctx['user'])->delete(route('settings.site.favicon.destroy'))->assertSessionHasNoErrors();
+
+    expect(SiteSetting::query()->first()->favicon_variants)->toBeNull();
+
+    foreach ($variants as $path) {
+        Storage::disk('public')->assertMissing($path);
+    }
+});
+
+it('lets the owner upload, preview and remove a dedicated mobile banner', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.site.update'), [
+            '_method' => 'put',
+            'title' => 'Clínica Exemplo',
+            'hero_image_mobile' => UploadedFile::fake()->image('banner-mobile.jpg'),
+        ])
+        ->assertSessionHasNoErrors();
+
+    $site = SiteSetting::query()->first();
+    expect($site->hero_image_mobile_path)->not->toBeNull();
+    Storage::disk('public')->assertExists($site->hero_image_mobile_path);
+
+    $mobilePath = $site->hero_image_mobile_path;
+
+    $this->actingAs($ctx['user'])
+        ->delete(route('settings.site.hero-image-mobile.destroy'))
+        ->assertSessionHasNoErrors();
+
+    expect($site->fresh()->hero_image_mobile_path)->toBeNull();
+    Storage::disk('public')->assertMissing($mobilePath);
+});

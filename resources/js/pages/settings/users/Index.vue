@@ -4,6 +4,7 @@ import { Plus, Search } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,14 +27,21 @@ import { dashboard } from '@/routes';
 import { cancel, resend } from '@/routes/settings/invitations';
 import { activate, deactivate } from '@/routes/settings/users';
 
-type Membership = EditableMembership & {
+type Membership = Omit<EditableMembership, 'unit_memberships'> & {
     user: {
         name: string;
         email: string;
+        phone: string | null;
+        photo_url: string | null;
         is_active: boolean;
         last_login_at: string | null;
     };
     role: { id: string; name: string } | null;
+    unit_memberships: {
+        unit_id: string;
+        is_primary: boolean;
+        unit: { id: string; name: string } | null;
+    }[];
 };
 
 type Invitation = {
@@ -62,6 +70,15 @@ const props = defineProps<{
 }>();
 
 const search = ref('');
+const statusFilter = ref<'all' | 'active' | 'inactive'>('all');
+const roleFilter = ref<'all' | string>('all');
+
+function primaryUnitName(membership: Membership): string {
+    return (
+        membership.unit_memberships.find((um) => um.is_primary)?.unit?.name ??
+        '—'
+    );
+}
 
 const indicators = computed(() => ({
     total: props.memberships.length,
@@ -82,16 +99,33 @@ const indicators = computed(() => ({
 const filteredMemberships = computed(() => {
     const term = search.value.trim().toLowerCase();
 
-    if (term === '') {
-        return props.memberships;
-    }
-
-    return props.memberships.filter(
-        (m) =>
+    return props.memberships.filter((m) => {
+        const matchesSearch =
+            term === '' ||
             m.user.name.toLowerCase().includes(term) ||
-            m.user.email.toLowerCase().includes(term),
-    );
+            m.user.email.toLowerCase().includes(term);
+
+        const matchesStatus =
+            statusFilter.value === 'all'
+                ? true
+                : statusFilter.value === 'active'
+                  ? m.user.is_active
+                  : !m.user.is_active;
+
+        const matchesRole =
+            roleFilter.value === 'all' || m.role?.id === roleFilter.value;
+
+        return matchesSearch && matchesStatus && matchesRole;
+    });
 });
+
+const hasActiveFilters = computed(
+    () =>
+        search.value.trim() !== '' ||
+        statusFilter.value !== 'all' ||
+        roleFilter.value !== 'all',
+);
+const hasFilteredResults = computed(() => filteredMemberships.value.length > 0);
 
 const hasAnyMemberships = computed(() => props.memberships.length > 0);
 
@@ -217,16 +251,42 @@ function resendInvitation(invitation: Invitation) {
             </Card>
         </div>
 
-        <div v-if="hasAnyMemberships" class="relative sm:max-w-xs">
-            <Search
-                class="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground"
-            />
-            <Input
-                v-model="search"
-                placeholder="Buscar por nome ou e-mail"
-                aria-label="Buscar usuários por nome ou e-mail"
-                class="pl-8"
-            />
+        <div
+            v-if="hasAnyMemberships"
+            class="flex flex-col gap-3 sm:flex-row sm:items-center"
+        >
+            <div class="relative sm:max-w-xs sm:flex-1">
+                <Search
+                    class="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground"
+                />
+                <Input
+                    v-model="search"
+                    placeholder="Buscar por nome ou e-mail"
+                    aria-label="Buscar usuários por nome ou e-mail"
+                    class="pl-8"
+                />
+            </div>
+
+            <select
+                v-model="statusFilter"
+                aria-label="Filtrar usuários por status"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+                <option value="all">Todos os status</option>
+                <option value="active">Ativos</option>
+                <option value="inactive">Inativos</option>
+            </select>
+
+            <select
+                v-model="roleFilter"
+                aria-label="Filtrar usuários por papel"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+                <option value="all">Todos os papéis</option>
+                <option v-for="role in roles" :key="role.id" :value="role.id">
+                    {{ role.name }}
+                </option>
+            </select>
         </div>
 
         <EmptyState
@@ -242,53 +302,170 @@ function resendInvitation(invitation: Invitation) {
             </template>
         </EmptyState>
 
-        <div v-else class="grid gap-3">
-            <Card
-                v-for="membership in filteredMemberships"
-                :key="membership.id"
-            >
-                <CardContent
-                    class="flex items-center justify-between gap-3 py-4"
+        <EmptyState
+            v-else-if="!hasFilteredResults"
+            title="Nenhum usuário corresponde aos filtros informados."
+        />
+
+        <template v-else>
+            <div class="hidden overflow-x-auto rounded-md border md:block">
+                <table class="w-full text-sm">
+                    <thead
+                        class="border-b bg-muted/50 text-left text-muted-foreground"
+                    >
+                        <tr>
+                            <th class="px-4 py-2 font-medium">
+                                <span class="sr-only">Foto</span>
+                            </th>
+                            <th class="px-4 py-2 font-medium">Nome</th>
+                            <th class="px-4 py-2 font-medium">E-mail</th>
+                            <th class="px-4 py-2 font-medium">Telefone</th>
+                            <th class="px-4 py-2 font-medium">Papel</th>
+                            <th class="px-4 py-2 font-medium">Unidade principal</th>
+                            <th class="px-4 py-2 font-medium">Status</th>
+                            <th class="px-4 py-2 font-medium">Último acesso</th>
+                            <th class="px-4 py-2 font-medium">
+                                <span class="sr-only">Ações</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="membership in filteredMemberships"
+                            :key="membership.id"
+                            class="border-b last:border-0"
+                        >
+                            <td class="px-4 py-3">
+                                <Avatar class="size-8">
+                                    <AvatarImage
+                                        v-if="membership.user.photo_url"
+                                        :src="membership.user.photo_url"
+                                        :alt="membership.user.name"
+                                    />
+                                    <AvatarFallback>
+                                        {{ membership.user.name.charAt(0) }}
+                                    </AvatarFallback>
+                                </Avatar>
+                            </td>
+                            <td class="px-4 py-3 font-medium">
+                                {{ membership.user.name }}
+                            </td>
+                            <td class="px-4 py-3 text-muted-foreground">
+                                {{ membership.user.email }}
+                            </td>
+                            <td class="px-4 py-3 text-muted-foreground">
+                                {{ membership.user.phone || '—' }}
+                            </td>
+                            <td class="px-4 py-3 text-muted-foreground">
+                                {{ membership.role?.name ?? '—' }}
+                            </td>
+                            <td class="px-4 py-3 text-muted-foreground">
+                                {{ primaryUnitName(membership) }}
+                            </td>
+                            <td class="px-4 py-3">
+                                <Badge
+                                    :variant="
+                                        membership.user.is_active
+                                            ? 'default'
+                                            : 'secondary'
+                                    "
+                                >
+                                    {{
+                                        membership.user.is_active
+                                            ? 'Ativo'
+                                            : 'Inativo'
+                                    }}
+                                </Badge>
+                            </td>
+                            <td class="px-4 py-3 text-muted-foreground">
+                                {{ membership.user.last_login_at ?? 'nunca acessou' }}
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <UserRowActions
+                                    :membership="membership"
+                                    :disabled="processingId === membership.id"
+                                    @edit="openEditSheet(membership)"
+                                    @toggle-status="toggleStatus(membership)"
+                                />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grid gap-3 md:hidden">
+                <Card
+                    v-for="membership in filteredMemberships"
+                    :key="membership.id"
                 >
-                    <div>
-                        <p class="font-medium">{{ membership.user.name }}</p>
-                        <p class="text-sm text-muted-foreground">
-                            {{ membership.user.email }}
-                        </p>
-                        <div class="mt-2 flex flex-wrap gap-1">
-                            <Badge
-                                :variant="
-                                    membership.user.is_active
-                                        ? 'default'
-                                        : 'secondary'
-                                "
-                            >
-                                {{
-                                    membership.user.is_active
-                                        ? 'Ativo'
-                                        : 'Inativo'
-                                }}
-                            </Badge>
-                            <Badge v-if="membership.role" variant="outline">
-                                {{ membership.role.name }}
-                            </Badge>
+                    <CardContent
+                        class="flex items-center justify-between gap-3 py-4"
+                    >
+                        <div class="flex items-center gap-3">
+                            <Avatar class="size-10">
+                                <AvatarImage
+                                    v-if="membership.user.photo_url"
+                                    :src="membership.user.photo_url"
+                                    :alt="membership.user.name"
+                                />
+                                <AvatarFallback>
+                                    {{ membership.user.name.charAt(0) }}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p class="font-medium">
+                                    {{ membership.user.name }}
+                                </p>
+                                <p class="text-sm text-muted-foreground">
+                                    {{ membership.user.email }}
+                                </p>
+                                <div class="mt-2 flex flex-wrap gap-1">
+                                    <Badge
+                                        :variant="
+                                            membership.user.is_active
+                                                ? 'default'
+                                                : 'secondary'
+                                        "
+                                    >
+                                        {{
+                                            membership.user.is_active
+                                                ? 'Ativo'
+                                                : 'Inativo'
+                                        }}
+                                    </Badge>
+                                    <Badge
+                                        v-if="membership.role"
+                                        variant="outline"
+                                    >
+                                        {{ membership.role.name }}
+                                    </Badge>
+                                </div>
+                                <p class="mt-1 text-xs text-muted-foreground">
+                                    Último acesso:
+                                    {{
+                                        membership.user.last_login_at ??
+                                        'nunca acessou'
+                                    }}
+                                </p>
+                            </div>
                         </div>
-                        <p class="mt-1 text-xs text-muted-foreground">
-                            Último acesso:
-                            {{
-                                membership.user.last_login_at ?? 'nunca acessou'
-                            }}
-                        </p>
-                    </div>
-                    <UserRowActions
-                        :membership="membership"
-                        :disabled="processingId === membership.id"
-                        @edit="openEditSheet(membership)"
-                        @toggle-status="toggleStatus(membership)"
-                    />
-                </CardContent>
-            </Card>
-        </div>
+                        <UserRowActions
+                            :membership="membership"
+                            :disabled="processingId === membership.id"
+                            @edit="openEditSheet(membership)"
+                            @toggle-status="toggleStatus(membership)"
+                        />
+                    </CardContent>
+                </Card>
+            </div>
+        </template>
+
+        <p
+            v-if="hasAnyMemberships && hasActiveFilters"
+            class="text-sm text-muted-foreground"
+        >
+            {{ filteredMemberships.length }} de {{ indicators.total }} usuários
+        </p>
 
         <template v-if="invitations.length > 0">
             <h2 class="text-lg font-semibold">Convites</h2>

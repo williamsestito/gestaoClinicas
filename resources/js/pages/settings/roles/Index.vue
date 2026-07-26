@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { Copy, Pencil, Plus, Trash2 } from '@lucide/vue';
+import { Copy, Pencil, Plus, Search, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
@@ -21,6 +21,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import {
     Sheet,
     SheetContent,
@@ -101,6 +102,24 @@ function confirmDelete() {
 }
 
 const hasAnyRoles = computed(() => props.roles.length > 0);
+
+const search = ref('');
+
+const filteredRoles = computed(() => {
+    const term = search.value.trim().toLowerCase();
+
+    if (term === '') {
+        return props.roles;
+    }
+
+    return props.roles.filter(
+        (role) =>
+            role.name.toLowerCase().includes(term) ||
+            (role.description ?? '').toLowerCase().includes(term),
+    );
+});
+
+const hasFilteredResults = computed(() => filteredRoles.value.length > 0);
 </script>
 
 <template>
@@ -119,6 +138,18 @@ const hasAnyRoles = computed(() => props.roles.length > 0);
             </template>
         </PageHeader>
 
+        <div v-if="hasAnyRoles" class="relative sm:max-w-xs">
+            <Search
+                class="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground"
+            />
+            <Input
+                v-model="search"
+                placeholder="Buscar por nome ou descrição"
+                aria-label="Buscar papéis por nome ou descrição"
+                class="pl-8"
+            />
+        </div>
+
         <EmptyState
             v-if="!hasAnyRoles"
             title="Nenhum papel cadastrado ainda."
@@ -132,62 +163,148 @@ const hasAnyRoles = computed(() => props.roles.length > 0);
             </template>
         </EmptyState>
 
-        <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Card v-for="role in roles" :key="role.id">
-                <CardContent class="flex flex-col gap-3 py-4">
-                    <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <p class="font-medium">{{ role.name }}</p>
-                            <p
-                                v-if="role.description"
-                                class="text-sm text-muted-foreground"
-                            >
-                                {{ role.description }}
-                            </p>
+        <EmptyState
+            v-else-if="!hasFilteredResults"
+            title="Nenhum papel corresponde à busca informada."
+        />
+
+        <template v-else>
+            <div class="hidden overflow-x-auto rounded-md border md:block">
+                <table class="w-full text-sm">
+                    <thead
+                        class="border-b bg-muted/50 text-left text-muted-foreground"
+                    >
+                        <tr>
+                            <th class="px-4 py-2 font-medium">Nome</th>
+                            <th class="px-4 py-2 font-medium">Descrição</th>
+                            <th class="px-4 py-2 font-medium">Permissões</th>
+                            <th class="px-4 py-2 font-medium">Usuários</th>
+                            <th class="px-4 py-2 font-medium">Tipo</th>
+                            <th class="px-4 py-2 font-medium">
+                                <span class="sr-only">Ações</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="role in filteredRoles"
+                            :key="role.id"
+                            class="border-b last:border-0"
+                        >
+                            <td class="px-4 py-3 font-medium">
+                                {{ role.name }}
+                            </td>
+                            <td class="px-4 py-3 text-muted-foreground">
+                                {{ role.description || '—' }}
+                            </td>
+                            <td class="px-4 py-3 text-muted-foreground">
+                                {{ role.permissions.length }}
+                            </td>
+                            <td class="px-4 py-3 text-muted-foreground">
+                                {{ role.organization_memberships_count }}
+                            </td>
+                            <td class="px-4 py-3">
+                                <Badge v-if="role.is_system" variant="secondary">
+                                    Sistema
+                                </Badge>
+                                <span v-else class="text-muted-foreground"
+                                    >Personalizado</span
+                                >
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <div class="flex flex-wrap justify-end gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        :disabled="processingRoleId === role.id"
+                                        @click="openEditSheet(role)"
+                                    >
+                                        <Pencil class="size-3.5" />
+                                        {{ isOwnerRole(role) ? 'Ver' : 'Editar' }}
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        :disabled="processingRoleId === role.id"
+                                        @click="duplicateRole(role)"
+                                    >
+                                        <Copy class="size-3.5" />
+                                        Duplicar
+                                    </Button>
+                                    <Button
+                                        v-if="!role.is_system"
+                                        size="sm"
+                                        variant="secondary"
+                                        :disabled="processingRoleId === role.id"
+                                        @click="rolePendingDeletion = role"
+                                    >
+                                        <Trash2 class="size-3.5" />
+                                        Excluir
+                                    </Button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grid gap-3 md:hidden">
+                <Card v-for="role in filteredRoles" :key="role.id">
+                    <CardContent class="flex flex-col gap-3 py-4">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <p class="font-medium">{{ role.name }}</p>
+                                <p
+                                    v-if="role.description"
+                                    class="text-sm text-muted-foreground"
+                                >
+                                    {{ role.description }}
+                                </p>
+                            </div>
+                            <Badge v-if="role.is_system" variant="secondary">
+                                Sistema
+                            </Badge>
                         </div>
-                        <Badge v-if="role.is_system" variant="secondary">
-                            Sistema
-                        </Badge>
-                    </div>
 
-                    <p class="text-sm text-muted-foreground">
-                        {{ role.permissions.length }} permissões ·
-                        {{ role.organization_memberships_count }} usuário(s)
-                    </p>
+                        <p class="text-sm text-muted-foreground">
+                            {{ role.permissions.length }} permissões ·
+                            {{ role.organization_memberships_count }} usuário(s)
+                        </p>
 
-                    <div class="flex flex-wrap gap-2">
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            :disabled="processingRoleId === role.id"
-                            @click="openEditSheet(role)"
-                        >
-                            <Pencil class="size-3.5" />
-                            {{ isOwnerRole(role) ? 'Ver' : 'Editar' }}
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            :disabled="processingRoleId === role.id"
-                            @click="duplicateRole(role)"
-                        >
-                            <Copy class="size-3.5" />
-                            Duplicar
-                        </Button>
-                        <Button
-                            v-if="!role.is_system"
-                            size="sm"
-                            variant="secondary"
-                            :disabled="processingRoleId === role.id"
-                            @click="rolePendingDeletion = role"
-                        >
-                            <Trash2 class="size-3.5" />
-                            Excluir
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                :disabled="processingRoleId === role.id"
+                                @click="openEditSheet(role)"
+                            >
+                                <Pencil class="size-3.5" />
+                                {{ isOwnerRole(role) ? 'Ver' : 'Editar' }}
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                :disabled="processingRoleId === role.id"
+                                @click="duplicateRole(role)"
+                            >
+                                <Copy class="size-3.5" />
+                                Duplicar
+                            </Button>
+                            <Button
+                                v-if="!role.is_system"
+                                size="sm"
+                                variant="secondary"
+                                :disabled="processingRoleId === role.id"
+                                @click="rolePendingDeletion = role"
+                            >
+                                <Trash2 class="size-3.5" />
+                                Excluir
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </template>
 
         <Sheet v-model:open="sheetOpen">
             <SheetContent

@@ -29,6 +29,23 @@ class SetActiveUnitAction
             ->where('status', RecordStatus::Active)
             ->first();
 
+        if (! $unitMembership && $membership->user->is_platform_admin) {
+            // Mesma lógica de acesso global do superadmin aplicada à
+            // organização (ver SetActiveOrganizationAction): concede acesso
+            // real à unidade em vez de bloquear, sem exigir vínculo prévio.
+            $unitMembership = $membership->unitMemberships()->where('unit_id', $unit->id)->first();
+
+            if ($unitMembership) {
+                $unitMembership->update(['status' => RecordStatus::Active]);
+            } else {
+                $unitMembership = $membership->unitMemberships()->create([
+                    'unit_id' => $unit->id,
+                    'status' => RecordStatus::Active,
+                    'is_manager' => true,
+                ]);
+            }
+        }
+
         if (! $unitMembership) {
             throw ValidationException::withMessages([
                 'unit' => 'Você não tem acesso a esta unidade.',

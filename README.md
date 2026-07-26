@@ -4,13 +4,13 @@ SaaS para gestão de clínicas e consultórios (estética, odontologia,
 massagens, terapias e demais estabelecimentos de atendimento).
 
 A fundação técnica (autenticação, painel administrativo, infraestrutura
-Docker, qualidade de código) e a **Fase 1** (organizações, entidades legais
+Docker, qualidade de código), a **Fase 1** (organizações, entidades legais
 CPF/CNPJ, unidades, endereços, horários de funcionamento e contexto ativo
-multiempresa) estão implementadas — ver
-[docs/architecture/overview.md](docs/architecture/overview.md) e
-[docs/modules/](docs/modules/). Profissionais, pacientes, agenda,
-prontuário, financeiro, produtos, estoque, vendas e página comercial ainda
-não foram implementados.
+multiempresa) e a página pública da clínica (landing, galeria, SEO) estão
+implementadas — ver [docs/architecture/overview.md](docs/architecture/overview.md)
+e [docs/modules/](docs/modules/). Profissionais, pacientes, agenda,
+prontuário, financeiro, produtos, estoque e vendas ainda não foram
+implementados.
 
 ## Stack
 
@@ -44,9 +44,11 @@ assets e executa um diagnóstico completo. Detalhes em
 | Serviço | URL |
 |---|---|
 | Aplicação | http://localhost:8080 |
+| Galeria pública ("Ver todas") | http://localhost:8080/galeria |
 | Login | http://localhost:8080/login |
 | Cadastro | http://localhost:8080/register |
 | Dashboard (autenticado) | http://localhost:8080/dashboard |
+| Perfil (dados pessoais, foto) | http://localhost:8080/settings/profile |
 | Onboarding de organização | http://localhost:8080/onboarding/organization |
 | Dados da clínica | http://localhost:8080/settings/organization |
 | Dados legais e fiscais | http://localhost:8080/settings/legal-entities |
@@ -185,7 +187,9 @@ remove também os volumes (Postgres/Redis/MinIO) — ação irreversível.
 - [docs/architecture/testing.md](docs/architecture/testing.md) — estratégia e cobertura de testes.
 - [docs/architecture/security-baseline.md](docs/architecture/security-baseline.md) — baseline de segurança.
 - [docs/architecture/tenancy.md](docs/architecture/tenancy.md) — multiempresa, contexto ativo, integridade entre organizações.
+- [docs/architecture/permissions.md](docs/architecture/permissions.md) — matriz de papéis e permissões (RBAC).
 - [docs/architecture/auditing.md](docs/architecture/auditing.md) — auditoria, sanitização recursiva.
+- [docs/pre-agendamento-futuro.md](docs/pre-agendamento-futuro.md) — arquitetura (não implementada) da busca de clínicas e pré-agendamento futuro.
 - [docs/architecture/localization.md](docs/architecture/localization.md) — regra código em inglês/interface em português, vocabulário oficial.
 - [docs/decisions/](docs/decisions/) — ADRs (decisões de arquitetura).
 - [docs/modules/](docs/modules/) — documentação dos módulos de negócio (futuro).

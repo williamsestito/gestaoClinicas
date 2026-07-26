@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\SiteSetting;
 use App\Support\Tenancy\TenantContextPresenter;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -44,6 +45,12 @@ class HandleInertiaRequests extends Middleware
             ],
             'tenant' => fn () => app(TenantContextPresenter::class)->toArray($request->user()),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // Favicon do site institucional — usado por app.blade.php para
+            // renderizar as tags <link rel="icon"> reais em TODA página
+            // (landing pública e painel), nunca só na home. Vazio ([])
+            // enquanto nenhum favicon foi enviado ainda: o blade não
+            // renderiza tag alguma nesse caso (nunca tag vazia).
+            'favicon' => fn () => SiteSetting::query()->first()?->faviconUrls() ?? [],
         ];
     }
 }

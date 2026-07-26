@@ -3,6 +3,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { Plus } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
+import IconPicker from '@/components/IconPicker.vue';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import SiteCollectionRowActions from '@/components/site/SiteCollectionRowActions.vue';
@@ -237,17 +238,7 @@ function confirmDelete() {
                 >
                     <div class="grid gap-2">
                         <Label for="icon">Ícone (opcional)</Label>
-                        <Input
-                            id="icon"
-                            v-model="form.icon"
-                            placeholder="heart-handshake"
-                        />
-                        <p class="text-xs text-muted-foreground">
-                            Um dos nomes: heart-handshake, heart, shield-check,
-                            shield, sparkles, graduation-cap, stethoscope,
-                            clock, users, award, badge-check, thumbs-up, smile,
-                            leaf. Outro valor usa o ícone padrão.
-                        </p>
+                        <IconPicker id="icon" v-model="form.icon" />
                         <InputError :message="form.errors.icon" />
                     </div>
 

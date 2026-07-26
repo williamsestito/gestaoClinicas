@@ -19,15 +19,19 @@ class OrganizationContextController extends Controller
 {
     public function edit(): Response
     {
-        // Nunca lista organizações inativas/suspensas, mesmo com vínculo ativo.
-        $organizations = Auth::user()
-            ->organizationMemberships()
-            ->with('organization')
-            ->where('status', OrganizationMembershipStatus::Active)
-            ->get()
-            ->pluck('organization')
-            ->filter(fn (?Organization $organization) => $organization?->status === OrganizationStatus::Active)
-            ->values();
+        $user = Auth::user();
+
+        // Superadmin enxerga todas as organizações ativas (acesso global);
+        // os demais usuários só veem as organizações onde têm vínculo.
+        $organizations = $user->is_platform_admin
+            ? Organization::query()->where('status', OrganizationStatus::Active)->orderBy('name')->get()
+            : $user->organizationMemberships()
+                ->with('organization')
+                ->where('status', OrganizationMembershipStatus::Active)
+                ->get()
+                ->pluck('organization')
+                ->filter(fn (?Organization $organization) => $organization?->status === OrganizationStatus::Active)
+                ->values();
 
         return Inertia::render('context/OrganizationSelector', [
             'organizations' => $organizations,

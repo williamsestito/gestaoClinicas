@@ -32,6 +32,7 @@ function baseSite() {
         title: 'Clínica Exemplo',
         description: null,
         hero_image_url: null as string | null,
+        hero_image_mobile_url: null as string | null,
         logo_url: null,
         favicon_url: null,
         primary_color: null,
@@ -55,7 +56,7 @@ describe('settings/site/Index — banner', () => {
             props: { site: baseSite(), contact: null },
         });
 
-        expect(wrapper.text()).not.toContain('Remover banner atual');
+        expect(wrapper.text()).not.toContain('Remover banner desktop atual');
     });
 
     it('shows the current banner and a "remove banner" action when one exists', () => {
@@ -72,7 +73,7 @@ describe('settings/site/Index — banner', () => {
         expect(
             wrapper.findComponent(ImageUploadField).props('currentUrl'),
         ).toBe('https://example.test/storage/hero.webp');
-        expect(wrapper.text()).toContain('Remover banner atual');
+        expect(wrapper.text()).toContain('Remover banner desktop atual');
     });
 
     it('hides the "remove banner" action while a new file is staged for upload', async () => {
@@ -86,7 +87,7 @@ describe('settings/site/Index — banner', () => {
             },
         });
 
-        expect(wrapper.text()).toContain('Remover banner atual');
+        expect(wrapper.text()).toContain('Remover banner desktop atual');
 
         await wrapper
             .findComponent(ImageUploadField)
@@ -95,7 +96,7 @@ describe('settings/site/Index — banner', () => {
                 new File(['x'], 'novo.webp', { type: 'image/webp' }),
             );
 
-        expect(wrapper.text()).not.toContain('Remover banner atual');
+        expect(wrapper.text()).not.toContain('Remover banner desktop atual');
     });
 
     it('asks for confirmation and deletes the banner via DELETE settings/site/hero-image', async () => {
@@ -112,12 +113,12 @@ describe('settings/site/Index — banner', () => {
 
         await wrapper
             .findAll('button')
-            .find((button) => button.text() === 'Remover banner atual')
+            .find((button) => button.text() === 'Remover banner desktop atual')
             ?.trigger('click');
         await wrapper.vm.$nextTick();
 
         const dialogText = document.body.textContent ?? '';
-        expect(dialogText).toContain('Remover banner?');
+        expect(dialogText).toContain('Remover banner desktop?');
 
         const confirmButton = Array.from(
             document.body.querySelectorAll('button'),
@@ -135,6 +136,13 @@ describe('settings/site/Index — banner', () => {
 });
 
 describe.each([
+    {
+        asset: 'hero_image_mobile' as const,
+        urlKey: 'hero_image_mobile_url' as const,
+        label: 'Remover banner mobile atual',
+        dialogTitle: 'Remover banner mobile?',
+        endpoint: '/settings/site/hero-image-mobile',
+    },
     {
         asset: 'logo' as const,
         urlKey: 'logo_url' as const,

@@ -1,56 +1,10 @@
 <script setup lang="ts">
-import {
-    Award,
-    BadgeCheck,
-    Clock,
-    GraduationCap,
-    Heart,
-    HeartHandshake,
-    Leaf,
-    Shield,
-    ShieldCheck,
-    Smile,
-    Sparkles,
-    Stethoscope,
-    ThumbsUp,
-    Users,
-} from '@lucide/vue';
-import type { FunctionalComponent } from 'vue';
+import { benefitIconFor } from '@/lib/benefit-icons';
 import type { PublicBenefit } from '@/types/site';
 
 defineProps<{
     benefits: PublicBenefit[];
 }>();
-
-// Conjunto curado (não um `import *` da biblioteca inteira, que impediria
-// o tree-shaking e inflaria o chunk) — cobre os ícones mais comuns para
-// diferenciais de clínicas de saúde/estética. Nome desconhecido cai no
-// ícone padrão.
-const ICONS: Record<string, FunctionalComponent> = {
-    'heart-handshake': HeartHandshake,
-    heart: Heart,
-    'heart-pulse': Heart,
-    'shield-check': ShieldCheck,
-    shield: Shield,
-    sparkles: Sparkles,
-    'graduation-cap': GraduationCap,
-    stethoscope: Stethoscope,
-    clock: Clock,
-    users: Users,
-    award: Award,
-    'badge-check': BadgeCheck,
-    'thumbs-up': ThumbsUp,
-    smile: Smile,
-    leaf: Leaf,
-};
-
-function iconFor(name: string | null): FunctionalComponent {
-    if (!name) {
-        return HeartHandshake;
-    }
-
-    return ICONS[name] ?? HeartHandshake;
-}
 </script>
 
 <template>
@@ -74,7 +28,10 @@ function iconFor(name: string | null): FunctionalComponent {
                 <div
                     class="mb-4 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"
                 >
-                    <component :is="iconFor(benefit.icon)" class="size-5" />
+                    <component
+                        :is="benefitIconFor(benefit.icon)"
+                        class="size-5"
+                    />
                 </div>
                 <h3 class="font-semibold">{{ benefit.title }}</h3>
                 <p

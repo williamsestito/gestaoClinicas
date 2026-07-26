@@ -48,6 +48,9 @@ class PublicSiteController extends Controller
                 'hero_image_url' => $site->hero_image_path
                     ? Storage::disk('public')->url($site->hero_image_path)
                     : null,
+                'hero_image_mobile_url' => $site->hero_image_mobile_path
+                    ? Storage::disk('public')->url($site->hero_image_mobile_path)
+                    : null,
                 'logo_url' => $site->logo_path
                     ? Storage::disk('public')->url($site->logo_path)
                     : null,

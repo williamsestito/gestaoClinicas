@@ -125,7 +125,25 @@ quando esses módulos forem implementados.
   [auditing.md](auditing.md).
 - Sanitização por lista de chaves (bloqueio total: senha, tokens,
   segredos, códigos de recuperação, segredo de 2FA, credencial de
-  passkey; mascaramento: CPF/CNPJ), recursiva em qualquer profundidade.
+  passkey; mascaramento: CPF/CNPJ), recursiva em qualquer profundidade —
+  aplica-se tanto a entidades legais quanto ao CPF do próprio usuário
+  (`users.cpf`, coletado no perfil desde a Etapa 0.9), já que a
+  sanitização é por nome de chave, não por tabela.
+
+## Upload de arquivos (perfil, site público)
+
+- Fotos de perfil, logo/banner/favicon do site e imagens da galeria usam
+  `App\Rules\ValidImageContentRule` (valida o conteúdo real do arquivo,
+  não apenas a extensão) e um limite de tamanho explícito por tipo — nunca
+  aceitam upload de PHP disfarçado de imagem.
+- Troca de arquivo é sempre feita via `App\Support\Site\SafeFileReplacer`
+  (stage → commit/rollback): o arquivo antigo só é removido depois que a
+  escrita no banco é confirmada, nunca antes — evita perder o arquivo
+  anterior se a request falhar no meio do caminho.
+- Favicon é convertido para múltiplos tamanhos (16/32/48/180/192px) via GD
+  no servidor (`App\Support\Site\FaviconGenerator`) — o usuário nunca
+  precisa fornecer um arquivo já nos formatos/tamanhos exigidos por
+  navegadores/dispositivos.
 - `AuditLog` é imutável: `update()`/`delete()` lançam exceção no próprio
   model, a policy nega `create`/`update`/`delete` incondicionalmente, e
   não existe rota de escrita — apenas `GET settings/audit` (somente

@@ -18,6 +18,7 @@ use App\Models\Role;
 use App\Models\Unit;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -30,8 +31,21 @@ class UserManagementController extends Controller
         $this->authorize('viewAny', [OrganizationMembership::class, $organization]);
 
         $memberships = $organization->memberships()
-            ->with(['user:id,name,email,is_active,last_login_at', 'role:id,name,slug', 'unitMemberships.unit:id,name'])
-            ->get();
+            ->with([
+                'user:id,name,email,phone,photo_path,is_active,last_login_at',
+                'role:id,name,slug',
+                'unitMemberships.unit:id,name',
+            ])
+            ->get()
+            ->each(function (OrganizationMembership $membership): void {
+                // Nunca expõe o photo_path bruto (caminho de storage) — só
+                // a URL pública já resolvida, mesmo padrão do restante do
+                // site institucional.
+                $membership->user->setAttribute(
+                    'photo_url',
+                    $membership->user->photo_path ? Storage::disk('public')->url($membership->user->photo_path) : null,
+                );
+            });
 
         $invitations = $organization->invitations()
             ->whereIn('status', [InvitationStatus::Pending, InvitationStatus::Expired])

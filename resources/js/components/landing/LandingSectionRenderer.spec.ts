@@ -12,6 +12,7 @@ function makeSite(): PublicSiteContent {
         title: 'Clínica Essenza',
         description: null,
         hero_image_url: null,
+        hero_image_mobile_url: null,
         logo_url: null,
         primary_color: null,
         secondary_color: null,

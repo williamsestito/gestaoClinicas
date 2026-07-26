@@ -138,6 +138,7 @@ export interface PublicSiteContent {
     title: string;
     description: string | null;
     hero_image_url: string | null;
+    hero_image_mobile_url: string | null;
     logo_url: string | null;
     primary_color: string | null;
     secondary_color: string | null;

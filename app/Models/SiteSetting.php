@@ -10,6 +10,7 @@ use App\Enums\SchemaBusinessType;
 use Database\Factories\SiteSettingFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Configuração singleton do conteúdo e SEO da página pública inicial
@@ -31,6 +32,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $longitude
  * @property string|null $logo_path
  * @property string|null $favicon_path
+ * @property array<int, string>|null $favicon_variants
+ * @property string|null $hero_image_mobile_path
  * @property string|null $cta_text
  * @property string|null $cta_url
  * @property string|null $about_text
@@ -61,6 +64,7 @@ class SiteSetting extends Model
         'title',
         'description',
         'hero_image_path',
+        'hero_image_mobile_path',
         'primary_color',
         'secondary_color',
         'official_domain',
@@ -80,6 +84,7 @@ class SiteSetting extends Model
         'longitude',
         'logo_path',
         'favicon_path',
+        'favicon_variants',
         'cta_text',
         'cta_url',
         'about_text',
@@ -112,9 +117,23 @@ class SiteSetting extends Model
             'longitude' => 'decimal:7',
             'is_published' => 'boolean',
             'sections_config' => 'array',
+            'favicon_variants' => 'array',
             'ga4_enabled' => 'boolean',
             'gtm_enabled' => 'boolean',
             'google_ads_enabled' => 'boolean',
         ];
+    }
+
+    /**
+     * URLs públicas dos favicons gerados (tamanho => URL), ou `[]` se
+     * nenhum favicon foi enviado ainda — nunca gera tag vazia no HTML.
+     *
+     * @return array<int, string>
+     */
+    public function faviconUrls(): array
+    {
+        return collect($this->favicon_variants ?? [])
+            ->map(fn (string $path): string => Storage::disk('public')->url($path))
+            ->all();
     }
 }

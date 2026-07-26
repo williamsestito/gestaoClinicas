@@ -85,9 +85,32 @@
             }
         </style>
 
-        <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        {{--
+            Favicon gerado a partir da imagem enviada pelo administrador em
+            "Site da clínica" (ver App\Support\Site\FaviconGenerator e
+            App\Http\Middleware\HandleInertiaRequests). Enquanto nenhum
+            favicon foi enviado, cai nos arquivos estáticos padrão —
+            nunca renderiza uma tag com href vazio.
+        --}}
+        @php($favicon = $page['props']['favicon'] ?? [])
+        @if(! empty($favicon))
+            @if(! empty($favicon['32']))
+                <link rel="icon" type="image/png" sizes="32x32" href="{{ $favicon['32'] }}">
+            @endif
+            @if(! empty($favicon['16']))
+                <link rel="icon" type="image/png" sizes="16x16" href="{{ $favicon['16'] }}">
+            @endif
+            @if(! empty($favicon['192']))
+                <link rel="icon" type="image/png" sizes="192x192" href="{{ $favicon['192'] }}">
+            @endif
+            @if(! empty($favicon['180']))
+                <link rel="apple-touch-icon" sizes="180x180" href="{{ $favicon['180'] }}">
+            @endif
+        @else
+            <link rel="icon" href="/favicon.ico" sizes="any">
+            <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+            <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        @endif
 
         @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         {{-- O <title> já é renderizado acima (dado real, sem depender de JS) — não duplicar aqui. --}}

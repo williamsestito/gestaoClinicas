@@ -28,6 +28,7 @@ class UpdateSiteContentRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
             'hero_image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120', new ValidImageContentRule],
+            'hero_image_mobile' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120', new ValidImageContentRule],
             'logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:1024', new ValidImageContentRule],
             'favicon' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:256', new ValidImageContentRule],
             'primary_color' => ['nullable', 'string', 'max:20'],

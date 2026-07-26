@@ -42,10 +42,8 @@ const brandStyle = {
             />
         </div>
 
-        <div
-            class="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2"
-        >
-            <div class="space-y-6 text-center lg:text-left">
+        <div class="mx-auto max-w-6xl space-y-12 px-4 sm:px-6">
+            <div class="space-y-6 text-center">
                 <h1
                     class="text-4xl font-bold tracking-tight text-balance sm:text-5xl"
                 >
@@ -53,13 +51,13 @@ const brandStyle = {
                 </h1>
                 <p
                     v-if="site.description"
-                    class="text-lg text-balance text-muted-foreground"
+                    class="mx-auto max-w-2xl text-lg text-balance text-muted-foreground"
                 >
                     {{ site.description }}
                 </p>
 
                 <div
-                    class="flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start"
+                    class="flex flex-col items-center justify-center gap-3 sm:flex-row"
                 >
                     <a
                         v-if="site.cta_text && site.cta_url"
@@ -87,7 +85,7 @@ const brandStyle = {
 
                 <div
                     v-if="!site.cta_text"
-                    class="flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start"
+                    class="flex flex-col items-center justify-center gap-3 sm:flex-row"
                 >
                     <Link v-if="page.props.auth.user" :href="dashboard()">
                         <Button size="lg">Acessar dashboard</Button>
@@ -104,19 +102,34 @@ const brandStyle = {
                     </template>
                 </div>
             </div>
+        </div>
 
-            <div
-                v-if="site.hero_image_url && !heroImageFailedToLoad"
-                class="relative"
-            >
+        <!--
+            O banner usa toda a largura da página (fora do container
+            max-w-6xl do texto acima), não apenas metade dela — feedback
+            direto de homologação. `<picture>`/`<source media>` troca a
+            imagem por CSS puro (sem JS): a versão mobile só é baixada e
+            exibida em telas pequenas, e some automaticamente se nenhuma
+            tiver sido enviada (cai na versão desktop também no mobile).
+        -->
+        <div
+            v-if="site.hero_image_url && !heroImageFailedToLoad"
+            class="mt-12 w-full px-4 sm:px-6"
+        >
+            <picture>
+                <source
+                    v-if="site.hero_image_mobile_url"
+                    media="(max-width: 767px)"
+                    :srcset="site.hero_image_mobile_url"
+                />
                 <img
                     :src="site.hero_image_url"
                     :alt="site.title"
                     fetchpriority="high"
-                    class="aspect-4/3 w-full rounded-2xl border border-border object-cover shadow-lg"
+                    class="aspect-4/5 w-full rounded-2xl border border-border object-cover shadow-lg sm:aspect-16/9 lg:aspect-21/9"
                     @error="heroImageFailedToLoad = true"
                 />
-            </div>
+            </picture>
         </div>
     </section>
 </template>

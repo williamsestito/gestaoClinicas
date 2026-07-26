@@ -8,9 +8,15 @@ unidades, endereços, horários de funcionamento e contexto ativo — ver
 [tenancy.md](tenancy.md), [auditing.md](auditing.md),
 [localization.md](localization.md) e [docs/modules/](../modules/). A
 fundação de domínio próprio, SEO técnico e acessibilidade da página
-pública inicial está em [seo.md](seo.md).
+pública inicial está em [seo.md](seo.md), e a matriz de papéis e
+permissões (RBAC) em [permissions.md](permissions.md). A página pública
+(landing, galeria em `/galeria`, benefícios, seções, SEO) e o perfil do
+usuário (dados pessoais, endereço, foto) foram concluídos na Fase 0.9.
 Profissionais, pacientes, agenda, prontuário, financeiro, produtos,
-estoque, vendas e demais páginas públicas ainda não foram implementados.
+estoque e vendas ainda não foram implementados — ver
+[docs/pre-agendamento-futuro.md](../pre-agendamento-futuro.md) para a
+arquitetura (não implementada) da futura busca de clínicas e
+pré-agendamento.
 
 ## Stack
 

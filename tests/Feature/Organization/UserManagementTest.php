@@ -12,6 +12,7 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Notifications\OrganizationInvitationNotification;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 it('lets the owner invite a user and sends the invitation notification', function () {
     Notification::fake();
@@ -314,4 +315,32 @@ it('records the last login timestamp on successful authentication', function () 
     ]);
 
     expect($user->fresh()->last_login_at)->not->toBeNull();
+});
+
+it('exposes phone and a resolved photo URL, but never the raw photo path or CPF, in the users listing', function () {
+    Storage::fake('public');
+    $ctx = ownerActingInOrganization();
+
+    $member = User::factory()->create([
+        'phone' => '(47) 99999-1234',
+        'cpf' => '39053344705',
+        'photo_path' => 'profile-photos/avatar.jpg',
+    ]);
+    OrganizationMembership::factory()->for($ctx['organization'])->for($member)->create();
+
+    $response = $this->actingAs($ctx['user'])->get(route('settings.users.index'));
+    $response->assertOk();
+
+    $page = $response->viewData('page');
+    $memberships = collect($page['props']['memberships']);
+    $memberEntry = $memberships->firstWhere('user.email', $member->email);
+
+    expect($memberEntry)->not->toBeNull()
+        ->and($memberEntry['user']['phone'])->toBe('(47) 99999-1234')
+        ->and($memberEntry['user'])->toHaveKey('photo_url')
+        ->and($memberEntry['user'])->not->toHaveKey('photo_path')
+        ->and($memberEntry['user'])->not->toHaveKey('cpf');
+
+    expect($response->getContent())->not->toContain('39053344705')
+        ->and($response->getContent())->not->toContain('profile-photos/avatar.jpg');
 });
