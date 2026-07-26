@@ -151,6 +151,48 @@ it('lets the owner assign a role and units to a member in one update', function 
         ->and($unitMembership->is_primary)->toBeTrue();
 });
 
+it('rejects associating a unit that belongs to another organization when updating a membership', function () {
+    $ctx = ownerActingInOrganization();
+    $member = User::factory()->create();
+    $membership = OrganizationMembership::factory()->for($ctx['organization'])->for($member)->create();
+    $foreignUnit = Unit::factory()->for(Organization::factory()->create())->create();
+
+    $this->actingAs($ctx['user'])
+        ->put(route('settings.users.update', $membership), [
+            'unit_ids' => [$foreignUnit->id],
+        ])
+        ->assertSessionHasErrors('unit_ids.0');
+
+    expect($membership->unitMemberships()->where('unit_id', $foreignUnit->id)->exists())->toBeFalse();
+});
+
+it('rejects a primary_unit_id that belongs to another organization when updating a membership', function () {
+    $ctx = ownerActingInOrganization();
+    $member = User::factory()->create();
+    $membership = OrganizationMembership::factory()->for($ctx['organization'])->for($member)->create();
+    $foreignUnit = Unit::factory()->for(Organization::factory()->create())->create();
+
+    $this->actingAs($ctx['user'])
+        ->put(route('settings.users.update', $membership), [
+            'primary_unit_id' => $foreignUnit->id,
+        ])
+        ->assertSessionHasErrors('primary_unit_id');
+});
+
+it('rejects associating a unit that belongs to another organization when inviting a user', function () {
+    $ctx = ownerActingInOrganization();
+    $foreignUnit = Unit::factory()->for(Organization::factory()->create())->create();
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.users.invite'), [
+            'email' => 'nova-com-unidade-externa@example.com',
+            'unit_ids' => [$foreignUnit->id],
+        ])
+        ->assertSessionHasErrors('unit_ids.0');
+
+    expect(Invitation::query()->where('email', 'nova-com-unidade-externa@example.com')->exists())->toBeFalse();
+});
+
 it('blocks assigning the Proprietário role to another member, even for the owner', function () {
     $ctx = ownerActingInOrganization();
     seedSystemRoles($ctx['organization']);

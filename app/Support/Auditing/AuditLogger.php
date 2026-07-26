@@ -24,6 +24,8 @@ class AuditLogger
     private const SENSITIVE_KEYS = [
         'password', 'password_confirmation', 'token', 'access_token', 'refresh_token',
         'secret', 'remember_token', 'api_key', 'recovery_codes', 'authentication_code',
+        'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at',
+        'credential', 'credential_id', 'public_key', 'user_handle_secret',
     ];
 
     /** @var list<string> chaves mascaradas (mantém os 2 últimos caracteres), em qualquer profundidade */

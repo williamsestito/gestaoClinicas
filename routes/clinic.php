@@ -52,6 +52,7 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
     Route::get('context/organization', [OrganizationContextController::class, 'edit'])
         ->name('context.organization.edit');
     Route::put('context/organization', [OrganizationContextController::class, 'update'])
+        ->middleware('throttle:20,1')
         ->name('context.organization.update');
 
     Route::middleware('tenant.active-organization')->group(function () {
@@ -64,6 +65,7 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
         Route::get('context/unit', [UnitContextController::class, 'edit'])
             ->name('context.unit.edit');
         Route::put('context/unit', [UnitContextController::class, 'update'])
+            ->middleware('throttle:20,1')
             ->name('context.unit.update');
 
         Route::get('settings/organization', [OrganizationSettingsController::class, 'edit'])

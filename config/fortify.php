@@ -145,7 +145,16 @@ return [
     'passkeys' => [
         'relying_party_id' => parse_url(config('app.url'), PHP_URL_HOST),
         'allowed_origins' => [config('app.url')],
-        'user_handle_secret' => env('PASSKEYS_USER_HANDLE_SECRET', config('app.key')),
+        // Nunca reutiliza APP_KEY como segredo de passkeys em produção: são
+        // propósitos criptográficos distintos, e reaproveitar a mesma chave
+        // acopla a rotação/exposição de uma à outra. Fora de produção, cai
+        // em APP_KEY apenas por conveniência de desenvolvimento/teste — ver
+        // docs/architecture/security-baseline.md. Usa env('APP_ENV') direto
+        // (nunca app()->environment()) porque arquivos de config são lidos
+        // antes do binding 'env' do container existir.
+        'user_handle_secret' => env('PASSKEYS_USER_HANDLE_SECRET') ?? (
+            env('APP_ENV', 'production') === 'production' ? null : config('app.key')
+        ),
         'timeout' => 60000,
     ],
 

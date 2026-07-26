@@ -11,3 +11,12 @@ parameters:
         - routes/
 
     level: 7
+
+    ignoreErrors:
+        -
+            # bootstrap/app.php roda a cada boot (nunca se beneficia de
+            # config:cache) e, neste ponto do withMiddleware(), o binding
+            # 'config' do container ainda não existe — config() lançaria
+            # exceção. env() direto é intencional e seguro aqui.
+            message: '#Called ''env'' outside of the config directory#'
+            path: bootstrap/app.php

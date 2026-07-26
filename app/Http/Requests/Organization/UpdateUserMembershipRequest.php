@@ -37,8 +37,8 @@ class UpdateUserMembershipRequest extends FormRequest
             ],
             'admin_note' => ['sometimes', 'nullable', 'string', 'max:255'],
             'unit_ids' => ['sometimes', 'array'],
-            'unit_ids.*' => ['string', 'exists:units,id'],
-            'primary_unit_id' => ['sometimes', 'nullable', 'string'],
+            'unit_ids.*' => ['string', Rule::exists('units', 'id')->where('organization_id', $organizationId)],
+            'primary_unit_id' => ['sometimes', 'nullable', 'string', Rule::exists('units', 'id')->where('organization_id', $organizationId)],
         ];
     }
 }

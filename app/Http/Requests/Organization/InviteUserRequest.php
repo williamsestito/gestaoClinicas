@@ -64,7 +64,7 @@ class InviteUserRequest extends FormRequest
                 new NotOwnerRoleRule,
             ],
             'unit_ids' => ['array'],
-            'unit_ids.*' => ['string', 'exists:units,id'],
+            'unit_ids.*' => ['string', Rule::exists('units', 'id')->where('organization_id', $organization?->id)],
         ];
     }
 }

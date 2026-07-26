@@ -104,6 +104,28 @@ it('blocks a non-owner without site.appointments.manage from updating notes', fu
     ])->assertForbidden();
 });
 
+it('blocks updating the status of an appointment request that belongs to another organization', function () {
+    $user = actingOwnerWithActiveContext();
+    $foreignRequest = AppointmentRequest::factory()->for(Organization::factory()->create())->create();
+
+    $this->actingAs($user)->patch("/settings/site/appointment-requests/{$foreignRequest->id}/status", [
+        'status' => 'contacted',
+    ])->assertNotFound();
+
+    expect($foreignRequest->fresh()->status->value)->toBe('pending');
+});
+
+it('blocks updating the internal notes of an appointment request that belongs to another organization', function () {
+    $user = actingOwnerWithActiveContext();
+    $foreignRequest = AppointmentRequest::factory()->for(Organization::factory()->create())->create(['internal_notes' => null]);
+
+    $this->actingAs($user)->patch("/settings/site/appointment-requests/{$foreignRequest->id}/notes", [
+        'internal_notes' => 'Não deveria conseguir gravar isso',
+    ])->assertNotFound();
+
+    expect($foreignRequest->fresh()->internal_notes)->toBeNull();
+});
+
 it('grants the reception role access to manage appointment requests', function () {
     actingOwnerWithActiveContext();
     $organization = Organization::find(session('active_organization_id'));

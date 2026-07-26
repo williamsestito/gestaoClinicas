@@ -71,7 +71,10 @@ class AppointmentRequestController extends Controller
         UpdateAppointmentRequestStatusRequest $request,
         AppointmentRequest $appointmentRequest,
         AuditLogger $auditLogger,
+        TenantContext $tenant,
     ): RedirectResponse {
+        abort_unless($appointmentRequest->organization_id === $tenant->organization()?->id, 404);
+
         $before = $appointmentRequest->only(['status']);
         $appointmentRequest->update(['status' => $request->validated('status')]);
 
@@ -91,7 +94,10 @@ class AppointmentRequestController extends Controller
         UpdateAppointmentRequestNotesRequest $request,
         AppointmentRequest $appointmentRequest,
         AuditLogger $auditLogger,
+        TenantContext $tenant,
     ): RedirectResponse {
+        abort_unless($appointmentRequest->organization_id === $tenant->organization()?->id, 404);
+
         $before = $appointmentRequest->only(['internal_notes']);
         $appointmentRequest->update(['internal_notes' => $request->validated('internal_notes')]);
 

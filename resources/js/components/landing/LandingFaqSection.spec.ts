@@ -85,4 +85,23 @@ describe('LandingFaqSection', () => {
         expect(content.exists()).toBe(true);
         expect(content.text().replace(/\s+/g, ' ')).toContain('Linha um.');
     });
+
+    it('never renders a malicious question/answer as executable markup', async () => {
+        const scriptPayload = '<script>alert(1)</script>';
+        const imgPayload = '<img src=x onerror=alert(1)>';
+
+        const wrapper = mount(LandingFaqSection, {
+            props: {
+                faqs: [{ id: 1, question: scriptPayload, answer: imgPayload, category: null }],
+            },
+        });
+
+        expect(wrapper.findAll('button')[0].text()).toContain(scriptPayload);
+        expect(wrapper.find('script').exists()).toBe(false);
+
+        await wrapper.find('button').trigger('click');
+
+        expect(wrapper.text()).toContain(imgPayload);
+        expect(wrapper.find('img').exists()).toBe(false);
+    });
 });
