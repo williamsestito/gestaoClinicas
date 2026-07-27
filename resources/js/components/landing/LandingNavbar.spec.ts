@@ -31,7 +31,7 @@ describe('LandingNavbar', () => {
 
         const desktopLink = wrapper.find('nav[aria-label="Seções da página"] a[href="#faq"]');
         expect(desktopLink.exists()).toBe(true);
-        expect(desktopLink.text()).toBe('Perguntas');
+        expect(desktopLink.text()).toBe('Dúvidas');
     });
 
     it('shows the same FAQ link in the mobile menu', async () => {

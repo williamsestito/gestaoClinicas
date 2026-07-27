@@ -41,6 +41,8 @@ type SiteContent = {
     cta_secondary_text: string | null;
     cta_secondary_url: string | null;
     about_text: string | null;
+    mission_text: string | null;
+    vision_text: string | null;
     facebook_url: string | null;
     instagram_url: string | null;
     linkedin_url: string | null;
@@ -85,6 +87,8 @@ const form = useForm({
     cta_secondary_text: props.site?.cta_secondary_text ?? '',
     cta_secondary_url: props.site?.cta_secondary_url ?? '',
     about_text: props.site?.about_text ?? '',
+    mission_text: props.site?.mission_text ?? '',
+    vision_text: props.site?.vision_text ?? '',
     facebook_url: props.site?.facebook_url ?? '',
     instagram_url: props.site?.instagram_url ?? '',
     linkedin_url: props.site?.linkedin_url ?? '',
@@ -362,6 +366,27 @@ function confirmAssetRemoval() {
                 <Label for="about_text">Sobre a clínica</Label>
                 <Textarea id="about_text" v-model="form.about_text" rows="4" />
                 <InputError :message="form.errors.about_text" />
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div class="grid gap-2">
+                    <Label for="mission_text">Missão (opcional)</Label>
+                    <Textarea
+                        id="mission_text"
+                        v-model="form.mission_text"
+                        rows="3"
+                    />
+                    <InputError :message="form.errors.mission_text" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="vision_text">Visão (opcional)</Label>
+                    <Textarea
+                        id="vision_text"
+                        v-model="form.vision_text"
+                        rows="3"
+                    />
+                    <InputError :message="form.errors.vision_text" />
+                </div>
             </div>
 
             <div class="grid gap-4">

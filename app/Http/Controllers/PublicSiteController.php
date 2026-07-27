@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\RecordStatus;
 use App\Models\Organization;
 use App\Models\SiteBenefit;
 use App\Models\SiteFaq;
 use App\Models\SiteGalleryItem;
+use App\Models\SitePartner;
 use App\Models\SiteProfessional;
 use App\Models\SiteService;
 use App\Models\SiteSetting;
@@ -45,6 +47,7 @@ class PublicSiteController extends Controller
             'site' => $site ? [
                 'title' => $site->title,
                 'description' => $site->description,
+                'schema_type_label' => $site->schema_type->label(),
                 'hero_image_url' => $site->hero_image_path
                     ? Storage::disk('public')->url($site->hero_image_path)
                     : null,
@@ -61,6 +64,8 @@ class PublicSiteController extends Controller
                 'cta_secondary_text' => $site->cta_secondary_text,
                 'cta_secondary_url' => $site->cta_secondary_url,
                 'about_text' => $site->about_text,
+                'mission_text' => $site->mission_text,
+                'vision_text' => $site->vision_text,
                 'facebook_url' => $site->facebook_url,
                 'instagram_url' => $site->instagram_url,
                 'linkedin_url' => $site->linkedin_url,
@@ -73,6 +78,8 @@ class PublicSiteController extends Controller
             'gallery' => $site ? $this->activeGallery() : [],
             'testimonials' => $site ? $this->activeTestimonials() : [],
             'faqs' => $site ? $this->activeFaqs() : [],
+            'partners' => $site ? $this->activePartners() : [],
+            'statistics' => $site ? $this->statistics($organization) : [],
             'contact' => $site && $headquarters ? [
                 'name' => $organization->name,
                 'phone' => $headquarters->phone,
@@ -226,6 +233,63 @@ class PublicSiteController extends Controller
                 'answer' => $faq->answer,
                 'category' => $faq->category,
             ])
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function activePartners(): array
+    {
+        return SitePartner::query()
+            ->where('is_active', true)
+            ->orderBy('order')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (SitePartner $partner) => [
+                'id' => $partner->id,
+                'name' => $partner->name,
+                'logo_url' => $partner->logo_path ? Storage::disk('public')->url($partner->logo_path) : null,
+                'url' => $partner->url,
+            ])
+            ->all();
+    }
+
+    /**
+     * Indicadores da faixa "estatísticas" logo abaixo do hero — sempre
+     * calculados a partir de dados reais (nunca um número configurado à
+     * mão). Um indicador só aparece se o valor for maior que zero, para
+     * nunca publicar "0 profissionais" como se fosse um destaque.
+     *
+     * @return array<int, array{value: string, label: string}>
+     */
+    private function statistics(?Organization $organization): array
+    {
+        $professionalsCount = SiteProfessional::query()->where('is_active', true)->count();
+
+        $specialtiesCount = SiteProfessional::query()
+            ->where('is_active', true)
+            ->whereNotNull('specialty')
+            ->distinct()
+            ->count('specialty');
+
+        $servicesCount = SiteService::query()->where('is_active', true)->count();
+
+        $unitsCount = $organization
+            ? $organization->units()->where('status', RecordStatus::Active)->count()
+            : 0;
+
+        $candidates = [
+            ['value' => $professionalsCount, 'label' => $professionalsCount === 1 ? 'Profissional' : 'Profissionais'],
+            ['value' => $specialtiesCount, 'label' => $specialtiesCount === 1 ? 'Especialidade' : 'Especialidades'],
+            ['value' => $servicesCount, 'label' => $servicesCount === 1 ? 'Serviço oferecido' : 'Serviços oferecidos'],
+            ['value' => $unitsCount, 'label' => $unitsCount === 1 ? 'Unidade' : 'Unidades'],
+        ];
+
+        return collect($candidates)
+            ->filter(fn (array $stat) => $stat['value'] > 0)
+            ->map(fn (array $stat) => ['value' => (string) $stat['value'], 'label' => $stat['label']])
+            ->values()
             ->all();
     }
 }

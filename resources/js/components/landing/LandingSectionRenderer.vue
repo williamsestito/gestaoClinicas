@@ -6,9 +6,11 @@ import type {
     PublicContact,
     PublicFaq,
     PublicGalleryItem,
+    PublicPartner,
     PublicProfessional,
     PublicService,
     PublicSiteContent,
+    PublicStatistic,
     PublicTestimonial,
 } from '@/types/site';
 
@@ -22,6 +24,8 @@ const props = defineProps<{
     gallery: PublicGalleryItem[];
     testimonials: PublicTestimonial[];
     faqs: PublicFaq[];
+    partners: PublicPartner[];
+    statistics: PublicStatistic[];
     schedulingActive: boolean;
 }>();
 
@@ -37,7 +41,7 @@ const SECTION_COMPONENTS: Record<
         component: defineAsyncComponent(
             () => import('@/components/landing/LandingHeroSection.vue'),
         ),
-        props: () => ({ site: props.site }),
+        props: () => ({ site: props.site, benefits: props.benefits }),
     },
     benefits: {
         component: defineAsyncComponent(
@@ -49,7 +53,7 @@ const SECTION_COMPONENTS: Record<
         component: defineAsyncComponent(
             () => import('@/components/landing/LandingAboutSection.vue'),
         ),
-        props: () => ({ site: props.site }),
+        props: () => ({ site: props.site, benefits: props.benefits }),
     },
     services: {
         component: defineAsyncComponent(
@@ -103,6 +107,18 @@ const SECTION_COMPONENTS: Record<
             () => import('@/components/landing/LandingFaqSection.vue'),
         ),
         props: () => ({ faqs: props.faqs }),
+    },
+    statistics: {
+        component: defineAsyncComponent(
+            () => import('@/components/landing/LandingStatisticsSection.vue'),
+        ),
+        props: () => ({ statistics: props.statistics }),
+    },
+    partners: {
+        component: defineAsyncComponent(
+            () => import('@/components/landing/LandingPartnersSection.vue'),
+        ),
+        props: () => ({ partners: props.partners }),
     },
 };
 

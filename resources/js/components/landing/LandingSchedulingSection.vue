@@ -24,7 +24,14 @@ defineProps<{
     services: PublicService[];
 }>();
 
-const { selectedServiceId } = useLandingScheduling();
+const { selectedServiceId, selectedProfessionalName } = useLandingScheduling();
+
+const STEPS = [
+    { title: 'Escolha o serviço', description: 'Selecione o tratamento de interesse (opcional).' },
+    { title: 'Preencha seus dados', description: 'Nome e telefone/WhatsApp para contato.' },
+    { title: 'Indique sua preferência', description: 'Data e período aproximados — não é uma reserva.' },
+    { title: 'Aguarde a confirmação', description: 'Nossa equipe confirma o horário pelo telefone ou WhatsApp.' },
+];
 
 const PERIOD_OPTIONS = ['Manhã', 'Tarde', 'Noite'];
 
@@ -104,6 +111,20 @@ watch(
     { immediate: true },
 );
 
+// Não há seleção real de profissional no formulário (só o serviço tem
+// coluna própria em `appointment_requests`) — clicar em "Agendar" num
+// profissional só preenche as observações, sem sobrescrever o que a
+// pessoa já tiver escrito.
+watch(
+    selectedProfessionalName,
+    (name) => {
+        if (name && !form.notes) {
+            form.notes = `Gostaria de agendar com ${name}.`;
+        }
+    },
+    { immediate: true },
+);
+
 function submit() {
     // form.recentlySuccessful já protege contra clique duplo (botão fica
     // desabilitado enquanto form.processing é true).
@@ -120,6 +141,7 @@ function submit() {
         class="mx-auto max-w-2xl scroll-mt-16 px-4 py-16 sm:px-6"
     >
         <div class="mb-8 text-center">
+            <p class="landing-eyebrow mb-2">Como funciona</p>
             <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
                 Agende sua avaliação
             </h2>
@@ -128,6 +150,29 @@ function submit() {
                 melhor horário.
             </p>
         </div>
+
+        <ol class="mb-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <li
+                v-for="(step, index) in STEPS"
+                :key="step.title"
+                class="flex flex-col items-center gap-2 text-center"
+            >
+                <span
+                    class="flex size-10 items-center justify-center rounded-full text-lg font-semibold"
+                    style="
+                        font-family: var(--landing-font-title);
+                        background-color: var(--landing-accent-soft);
+                        color: var(--landing-primary);
+                    "
+                >
+                    {{ index + 1 }}
+                </span>
+                <p class="text-sm font-medium">{{ step.title }}</p>
+                <p class="text-xs text-muted-foreground">
+                    {{ step.description }}
+                </p>
+            </li>
+        </ol>
 
         <div
             v-if="form.recentlySuccessful"

@@ -64,7 +64,9 @@ beforeEach(() => {
     formState.processing = false;
     formState.recentlySuccessful = false;
     formState.service_id = null;
+    formState.notes = '';
     useLandingScheduling().selectedServiceId.value = null;
+    useLandingScheduling().selectedProfessionalName.value = null;
 });
 
 describe('LandingSchedulingSection', () => {
@@ -138,6 +140,24 @@ describe('LandingSchedulingSection', () => {
         });
 
         expect(wrapper.text()).toContain('não garante reserva');
+    });
+
+    it('shows the four-step explainer of how the request flow works', () => {
+        const wrapper = mount(LandingSchedulingSection, {
+            props: { services: [] },
+        });
+
+        expect(wrapper.findAll('ol > li')).toHaveLength(4);
+        expect(wrapper.text()).toContain('Escolha o serviço');
+        expect(wrapper.text()).toContain('Aguarde a confirmação');
+    });
+
+    it('prefills the notes with the professional chosen on the team section, without overwriting existing notes', () => {
+        useLandingScheduling().selectedProfessionalName.value = 'Dra. Ana';
+
+        mount(LandingSchedulingSection, { props: { services: [] } });
+
+        expect(formState.notes).toBe('Gostaria de agendar com Dra. Ana.');
     });
 
     it('captures utm parameters and the referrer when the form is submitted', () => {

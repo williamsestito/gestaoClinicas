@@ -12,6 +12,7 @@ use App\Models\Role;
 use App\Models\SiteBenefit;
 use App\Models\SiteFaq;
 use App\Models\SiteGalleryItem;
+use App\Models\SitePartner;
 use App\Models\SiteProfessional;
 use App\Models\SiteService;
 use App\Models\SiteSetting;
@@ -106,6 +107,7 @@ class AppServiceProvider extends ServiceProvider
             'site_service' => SiteService::class,
             'site_professional' => SiteProfessional::class,
             'site_gallery_item' => SiteGalleryItem::class,
+            'site_partner' => SitePartner::class,
             'site_testimonial' => SiteTestimonial::class,
             'site_faq' => SiteFaq::class,
             'appointment_request' => AppointmentRequest::class,

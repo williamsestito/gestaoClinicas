@@ -43,6 +43,8 @@ class SiteContentController extends Controller
                 'cta_secondary_text' => $siteSetting->cta_secondary_text,
                 'cta_secondary_url' => $siteSetting->cta_secondary_url,
                 'about_text' => $siteSetting->about_text,
+                'mission_text' => $siteSetting->mission_text,
+                'vision_text' => $siteSetting->vision_text,
                 'facebook_url' => $siteSetting->facebook_url,
                 'instagram_url' => $siteSetting->instagram_url,
                 'linkedin_url' => $siteSetting->linkedin_url,

@@ -38,6 +38,8 @@ class UpdateSiteContentRequest extends FormRequest
             'cta_secondary_text' => ['nullable', 'string', 'max:60'],
             'cta_secondary_url' => ['nullable', 'url:http,https', 'max:255'],
             'about_text' => ['nullable', 'string', 'max:2000'],
+            'mission_text' => ['nullable', 'string', 'max:600'],
+            'vision_text' => ['nullable', 'string', 'max:600'],
             'facebook_url' => ['nullable', 'url:http,https', 'max:255'],
             'instagram_url' => ['nullable', 'url:http,https', 'max:255'],
             'linkedin_url' => ['nullable', 'url:http,https', 'max:255'],

@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import { Link2, User } from '@lucide/vue';
+import { Button } from '@/components/ui/button';
+import { useLandingScheduling } from '@/composables/useLandingScheduling';
 import type { PublicProfessional } from '@/types/site';
 
 defineProps<{
     professionals: PublicProfessional[];
 }>();
+
+const { selectedProfessionalName } = useLandingScheduling();
+
+function selectProfessional(name: string) {
+    selectedProfessionalName.value = name;
+}
 </script>
 
 <template>
@@ -14,27 +22,28 @@ defineProps<{
         class="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6"
     >
         <div class="mx-auto mb-10 max-w-2xl text-center">
+            <p class="landing-eyebrow mb-2">Quem cuida de você</p>
             <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
                 Nossa equipe
             </h2>
         </div>
 
-        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div
                 v-for="professional in professionals"
                 :key="professional.id"
-                class="rounded-2xl border border-border bg-card p-6 text-center shadow-sm"
+                class="flex flex-col items-center rounded-(--landing-radius-md) border border-border bg-card p-6 text-center shadow-sm"
             >
                 <img
                     v-if="professional.photo_url"
                     :src="professional.photo_url"
                     :alt="professional.name"
                     loading="lazy"
-                    class="mx-auto size-24 rounded-full object-cover"
+                    class="size-24 rounded-full object-cover"
                 />
                 <div
                     v-else
-                    class="mx-auto flex size-24 items-center justify-center rounded-full bg-muted text-muted-foreground"
+                    class="flex size-24 items-center justify-center rounded-full bg-muted text-muted-foreground"
                 >
                     <User class="size-10" />
                 </div>
@@ -42,6 +51,12 @@ defineProps<{
                 <h3 class="mt-4 font-semibold">{{ professional.name }}</h3>
                 <p v-if="professional.role_title" class="text-sm text-primary">
                     {{ professional.role_title }}
+                </p>
+                <p
+                    v-if="professional.specialty"
+                    class="text-sm text-muted-foreground"
+                >
+                    {{ professional.specialty }}
                 </p>
                 <p
                     v-if="professional.professional_register"
@@ -95,6 +110,16 @@ defineProps<{
                         <Link2 class="size-4" />
                     </a>
                 </div>
+
+                <a
+                    href="#scheduling"
+                    class="mt-4 w-full"
+                    @click="selectProfessional(professional.name)"
+                >
+                    <Button class="w-full rounded-full" variant="outline">
+                        Agendar
+                    </Button>
+                </a>
             </div>
         </div>
     </section>

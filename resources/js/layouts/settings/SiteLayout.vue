@@ -8,6 +8,7 @@ import { index as indexAppointmentRequests } from '@/routes/settings/site/appoin
 import { index as indexBenefits } from '@/routes/settings/site/benefits';
 import { index as indexFaq } from '@/routes/settings/site/faq';
 import { index as indexGallery } from '@/routes/settings/site/gallery';
+import { index as indexPartners } from '@/routes/settings/site/partners';
 import { index as indexProfessionals } from '@/routes/settings/site/professionals';
 import { edit as editSections } from '@/routes/settings/site/sections';
 import { index as indexServices } from '@/routes/settings/site/services';
@@ -22,6 +23,7 @@ const siteNavItems: NavItem[] = [
     { title: 'Equipe', href: indexProfessionals() },
     { title: 'Galeria', href: indexGallery() },
     { title: 'Depoimentos', href: indexTestimonials() },
+    { title: 'Convênios', href: indexPartners() },
     { title: 'FAQ', href: indexFaq() },
     { title: 'Agendamentos', href: indexAppointmentRequests() },
 ];

@@ -2,6 +2,15 @@
 
 @import 'tw-animate-css';
 
+/* Tipografia da landing pública (self-hosted, sem CDN externo — respeita a
+   CSP existente, que só libera font-src 'self'). */
+@import '@fontsource/playfair-display/500.css';
+@import '@fontsource/playfair-display/600.css';
+@import '@fontsource/playfair-display/700.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
@@ -172,5 +181,89 @@
         html {
             scroll-behavior: smooth;
         }
+    }
+}
+
+/*
+  Identidade visual da página pública (landing): editorial, tons claros,
+  verde escuro de destaque, tipografia serifada nos títulos — deliberadamente
+  independente do tema claro/escuro do painel administrativo (site
+  institucional, não um dashboard). Sobrescreve as MESMAS variáveis
+  semânticas do shadcn (--background, --foreground, --primary...) já usadas
+  em todos os componentes de `components/landing/`, então nenhuma classe
+  Tailwind precisa mudar — só o valor por trás dela.
+
+  `--landing-primary`/`--landing-primary-dark` podem ser sobrescritos por
+  estilo inline (ver Welcome.vue/Gallery.vue) com as cores cadastradas pela
+  clínica; os valores abaixo são só o fallback.
+*/
+.landing-theme {
+    --landing-background: #f7f5f1;
+    --landing-surface: #ffffff;
+    --landing-primary: #2f7464;
+    --landing-primary-dark: #22594d;
+    --landing-text: #253330;
+    --landing-text-muted: #6f7773;
+    --landing-border: #dedfd9;
+    --landing-accent-soft: #e9f0ec;
+    --landing-radius-sm: 12px;
+    --landing-radius-md: 20px;
+    --landing-radius-lg: 32px;
+    --landing-shadow-soft: 0 12px 40px rgba(37, 51, 48, 0.08);
+    --landing-container: 1360px;
+    --landing-font-title: 'Playfair Display', Georgia, serif;
+    --landing-font-body:
+        'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji';
+
+    --background: var(--landing-background);
+    --foreground: var(--landing-text);
+    --card: var(--landing-surface);
+    --card-foreground: var(--landing-text);
+    --popover: var(--landing-surface);
+    --popover-foreground: var(--landing-text);
+    --primary: var(--landing-primary);
+    --primary-foreground: #ffffff;
+    --secondary: var(--landing-accent-soft);
+    --secondary-foreground: var(--landing-text);
+    --muted: var(--landing-accent-soft);
+    --muted-foreground: var(--landing-text-muted);
+    --accent: var(--landing-accent-soft);
+    --accent-foreground: var(--landing-text);
+    --border: var(--landing-border);
+    --input: var(--landing-border);
+    --ring: var(--landing-primary);
+    --radius: var(--landing-radius-sm);
+
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--landing-font-body);
+}
+
+.landing-theme h1,
+.landing-theme h2,
+.landing-theme h3 {
+    font-family: var(--landing-font-title);
+    letter-spacing: -0.01em;
+}
+
+.landing-eyebrow {
+    font-family: var(--landing-font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--landing-primary);
+}
+
+/* Sobre a imagem do hero (fundo escuro, só a partir do md — no mobile o
+   banner fica numa caixa própria abaixo do texto, sem overlay) o eyebrow
+   não pode usar a cor de destaque normal — baixo contraste. Ambas as
+   classes são CSS simples (fora de qualquer @layer), então a ordem de
+   declaração é quem decide, não a especificidade: esta regra, vindo
+   depois, sempre vence quando as duas classes estão no mesmo elemento. */
+@media (width >= 48rem) {
+    .landing-eyebrow--on-image {
+        color: rgb(255 255 255 / 80%);
     }
 }

@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
-import type { PublicContact, PublicSiteContent } from '@/types/site';
+import { LANDING_NAV_LABELS } from '@/lib/landing-nav';
+import type { LandingSectionType, PublicContact, PublicSiteContent } from '@/types/site';
 
 const props = defineProps<{
     site: PublicSiteContent;
     contact: PublicContact | null;
+    activeTypes?: LandingSectionType[];
 }>();
+
+const navLinks = computed(() =>
+    (props.activeTypes ?? [])
+        .filter((type): type is keyof typeof LANDING_NAV_LABELS => type in LANDING_NAV_LABELS)
+        .map((type) => ({ type, label: LANDING_NAV_LABELS[type]! })),
+);
 
 const socialLinks = computed(() =>
     [
@@ -22,7 +30,7 @@ const currentYear = new Date().getFullYear();
 <template>
     <footer class="border-t border-border bg-muted/30">
         <div
-            class="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3"
+            class="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-4"
         >
             <div class="space-y-3">
                 <div class="flex items-center gap-2 font-semibold">
@@ -45,7 +53,42 @@ const currentYear = new Date().getFullYear();
                 >
                     {{ site.description }}
                 </p>
+
+                <nav
+                    v-if="socialLinks.length > 0"
+                    aria-label="Redes sociais"
+                    class="flex gap-3 pt-1 text-sm"
+                >
+                    <a
+                        v-for="link in socialLinks"
+                        :key="link.label"
+                        :href="link.url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                    >
+                        {{ link.label }}
+                    </a>
+                </nav>
             </div>
+
+            <nav
+                v-if="navLinks.length > 0"
+                aria-label="Navegação do rodapé"
+                class="space-y-2 text-sm"
+            >
+                <p class="font-medium text-foreground">Navegação</p>
+                <ul class="space-y-1">
+                    <li v-for="link in navLinks" :key="link.type">
+                        <a
+                            :href="`#${link.type}`"
+                            class="text-muted-foreground hover:text-foreground"
+                        >
+                            {{ link.label }}
+                        </a>
+                    </li>
+                </ul>
+            </nav>
 
             <div v-if="contact" class="space-y-2 text-sm text-muted-foreground">
                 <p class="font-medium text-foreground">Contato</p>
@@ -57,25 +100,16 @@ const currentYear = new Date().getFullYear();
                 </p>
             </div>
 
-            <nav
-                v-if="socialLinks.length > 0"
-                aria-label="Redes sociais"
-                class="space-y-2 text-sm"
-            >
-                <p class="font-medium">Redes sociais</p>
-                <ul class="space-y-1">
-                    <li v-for="link in socialLinks" :key="link.label">
-                        <a
-                            :href="link.url"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                        >
-                            {{ link.label }}
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+            <div class="space-y-2 text-sm text-muted-foreground">
+                <p class="font-medium text-foreground">Legal</p>
+                <p>© {{ currentYear }} {{ site.title }}</p>
+                <p class="text-xs">
+                    Site gerenciado via
+                    <span class="font-medium text-foreground"
+                        >Gestão de Clínicas</span
+                    >
+                </p>
+            </div>
         </div>
 
         <div

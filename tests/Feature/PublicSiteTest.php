@@ -8,11 +8,13 @@ use App\Models\Organization;
 use App\Models\SiteBenefit;
 use App\Models\SiteFaq;
 use App\Models\SiteGalleryItem;
+use App\Models\SitePartner;
 use App\Models\SiteProfessional;
 use App\Models\SiteService;
 use App\Models\SiteSetting;
 use App\Models\SiteTestimonial;
 use App\Models\Unit;
+use App\Support\Site\LandingSections;
 
 it('renders the Welcome page in the pending-setup state when no organization exists yet', function () {
     $this->get('/')
@@ -96,6 +98,8 @@ it('exposes empty collections and no contact when the site is not published', fu
             ->where('sections', [])
             ->where('benefits', [])
             ->where('services', [])
+            ->where('partners', [])
+            ->where('statistics', [])
             ->where('contact', null)
         );
 });
@@ -115,10 +119,11 @@ it('exposes active benefits, services, professionals, gallery, testimonials and 
     SiteGalleryItem::factory()->create(['caption' => 'Foto ativa', 'is_active' => true]);
     SiteTestimonial::factory()->create(['author_name' => 'Cliente ativo', 'is_active' => true]);
     SiteFaq::factory()->create(['question' => 'Pergunta ativa', 'is_active' => true]);
+    SitePartner::factory()->create(['name' => 'Parceiro ativo', 'is_active' => true]);
 
     $this->get('/')
         ->assertInertia(fn ($page) => $page
-            ->has('sections', 11)
+            ->has('sections', count(LandingSections::TYPES))
             ->has('benefits', 1)
             ->where('benefits.0.title', 'Ativo')
             ->has('services', 1)
@@ -126,6 +131,11 @@ it('exposes active benefits, services, professionals, gallery, testimonials and 
             ->has('gallery', 1)
             ->has('testimonials', 1)
             ->has('faqs', 1)
+            ->has('partners', 1)
+            ->where('partners.0.name', 'Parceiro ativo')
+            // 1 profissional (com especialidade), 1 serviço, 1 unidade matriz — 4 indicadores reais.
+            ->has('statistics', 4)
+            ->where('statistics.0', ['value' => '1', 'label' => 'Profissional'])
             ->where('contact.phone', '(47) 3222-1122')
         );
 });
@@ -173,5 +183,44 @@ it('orders public faqs by the order field, breaking ties by id', function () {
             ->where('faqs.0.question', $first->question)
             ->where('faqs.1.question', $second->question)
             ->where('faqs.2.question', $tieBreakerOlder->question)
+        );
+});
+
+it('never fabricates a statistic — only counts that are actually greater than zero appear', function () {
+    Organization::factory()->create();
+    SiteSetting::factory()->create();
+    // Nenhum profissional, serviço ou unidade cadastrado além do que o
+    // factory de Organization já cria por padrão (nenhuma unidade).
+
+    $this->get('/')
+        ->assertInertia(fn ($page) => $page->where('statistics', []));
+});
+
+it('uses the singular label when a statistic equals exactly one', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+    SiteSetting::factory()->create();
+
+    SiteProfessional::factory()->create(['specialty' => null]);
+
+    $this->get('/')
+        ->assertInertia(fn ($page) => $page
+            ->where('statistics', [
+                ['value' => '1', 'label' => 'Profissional'],
+                ['value' => '1', 'label' => 'Unidade'],
+            ])
+        );
+});
+
+it('uses the plural label once a statistic is greater than one', function () {
+    Organization::factory()->create();
+    SiteSetting::factory()->create();
+
+    SiteProfessional::factory()->count(2)->create(['specialty' => null]);
+
+    $this->get('/')
+        ->assertInertia(fn ($page) => $page
+            ->where('statistics.0', ['value' => '2', 'label' => 'Profissionais'])
         );
 });

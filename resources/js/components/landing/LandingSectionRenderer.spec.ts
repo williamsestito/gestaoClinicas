@@ -4,6 +4,8 @@ import LandingBenefitsSection from '@/components/landing/LandingBenefitsSection.
 import LandingContactSection from '@/components/landing/LandingContactSection.vue';
 import LandingFaqSection from '@/components/landing/LandingFaqSection.vue';
 import LandingHeroSection from '@/components/landing/LandingHeroSection.vue';
+import LandingPartnersSection from '@/components/landing/LandingPartnersSection.vue';
+import LandingStatisticsSection from '@/components/landing/LandingStatisticsSection.vue';
 import type { LandingSectionType, PublicSiteContent } from '@/types/site';
 import LandingSectionRenderer from './LandingSectionRenderer.vue';
 
@@ -11,6 +13,7 @@ function makeSite(): PublicSiteContent {
     return {
         title: 'Clínica Essenza',
         description: null,
+        schema_type_label: null,
         hero_image_url: null,
         hero_image_mobile_url: null,
         logo_url: null,
@@ -21,6 +24,8 @@ function makeSite(): PublicSiteContent {
         cta_secondary_text: null,
         cta_secondary_url: null,
         about_text: null,
+        mission_text: null,
+        vision_text: null,
         facebook_url: null,
         instagram_url: null,
         linkedin_url: null,
@@ -40,6 +45,8 @@ const stubs = {
     LandingSchedulingSection: true,
     LandingContactSection: true,
     LandingFaqSection: true,
+    LandingStatisticsSection: true,
+    LandingPartnersSection: true,
 };
 
 async function mountRenderer(
@@ -57,6 +64,8 @@ async function mountRenderer(
             gallery: [],
             testimonials: [],
             faqs: [],
+            partners: [],
+            statistics: [],
             schedulingActive: false,
             ...extra,
         },
@@ -135,6 +144,26 @@ describe('LandingSectionRenderer', () => {
 
         expect(
             wrapper.findComponent(LandingFaqSection).props('faqs'),
+        ).toHaveLength(1);
+    });
+
+    it('renders the statistics component with the statistics list', async () => {
+        const wrapper = await mountRenderer('statistics', {
+            statistics: [{ value: '5', label: 'Profissionais' }],
+        });
+
+        expect(
+            wrapper.findComponent(LandingStatisticsSection).props('statistics'),
+        ).toHaveLength(1);
+    });
+
+    it('renders the partners component with the partners list', async () => {
+        const wrapper = await mountRenderer('partners', {
+            partners: [{ id: 1, name: 'Convênio X', logo_url: null, url: null }],
+        });
+
+        expect(
+            wrapper.findComponent(LandingPartnersSection).props('partners'),
         ).toHaveLength(1);
     });
 });

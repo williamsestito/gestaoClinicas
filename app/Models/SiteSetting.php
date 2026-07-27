@@ -37,6 +37,8 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $cta_text
  * @property string|null $cta_url
  * @property string|null $about_text
+ * @property string|null $mission_text
+ * @property string|null $vision_text
  * @property string|null $facebook_url
  * @property string|null $instagram_url
  * @property string|null $linkedin_url
@@ -88,6 +90,8 @@ class SiteSetting extends Model
         'cta_text',
         'cta_url',
         'about_text',
+        'mission_text',
+        'vision_text',
         'facebook_url',
         'instagram_url',
         'linkedin_url',

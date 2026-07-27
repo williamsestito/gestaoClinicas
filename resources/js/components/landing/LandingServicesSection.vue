@@ -1,15 +1,38 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useLandingScheduling } from '@/composables/useLandingScheduling';
 import type { PublicService } from '@/types/site';
 
-defineProps<{
+const props = defineProps<{
     services: PublicService[];
 }>();
 
 const { selectedServiceId } = useLandingScheduling();
+
+const ALL_CATEGORIES = 'Todos';
+const activeCategory = ref(ALL_CATEGORIES);
+
+// Categorias vêm só dos serviços realmente cadastrados — nunca uma lista
+// fixa (ex.: "Estética", "Odontologia"), já que cada clínica define as
+// suas livremente no campo `category` de cada serviço.
+const categories = computed(() => {
+    const found = new Set(
+        props.services.map((service) => service.category).filter((c): c is string => Boolean(c)),
+    );
+
+    return found.size > 0 ? [ALL_CATEGORIES, ...found] : [];
+});
+
+const filteredServices = computed(() => {
+    if (activeCategory.value === ALL_CATEGORIES) {
+        return props.services;
+    }
+
+    return props.services.filter((service) => service.category === activeCategory.value);
+});
 
 function formatPrice(cents: number | null): string | null {
     if (cents === null) {
@@ -34,16 +57,41 @@ function selectService(id: number) {
         class="mx-auto max-w-6xl scroll-mt-16 px-4 py-16 sm:px-6"
     >
         <div class="mx-auto mb-10 max-w-2xl text-center">
+            <p class="landing-eyebrow mb-2">O que oferecemos</p>
             <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
                 Serviços e tratamentos
             </h2>
         </div>
 
+        <div
+            v-if="categories.length > 1"
+            class="mb-8 flex justify-start gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:justify-center [&::-webkit-scrollbar]:hidden"
+            role="tablist"
+            aria-label="Filtrar serviços por categoria"
+        >
+            <button
+                v-for="category in categories"
+                :key="category"
+                type="button"
+                role="tab"
+                :aria-selected="activeCategory === category"
+                class="shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
+                :class="
+                    activeCategory === category
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border text-muted-foreground hover:text-foreground'
+                "
+                @click="activeCategory = category"
+            >
+                {{ category }}
+            </button>
+        </div>
+
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <Card
-                v-for="service in services"
+                v-for="service in filteredServices"
                 :key="service.id"
-                class="flex flex-col overflow-hidden py-0"
+                class="flex flex-col overflow-hidden rounded-(--landing-radius-md) py-0"
             >
                 <img
                     v-if="service.image_url"
@@ -85,7 +133,7 @@ function selectService(id: number) {
                         class="mt-auto pt-3"
                         @click="selectService(service.id)"
                     >
-                        <Button class="w-full" variant="outline">
+                        <Button class="w-full rounded-full" variant="outline">
                             {{ service.cta_text || 'Agendar' }}
                         </Button>
                     </a>

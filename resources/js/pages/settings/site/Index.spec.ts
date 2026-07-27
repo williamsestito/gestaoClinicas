@@ -42,6 +42,8 @@ function baseSite() {
         cta_secondary_text: null,
         cta_secondary_url: null,
         about_text: null,
+        mission_text: null,
+        vision_text: null,
         facebook_url: null,
         instagram_url: null,
         linkedin_url: null,

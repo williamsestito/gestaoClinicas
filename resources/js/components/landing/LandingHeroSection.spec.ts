@@ -12,6 +12,7 @@ function makeSite(overrides: Partial<PublicSiteContent> = {}): PublicSiteContent
     return {
         title: 'Clínica Essenza',
         description: 'Cuidado que você merece.',
+        schema_type_label: null,
         hero_image_url: null,
         hero_image_mobile_url: null,
         logo_url: null,
@@ -22,6 +23,8 @@ function makeSite(overrides: Partial<PublicSiteContent> = {}): PublicSiteContent
         cta_secondary_text: null,
         cta_secondary_url: null,
         about_text: null,
+        mission_text: null,
+        vision_text: null,
         facebook_url: null,
         instagram_url: null,
         linkedin_url: null,
@@ -71,5 +74,48 @@ describe('LandingHeroSection', () => {
 
         expect(wrapper.find('source').exists()).toBe(false);
         expect(wrapper.find('img').attributes('src')).toBe('/storage/hero-desktop.jpg');
+    });
+
+    it('shows the eyebrow badge when the site has a schema type label', () => {
+        const wrapper = mount(LandingHeroSection, {
+            props: { site: makeSite({ schema_type_label: 'Clínica médica' }) },
+        });
+
+        expect(wrapper.text()).toContain('Clínica médica');
+    });
+
+    it('does not show an eyebrow badge when there is no schema type label', () => {
+        const wrapper = mount(LandingHeroSection, {
+            props: { site: makeSite() },
+        });
+
+        expect(wrapper.find('.landing-eyebrow').exists()).toBe(false);
+    });
+
+    it('shows up to three quick highlights reused from the benefits list', () => {
+        const wrapper = mount(LandingHeroSection, {
+            props: {
+                site: makeSite(),
+                benefits: [
+                    { id: 1, icon: null, title: 'Atendimento humanizado', description: null },
+                    { id: 2, icon: null, title: 'Agenda online', description: null },
+                    { id: 3, icon: null, title: 'Equipe integrada', description: null },
+                    { id: 4, icon: null, title: 'Não deveria aparecer', description: null },
+                ],
+            },
+        });
+
+        const items = wrapper.findAll('li');
+        expect(items).toHaveLength(3);
+        expect(wrapper.text()).toContain('Atendimento humanizado');
+        expect(wrapper.text()).not.toContain('Não deveria aparecer');
+    });
+
+    it('does not render the highlights list when there are no benefits', () => {
+        const wrapper = mount(LandingHeroSection, {
+            props: { site: makeSite(), benefits: [] },
+        });
+
+        expect(wrapper.find('ul').exists()).toBe(false);
     });
 });

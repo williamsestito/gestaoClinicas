@@ -14,6 +14,7 @@ use App\Http\Controllers\Organization\SiteBenefitController;
 use App\Http\Controllers\Organization\SiteContentController;
 use App\Http\Controllers\Organization\SiteFaqController;
 use App\Http\Controllers\Organization\SiteGalleryItemController;
+use App\Http\Controllers\Organization\SitePartnerController;
 use App\Http\Controllers\Organization\SiteProfessionalController;
 use App\Http\Controllers\Organization\SiteSectionsController;
 use App\Http\Controllers\Organization\SiteServiceController;
@@ -192,6 +193,7 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
             'gallery' => [SiteGalleryItemController::class, 'siteGalleryItem'],
             'testimonials' => [SiteTestimonialController::class, 'siteTestimonial'],
             'faq' => [SiteFaqController::class, 'siteFaq'],
+            'partners' => [SitePartnerController::class, 'sitePartner'],
         ] as $segment => [$controller, $param]) {
             Route::get("settings/site/{$segment}", [$controller, 'index'])
                 ->name("settings.site.{$segment}.index");

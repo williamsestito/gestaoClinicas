@@ -16,16 +16,18 @@ final class LandingSections
     /** @var list<string> */
     public const TYPES = [
         'hero',
-        'benefits',
+        'statistics',
         'about',
         'services',
         'professionals',
+        'benefits',
         'gallery',
         'testimonials',
-        'cta',
+        'partners',
         'scheduling',
-        'contact',
+        'cta',
         'faq',
+        'contact',
     ];
 
     /**

@@ -26,6 +26,8 @@ function mountWelcome(
                 LandingNavbar: true,
                 LandingSectionRenderer: true,
                 LandingFooter: true,
+                LandingWhatsappButton: true,
+                LandingCookieConsent: true,
             },
         },
     });
@@ -37,6 +39,7 @@ function makeSite(
     return {
         title: 'Clínica Essenza',
         description: 'Cuidando de você com excelência.',
+        schema_type_label: null,
         hero_image_url: null,
         hero_image_mobile_url: null,
         logo_url: null,
@@ -47,6 +50,8 @@ function makeSite(
         cta_secondary_text: null,
         cta_secondary_url: null,
         about_text: null,
+        mission_text: null,
+        vision_text: null,
         facebook_url: null,
         instagram_url: null,
         linkedin_url: null,

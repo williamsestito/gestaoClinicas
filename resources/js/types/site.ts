@@ -59,6 +59,12 @@ export interface SiteFaq extends SiteCollectionItemBase {
     category: string | null;
 }
 
+export interface SitePartner extends SiteCollectionItemBase {
+    name: string;
+    logo_url: string | null;
+    url: string | null;
+}
+
 export interface SiteServiceOption {
     id: number;
     name: string;
@@ -66,16 +72,18 @@ export interface SiteServiceOption {
 
 export const LANDING_SECTION_TYPES = [
     'hero',
-    'benefits',
+    'statistics',
     'about',
     'services',
     'professionals',
+    'benefits',
     'gallery',
     'testimonials',
-    'cta',
+    'partners',
     'scheduling',
-    'contact',
+    'cta',
     'faq',
+    'contact',
 ] as const;
 
 export type LandingSectionType = (typeof LANDING_SECTION_TYPES)[number];
@@ -87,12 +95,14 @@ export interface LandingSection {
 
 export const LANDING_SECTION_LABELS: Record<LandingSectionType, string> = {
     hero: 'Banner principal',
+    statistics: 'Indicadores',
     benefits: 'Diferenciais',
     about: 'Sobre a clínica',
     services: 'Serviços',
     professionals: 'Equipe',
     gallery: 'Galeria',
     testimonials: 'Depoimentos',
+    partners: 'Convênios e parceiros',
     cta: 'Chamada para ação',
     scheduling: 'Agendamento',
     contact: 'Contato e localização',
@@ -137,6 +147,7 @@ export interface SiteContact {
 export interface PublicSiteContent {
     title: string;
     description: string | null;
+    schema_type_label: string | null;
     hero_image_url: string | null;
     hero_image_mobile_url: string | null;
     logo_url: string | null;
@@ -147,6 +158,8 @@ export interface PublicSiteContent {
     cta_secondary_text: string | null;
     cta_secondary_url: string | null;
     about_text: string | null;
+    mission_text: string | null;
+    vision_text: string | null;
     facebook_url: string | null;
     instagram_url: string | null;
     linkedin_url: string | null;
@@ -227,4 +240,16 @@ export interface PublicFaq {
     question: string;
     answer: string;
     category: string | null;
+}
+
+export interface PublicPartner {
+    id: number;
+    name: string;
+    logo_url: string | null;
+    url: string | null;
+}
+
+export interface PublicStatistic {
+    value: string;
+    label: string;
 }

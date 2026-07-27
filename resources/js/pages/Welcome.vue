@@ -2,9 +2,11 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import LandingCookieConsent from '@/components/landing/LandingCookieConsent.vue';
 import LandingFooter from '@/components/landing/LandingFooter.vue';
 import LandingNavbar from '@/components/landing/LandingNavbar.vue';
 import LandingSectionRenderer from '@/components/landing/LandingSectionRenderer.vue';
+import LandingWhatsappButton from '@/components/landing/LandingWhatsappButton.vue';
 import { Button } from '@/components/ui/button';
 import { dashboard, login, register } from '@/routes';
 import type {
@@ -13,9 +15,11 @@ import type {
     PublicContact,
     PublicFaq,
     PublicGalleryItem,
+    PublicPartner,
     PublicProfessional,
     PublicService,
     PublicSiteContent,
+    PublicStatistic,
     PublicTestimonial,
 } from '@/types/site';
 
@@ -30,6 +34,8 @@ const props = withDefaults(
         gallery?: PublicGalleryItem[];
         testimonials?: PublicTestimonial[];
         faqs?: PublicFaq[];
+        partners?: PublicPartner[];
+        statistics?: PublicStatistic[];
         contact?: PublicContact | null;
     }>(),
     {
@@ -41,9 +47,18 @@ const props = withDefaults(
         gallery: () => [],
         testimonials: () => [],
         faqs: () => [],
+        partners: () => [],
+        statistics: () => [],
         contact: null,
     },
 );
+
+// Cores da clínica sobrescrevem os fallbacks de `.landing-theme` (ver
+// resources/css/app.css) só quando cadastradas — nunca um hex fixo aqui.
+const landingThemeStyle = computed(() => ({
+    '--landing-primary': props.site?.primary_color ?? undefined,
+    '--landing-primary-dark': props.site?.secondary_color ?? undefined,
+}));
 
 // Estado "fallback": organização ainda não configurada, ou site existente
 // mas ainda não publicado — em ambos os casos não há conteúdo administrado
@@ -92,6 +107,10 @@ const orderedActiveSections = computed(() =>
                 return props.testimonials.length > 0;
             case 'faq':
                 return props.faqs.length > 0;
+            case 'partners':
+                return props.partners.length > 0;
+            case 'statistics':
+                return props.statistics.length > 0;
             case 'contact':
                 return (
                     props.contact !== null &&
@@ -128,7 +147,7 @@ const schedulingActive = computed(() =>
 
     <div
         v-if="!site"
-        class="flex min-h-screen flex-col bg-background text-foreground"
+        class="landing-theme flex min-h-screen flex-col bg-background text-foreground"
     >
         <header class="flex justify-center px-6 pt-10">
             <div
@@ -189,7 +208,8 @@ const schedulingActive = computed(() =>
 
     <div
         v-else
-        class="flex min-h-screen flex-col bg-background text-foreground"
+        class="landing-theme flex min-h-screen flex-col bg-background text-foreground"
+        :style="landingThemeStyle"
     >
         <LandingNavbar
             :title="site.title"
@@ -210,10 +230,19 @@ const schedulingActive = computed(() =>
                 :gallery="gallery"
                 :testimonials="testimonials"
                 :faqs="faqs"
+                :partners="partners"
+                :statistics="statistics"
                 :scheduling-active="schedulingActive"
             />
         </main>
 
-        <LandingFooter :site="site" :contact="contact" />
+        <LandingFooter
+            :site="site"
+            :contact="contact"
+            :active-types="orderedActiveSections.map((section) => section.type)"
+        />
+
+        <LandingWhatsappButton :contact="contact" />
+        <LandingCookieConsent />
     </div>
 </template>
