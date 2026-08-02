@@ -6,13 +6,18 @@ use App\Enums\AuditAction;
 use App\Enums\OrganizationMembershipStatus;
 use App\Enums\PermissionKey;
 use App\Enums\RecordStatus;
+use App\Enums\Weekday;
 use App\Models\AuditLog;
+use App\Models\LegalEntity;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\Permission;
 use App\Models\Professional;
+use App\Models\ProfessionalUnit;
+use App\Models\ProfessionalWorkingHour;
 use App\Models\Role;
 use App\Models\SiteProfessional;
+use App\Models\Unit;
 use App\Models\User;
 use Database\Factories\LegalEntityFactory;
 use Illuminate\Http\UploadedFile;
@@ -139,6 +144,42 @@ it('never sends the unmasked document in the index or edit inertia props', funct
     $editResponse = $this->actingAs($user)->get("/settings/professionals/{$professional->id}/edit");
     $editResponse->assertInertia(fn ($page) => $page
         ->where('professional.document', fn ($value) => ! str_contains((string) $value, substr($document, 0, 5))));
+});
+
+it('exposes the operational summary on the edit page', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+    $professional = Professional::factory()->for($organization)->create();
+
+    $response = $this->actingAs($user)->get("/settings/professionals/{$professional->id}/edit");
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('operationalSummary.status', 'incomplete')
+        ->where('operationalSummary.is_operational', false)
+        ->where('operationalSummary.active_units_count', 0)
+        ->has('operationalSummary.reasons'));
+});
+
+it('exposes unit, specialty, service and operational filter data on the index page', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+    $legalEntity = LegalEntity::factory()->for($organization)->create();
+    $unit = Unit::factory()->for($organization)->create(['legal_entity_id' => $legalEntity->id, 'status' => RecordStatus::Active]);
+    $professional = Professional::factory()->for($organization)->create(['status' => RecordStatus::Active]);
+    $link = ProfessionalUnit::factory()->for($professional)->create(['organization_id' => $organization->id, 'unit_id' => $unit->id]);
+    ProfessionalWorkingHour::factory()->for($link, 'professionalUnit')->create([
+        'organization_id' => $organization->id,
+        'weekday' => Weekday::Monday,
+    ]);
+
+    $response = $this->actingAs($user)->get('/settings/professionals');
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('professionals.0.unit_names.0', $unit->name)
+        ->where('professionals.0.has_working_hours', true)
+        ->where('professionals.0.operational_status', 'operational')
+        ->has('units')
+        ->has('specialties'));
 });
 
 it('never stores the full document in the audit log', function () {

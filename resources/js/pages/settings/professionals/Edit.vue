@@ -6,7 +6,10 @@ import type {
     EditableProfessional,
     EligibleUser,
 } from '@/components/professionals/ProfessionalForm.vue';
+import ProfessionalOperationalSummary from '@/components/professionals/ProfessionalOperationalSummary.vue';
+import type { OperationalSummary } from '@/components/professionals/ProfessionalOperationalSummary.vue';
 import ProfessionalPhotoUpload from '@/components/professionals/ProfessionalPhotoUpload.vue';
+import ProfessionalTabs from '@/components/professionals/ProfessionalTabs.vue';
 import ProfessionalUserLink from '@/components/professionals/ProfessionalUserLink.vue';
 import { Separator } from '@/components/ui/separator';
 import { dashboard } from '@/routes';
@@ -16,8 +19,10 @@ const props = defineProps<{
     professional: EditableProfessional & {
         photo_url: string | null;
         linked_user: { id: number; name: string } | null;
+        status: 'active' | 'inactive';
     };
     eligibleUsers: EligibleUser[];
+    operationalSummary: OperationalSummary;
 }>();
 
 defineOptions({
@@ -45,6 +50,10 @@ function cancel() {
             :description="`Atualize os dados de ${props.professional.display_name}`"
         />
 
+        <ProfessionalTabs :professional="props.professional" active="general" />
+
+        <ProfessionalOperationalSummary :summary="props.operationalSummary" />
+
         <div class="grid gap-6">
             <div>
                 <h3 class="mb-3 text-sm font-medium">Dados profissionais</h3>
@@ -69,7 +78,7 @@ function cancel() {
 
             <div>
                 <h3 class="mb-1 text-sm font-medium">Usuário vinculado</h3>
-                <p class="mb-3 text-sm text-muted-foreground">
+                <p class="text-muted-foreground mb-3 text-sm">
                     Vínculo opcional — não concede acesso nem permissões por si
                     só.
                 </p>

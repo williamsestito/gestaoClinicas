@@ -2,8 +2,10 @@
 import { Link } from '@inertiajs/vue3';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { edit } from '@/routes/settings/professionals';
+import { index as availabilityIndex } from '@/routes/settings/professionals/availability';
 import { index as servicesIndex } from '@/routes/settings/professionals/services';
 import { index as registrationsIndex } from '@/routes/settings/professionals/specialties';
+import { index as timeBlocksIndex } from '@/routes/settings/professionals/time-blocks';
 import { index as unitsIndex } from '@/routes/settings/professionals/units';
 
 const props = defineProps<{
@@ -12,7 +14,13 @@ const props = defineProps<{
         display_name: string;
         status: 'active' | 'inactive';
     };
-    active: 'general' | 'specialties' | 'units' | 'services';
+    active:
+        | 'general'
+        | 'specialties'
+        | 'units'
+        | 'services'
+        | 'availability'
+        | 'time-blocks';
 }>();
 
 const tabs = [
@@ -35,6 +43,16 @@ const tabs = [
         key: 'services',
         label: 'Serviços executados',
         href: () => servicesIndex(props.professional.id).url,
+    },
+    {
+        key: 'availability',
+        label: 'Jornada e disponibilidade',
+        href: () => availabilityIndex(props.professional.id).url,
+    },
+    {
+        key: 'time-blocks',
+        label: 'Ausências e bloqueios',
+        href: () => timeBlocksIndex(props.professional.id).url,
     },
 ] as const;
 </script>

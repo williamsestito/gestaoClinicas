@@ -47,11 +47,35 @@ export type ProfessionalRow = {
     linked_user_name: string | null;
     deleted_at: string | null;
     updated_at: string;
+    unit_ids: string[];
+    unit_names: string[];
+    specialty_ids: string[];
+    specialty_names: string[];
+    active_services_count: number;
+    has_active_unit: boolean;
+    has_active_specialty: boolean;
+    has_active_service: boolean;
+    has_working_hours: boolean;
+    has_ongoing_absence: boolean;
+    operational_status: 'operational' | 'incomplete' | 'inactive';
+};
+
+export type FilterOption = { id: string; name: string };
+
+const OPERATIONAL_STATUS_LABELS: Record<
+    ProfessionalRow['operational_status'],
+    string
+> = {
+    operational: 'Operacional',
+    incomplete: 'Configuração incompleta',
+    inactive: 'Inativo',
 };
 
 const props = defineProps<{
     professionals: ProfessionalRow[];
     eligibleUsers?: EligibleUser[];
+    units?: FilterOption[];
+    specialties?: FilterOption[];
 }>();
 
 defineOptions({
@@ -68,6 +92,13 @@ const eligibleUserOptions = computed(() => props.eligibleUsers ?? []);
 
 const search = ref('');
 const statusFilter = ref<'all' | 'active' | 'inactive' | 'deleted'>('all');
+const unitFilter = ref('all');
+const specialtyFilter = ref('all');
+const workingHoursFilter = ref<'all' | 'with' | 'without'>('all');
+const ongoingAbsenceFilter = ref(false);
+const operationalStatusFilter = ref<
+    'all' | 'operational' | 'incomplete' | 'inactive'
+>('all');
 
 const indicators = computed(() => ({
     total: props.professionals.length,
@@ -101,7 +132,36 @@ const filteredProfessionals = computed(() => {
                   : !professional.deleted_at &&
                     professional.status === statusFilter.value;
 
-        return matchesSearch && matchesStatus;
+        const matchesUnit =
+            unitFilter.value === 'all' ||
+            professional.unit_ids.includes(unitFilter.value);
+
+        const matchesSpecialty =
+            specialtyFilter.value === 'all' ||
+            professional.specialty_ids.includes(specialtyFilter.value);
+
+        const matchesWorkingHours =
+            workingHoursFilter.value === 'all' ||
+            (workingHoursFilter.value === 'with'
+                ? professional.has_working_hours
+                : !professional.has_working_hours);
+
+        const matchesOngoingAbsence =
+            !ongoingAbsenceFilter.value || professional.has_ongoing_absence;
+
+        const matchesOperationalStatus =
+            operationalStatusFilter.value === 'all' ||
+            professional.operational_status === operationalStatusFilter.value;
+
+        return (
+            matchesSearch &&
+            matchesStatus &&
+            matchesUnit &&
+            matchesSpecialty &&
+            matchesWorkingHours &&
+            matchesOngoingAbsence &&
+            matchesOperationalStatus
+        );
     });
 });
 
@@ -110,7 +170,14 @@ const hasFilteredResults = computed(
     () => filteredProfessionals.value.length > 0,
 );
 const hasActiveFilters = computed(
-    () => search.value.trim() !== '' || statusFilter.value !== 'all',
+    () =>
+        search.value.trim() !== '' ||
+        statusFilter.value !== 'all' ||
+        unitFilter.value !== 'all' ||
+        specialtyFilter.value !== 'all' ||
+        workingHoursFilter.value !== 'all' ||
+        ongoingAbsenceFilter.value ||
+        operationalStatusFilter.value !== 'all',
 );
 
 const sheetOpen = ref(false);
@@ -192,13 +259,13 @@ function formatDate(value: string): string {
         <div v-if="hasAny" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-sm text-muted-foreground">Total</p>
+                    <p class="text-muted-foreground text-sm">Total</p>
                     <p class="text-2xl font-semibold">{{ indicators.total }}</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-sm text-muted-foreground">Ativos</p>
+                    <p class="text-muted-foreground text-sm">Ativos</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.active }}
                     </p>
@@ -206,7 +273,7 @@ function formatDate(value: string): string {
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-sm text-muted-foreground">Inativos</p>
+                    <p class="text-muted-foreground text-sm">Inativos</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.inactive }}
                     </p>
@@ -214,7 +281,7 @@ function formatDate(value: string): string {
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-sm text-muted-foreground">Excluídos</p>
+                    <p class="text-muted-foreground text-sm">Excluídos</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.deleted }}
                     </p>
@@ -228,7 +295,7 @@ function formatDate(value: string): string {
         >
             <div class="relative sm:max-w-xs sm:flex-1">
                 <Search
-                    class="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground"
+                    class="text-muted-foreground pointer-events-none absolute left-2.5 top-2.5 size-4"
                 />
                 <Input
                     v-model="search"
@@ -241,13 +308,69 @@ function formatDate(value: string): string {
             <select
                 v-model="statusFilter"
                 aria-label="Filtrar profissionais por status"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option value="all">Todos</option>
                 <option value="active">Ativos</option>
                 <option value="inactive">Inativos</option>
                 <option value="deleted">Excluídos</option>
             </select>
+
+            <select
+                v-model="unitFilter"
+                aria-label="Filtrar profissionais por unidade"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+            >
+                <option value="all">Todas as unidades</option>
+                <option
+                    v-for="unit in props.units ?? []"
+                    :key="unit.id"
+                    :value="unit.id"
+                >
+                    {{ unit.name }}
+                </option>
+            </select>
+
+            <select
+                v-model="specialtyFilter"
+                aria-label="Filtrar profissionais por especialidade"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+            >
+                <option value="all">Todas as especialidades</option>
+                <option
+                    v-for="specialty in props.specialties ?? []"
+                    :key="specialty.id"
+                    :value="specialty.id"
+                >
+                    {{ specialty.name }}
+                </option>
+            </select>
+
+            <select
+                v-model="workingHoursFilter"
+                aria-label="Filtrar profissionais por jornada"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+            >
+                <option value="all">Com ou sem jornada</option>
+                <option value="with">Com jornada</option>
+                <option value="without">Sem jornada</option>
+            </select>
+
+            <select
+                v-model="operationalStatusFilter"
+                aria-label="Filtrar profissionais por situação operacional"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+            >
+                <option value="all">Qualquer situação operacional</option>
+                <option value="operational">Operacional</option>
+                <option value="incomplete">Configuração incompleta</option>
+                <option value="inactive">Inativo</option>
+            </select>
+
+            <label class="flex items-center gap-2 text-sm">
+                <input v-model="ongoingAbsenceFilter" type="checkbox" />
+                Com ausência em andamento
+            </label>
         </div>
 
         <EmptyState
@@ -272,7 +395,7 @@ function formatDate(value: string): string {
             <div class="hidden overflow-x-auto rounded-md border md:block">
                 <table class="w-full text-sm">
                     <thead
-                        class="border-b bg-muted/50 text-left text-muted-foreground"
+                        class="bg-muted/50 text-muted-foreground border-b text-left"
                     >
                         <tr>
                             <th class="px-4 py-2 font-medium">Profissional</th>
@@ -304,19 +427,19 @@ function formatDate(value: string): string {
                                     />
                                     <UserRound
                                         v-else
-                                        class="size-8 rounded-full border p-1 text-muted-foreground"
+                                        class="text-muted-foreground size-8 rounded-full border p-1"
                                     />
                                     {{ professional.display_name }}
                                 </div>
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 <div>{{ professional.email || '—' }}</div>
                                 <div>{{ professional.phone || '—' }}</div>
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 {{ professional.document || '—' }}
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 {{ professional.linked_user_name || 'Nenhum' }}
                             </td>
                             <td class="px-4 py-3">
@@ -324,8 +447,15 @@ function formatDate(value: string): string {
                                     :status="professional.status"
                                     :deleted-at="professional.deleted_at"
                                 />
+                                <p class="text-muted-foreground mt-1 text-xs">
+                                    {{
+                                        OPERATIONAL_STATUS_LABELS[
+                                            professional.operational_status
+                                        ]
+                                    }}
+                                </p>
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 {{ formatDate(professional.updated_at) }}
                             </td>
                             <td class="px-4 py-3 text-right">
@@ -360,7 +490,7 @@ function formatDate(value: string): string {
                                 />
                                 <UserRound
                                     v-else
-                                    class="size-8 rounded-full border p-1 text-muted-foreground"
+                                    class="text-muted-foreground size-8 rounded-full border p-1"
                                 />
                                 <p class="font-medium">
                                     {{ professional.display_name }}
@@ -381,8 +511,15 @@ function formatDate(value: string): string {
                             :status="professional.status"
                             :deleted-at="professional.deleted_at"
                         />
+                        <p class="text-muted-foreground text-xs">
+                            {{
+                                OPERATIONAL_STATUS_LABELS[
+                                    professional.operational_status
+                                ]
+                            }}
+                        </p>
 
-                        <p class="text-sm text-muted-foreground">
+                        <p class="text-muted-foreground text-sm">
                             {{ professional.email || 'Sem e-mail' }}
                         </p>
                     </CardContent>
@@ -392,7 +529,7 @@ function formatDate(value: string): string {
 
         <p
             v-if="hasAny && hasActiveFilters"
-            class="text-sm text-muted-foreground"
+            class="text-muted-foreground text-sm"
         >
             {{ filteredProfessionals.length }} de
             {{ indicators.total }} profissionais

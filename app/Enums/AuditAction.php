@@ -19,6 +19,8 @@ enum AuditAction: string
     case PrimaryProfessionalSpecialtyChanged = 'primary_professional_specialty_changed';
     case PrimaryProfessionalRegistrationChanged = 'primary_professional_registration_changed';
     case PrimaryProfessionalUnitChanged = 'primary_professional_unit_changed';
+    case Copied = 'copied';
+    case ConflictDetected = 'conflict_detected';
 
     public function label(): string
     {
@@ -36,6 +38,8 @@ enum AuditAction: string
             self::PrimaryProfessionalSpecialtyChanged => 'Troca de especialidade principal do profissional',
             self::PrimaryProfessionalRegistrationChanged => 'Troca de registro profissional principal',
             self::PrimaryProfessionalUnitChanged => 'Troca de unidade principal do profissional',
+            self::Copied => 'Cópia de horários',
+            self::ConflictDetected => 'Conflito detectado (operação bloqueada)',
         };
     }
 }

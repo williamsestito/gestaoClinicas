@@ -12,7 +12,9 @@ use App\Http\Controllers\Organization\ProfessionalController;
 use App\Http\Controllers\Organization\ProfessionalRegistrationController;
 use App\Http\Controllers\Organization\ProfessionalServiceController;
 use App\Http\Controllers\Organization\ProfessionalSpecialtyController;
+use App\Http\Controllers\Organization\ProfessionalTimeBlockController;
 use App\Http\Controllers\Organization\ProfessionalUnitController;
+use App\Http\Controllers\Organization\ProfessionalWorkingHourController;
 use App\Http\Controllers\Organization\RoleController;
 use App\Http\Controllers\Organization\SeoMarketingController;
 use App\Http\Controllers\Organization\ServiceController;
@@ -270,6 +272,40 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
                 ->name('settings.professionals.services.destroy');
             Route::post('settings/professionals/{professional}/services/{professionalService}/restore', [ProfessionalServiceController::class, 'restore'])
                 ->name('settings.professionals.services.restore');
+
+            // Etapa 2.8 — jornada e disponibilidade regular do profissional.
+            Route::get('settings/professionals/{professional}/availability', [ProfessionalController::class, 'availability'])
+                ->name('settings.professionals.availability.index');
+            Route::post('settings/professionals/{professional}/units/{professionalUnit}/working-hours', [ProfessionalWorkingHourController::class, 'store'])
+                ->name('settings.professionals.working-hours.store');
+            Route::post('settings/professionals/{professional}/units/{professionalUnit}/working-hours/copy', [ProfessionalWorkingHourController::class, 'copy'])
+                ->name('settings.professionals.working-hours.copy');
+            Route::put('settings/professionals/{professional}/working-hours/{workingHour}', [ProfessionalWorkingHourController::class, 'update'])
+                ->name('settings.professionals.working-hours.update');
+            Route::patch('settings/professionals/{professional}/working-hours/{workingHour}/activate', [ProfessionalWorkingHourController::class, 'activate'])
+                ->name('settings.professionals.working-hours.activate');
+            Route::patch('settings/professionals/{professional}/working-hours/{workingHour}/deactivate', [ProfessionalWorkingHourController::class, 'deactivate'])
+                ->name('settings.professionals.working-hours.deactivate');
+            Route::delete('settings/professionals/{professional}/working-hours/{workingHour}', [ProfessionalWorkingHourController::class, 'destroy'])
+                ->name('settings.professionals.working-hours.destroy');
+            Route::post('settings/professionals/{professional}/working-hours/{workingHour}/restore', [ProfessionalWorkingHourController::class, 'restore'])
+                ->name('settings.professionals.working-hours.restore');
+
+            // Etapa 2.9 — ausências, folgas e bloqueios do profissional.
+            Route::get('settings/professionals/{professional}/time-blocks', [ProfessionalController::class, 'timeBlocks'])
+                ->name('settings.professionals.time-blocks.index');
+            Route::post('settings/professionals/{professional}/time-blocks', [ProfessionalTimeBlockController::class, 'store'])
+                ->name('settings.professionals.time-blocks.store');
+            Route::put('settings/professionals/{professional}/time-blocks/{timeBlock}', [ProfessionalTimeBlockController::class, 'update'])
+                ->name('settings.professionals.time-blocks.update');
+            Route::patch('settings/professionals/{professional}/time-blocks/{timeBlock}/activate', [ProfessionalTimeBlockController::class, 'activate'])
+                ->name('settings.professionals.time-blocks.activate');
+            Route::patch('settings/professionals/{professional}/time-blocks/{timeBlock}/deactivate', [ProfessionalTimeBlockController::class, 'deactivate'])
+                ->name('settings.professionals.time-blocks.deactivate');
+            Route::delete('settings/professionals/{professional}/time-blocks/{timeBlock}', [ProfessionalTimeBlockController::class, 'destroy'])
+                ->name('settings.professionals.time-blocks.destroy');
+            Route::post('settings/professionals/{professional}/time-blocks/{timeBlock}/restore', [ProfessionalTimeBlockController::class, 'restore'])
+                ->name('settings.professionals.time-blocks.restore');
 
             Route::post('settings/professionals/{professional}/photo', [ProfessionalController::class, 'updatePhoto'])
                 ->name('settings.professionals.photo.update');

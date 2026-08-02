@@ -6,8 +6,10 @@ namespace App\Policies;
 
 use App\Enums\OrganizationMembershipStatus;
 use App\Enums\PermissionKey;
+use App\Enums\RecordStatus;
 use App\Models\Organization;
 use App\Models\Professional;
+use App\Models\Unit;
 use App\Models\User;
 use App\Support\Authorization\PermissionChecker;
 
@@ -92,6 +94,63 @@ class ProfessionalPolicy
     {
         return $this->hasActiveMembership($user, $professional->organization_id, requireOwner: true)
             || $this->permissionChecker->can($user, PermissionKey::ProfessionalsManageServices, $professional->organization_id);
+    }
+
+    /**
+     * Gestão de jornada e disponibilidade. Diferente das demais permissões
+     * desta Policy (sempre org-wide), esta é escopada por unidade quando o
+     * acesso vem de `ProfessionalAvailabilityManage` (ex.: Gerente de
+     * unidade) em vez do acesso amplo de proprietário/`ProfessionalsManage`:
+     * nesse caso, exige `UnitMembership.is_manager = true` ativo para a
+     * unidade específica do intervalo de jornada. `$unit` é obrigatório
+     * porque toda jornada pertence a uma unidade (via professional_unit).
+     */
+    public function manageAvailability(User $user, Professional $professional, Unit $unit): bool
+    {
+        return $this->hasBroadProfessionalAccess($user, $professional->organization_id)
+            || $this->hasUnitScopedAccess($user, $professional->organization_id, $unit, PermissionKey::ProfessionalAvailabilityManage);
+    }
+
+    /**
+     * Gestão de ausências e bloqueios. Bloqueios de escopo "todas as
+     * unidades" (`$unit = null`) só podem ser geridos por quem tem acesso
+     * amplo — um Gerente de unidade nunca pode bloquear o profissional em
+     * todas as unidades de uma vez, só na(s) unidade(s) que gerencia.
+     */
+    public function manageTimeBlocks(User $user, Professional $professional, ?Unit $unit): bool
+    {
+        if ($this->hasBroadProfessionalAccess($user, $professional->organization_id)) {
+            return true;
+        }
+
+        if ($unit === null) {
+            return false;
+        }
+
+        return $this->hasUnitScopedAccess($user, $professional->organization_id, $unit, PermissionKey::ProfessionalTimeBlocksManage);
+    }
+
+    private function hasBroadProfessionalAccess(User $user, string $organizationId): bool
+    {
+        return $this->hasActiveMembership($user, $organizationId, requireOwner: true)
+            || $this->permissionChecker->can($user, PermissionKey::ProfessionalsManage, $organizationId);
+    }
+
+    private function hasUnitScopedAccess(User $user, string $organizationId, Unit $unit, PermissionKey $permission): bool
+    {
+        if (! $this->permissionChecker->can($user, $permission, $organizationId)) {
+            return false;
+        }
+
+        return $user->organizationMemberships()
+            ->where('organization_id', $organizationId)
+            ->where('status', OrganizationMembershipStatus::Active)
+            ->whereHas('unitMemberships', function ($query) use ($unit) {
+                $query->where('unit_id', $unit->id)
+                    ->where('is_manager', true)
+                    ->where('status', RecordStatus::Active);
+            })
+            ->exists();
     }
 
     private function hasActiveMembership(User $user, string $organizationId, bool $requireOwner = false): bool

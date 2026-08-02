@@ -78,6 +78,11 @@ enum PermissionKey: string
     case ProfessionalRegistrationsManage = 'professional-registrations.manage';
     case ProfessionalRegistrationsViewSensitive = 'professional-registrations.view-sensitive';
 
+    case ProfessionalAvailabilityView = 'professional-availability.view';
+    case ProfessionalAvailabilityManage = 'professional-availability.manage';
+    case ProfessionalTimeBlocksView = 'professional-time-blocks.view';
+    case ProfessionalTimeBlocksManage = 'professional-time-blocks.manage';
+
     public function label(): string
     {
         return match ($this) {
@@ -146,6 +151,11 @@ enum PermissionKey: string
             self::ProfessionalRegistrationsView => 'Visualizar registros profissionais',
             self::ProfessionalRegistrationsManage => 'Gerenciar registros profissionais',
             self::ProfessionalRegistrationsViewSensitive => 'Visualizar número completo de registros profissionais',
+
+            self::ProfessionalAvailabilityView => 'Visualizar jornada e disponibilidade',
+            self::ProfessionalAvailabilityManage => 'Gerenciar jornada e disponibilidade',
+            self::ProfessionalTimeBlocksView => 'Visualizar ausências e bloqueios',
+            self::ProfessionalTimeBlocksManage => 'Gerenciar ausências e bloqueios',
         };
     }
 
@@ -166,6 +176,8 @@ enum PermissionKey: string
             str_starts_with($this->value, 'specialties.') => 'Especialidades',
             str_starts_with($this->value, 'services.') => 'Serviços',
             str_starts_with($this->value, 'professional-registrations.') => 'Registros profissionais',
+            str_starts_with($this->value, 'professional-availability.') => 'Jornada e disponibilidade',
+            str_starts_with($this->value, 'professional-time-blocks.') => 'Ausências e bloqueios',
             str_starts_with($this->value, 'professionals.') => 'Profissionais',
             default => 'Geral',
         };

@@ -43,6 +43,17 @@ function makeProfessional(
         linked_user_name: null,
         deleted_at: null,
         updated_at: '2026-08-02T12:00:00Z',
+        unit_ids: [],
+        unit_names: [],
+        specialty_ids: [],
+        specialty_names: [],
+        active_services_count: 0,
+        has_active_unit: false,
+        has_active_specialty: false,
+        has_active_service: false,
+        has_working_hours: false,
+        has_ongoing_absence: false,
+        operational_status: 'incomplete',
         ...overrides,
     };
 }
@@ -181,6 +192,118 @@ describe('settings/professionals/Index', () => {
             {},
             expect.objectContaining({ preserveScroll: true }),
         );
+    });
+
+    it('filters the listing by unit', async () => {
+        const professionals = [
+            makeProfessional({
+                id: '1',
+                display_name: 'Dra. Ana Souza',
+                unit_ids: ['unit-1'],
+            }),
+            makeProfessional({
+                id: '2',
+                display_name: 'Dr. Bruno Lima',
+                unit_ids: ['unit-2'],
+            }),
+        ];
+        const wrapper = mount(Index, {
+            props: {
+                professionals,
+                units: [
+                    { id: 'unit-1', name: 'Unidade Centro' },
+                    { id: 'unit-2', name: 'Unidade Norte' },
+                ],
+            },
+        });
+
+        await wrapper
+            .find('select[aria-label="Filtrar profissionais por unidade"]')
+            .setValue('unit-1');
+
+        expect(wrapper.text()).toContain('Dra. Ana Souza');
+        expect(wrapper.text()).not.toContain('Dr. Bruno Lima');
+    });
+
+    it('filters the listing by working hours configuration', async () => {
+        const professionals = [
+            makeProfessional({
+                id: '1',
+                display_name: 'Dra. Ana Souza',
+                has_working_hours: true,
+            }),
+            makeProfessional({
+                id: '2',
+                display_name: 'Dr. Bruno Lima',
+                has_working_hours: false,
+            }),
+        ];
+        const wrapper = mount(Index, { props: { professionals } });
+
+        await wrapper
+            .find('select[aria-label="Filtrar profissionais por jornada"]')
+            .setValue('without');
+
+        expect(wrapper.text()).toContain('Dr. Bruno Lima');
+        expect(wrapper.text()).not.toContain('Dra. Ana Souza');
+    });
+
+    it('filters the listing by operational status', async () => {
+        const professionals = [
+            makeProfessional({
+                id: '1',
+                display_name: 'Dra. Ana Souza',
+                operational_status: 'operational',
+            }),
+            makeProfessional({
+                id: '2',
+                display_name: 'Dr. Bruno Lima',
+                operational_status: 'incomplete',
+            }),
+        ];
+        const wrapper = mount(Index, { props: { professionals } });
+
+        await wrapper
+            .find(
+                'select[aria-label="Filtrar profissionais por situação operacional"]',
+            )
+            .setValue('incomplete');
+
+        expect(wrapper.text()).toContain('Dr. Bruno Lima');
+        expect(wrapper.text()).not.toContain('Dra. Ana Souza');
+    });
+
+    it('filters the listing by ongoing absence', async () => {
+        const professionals = [
+            makeProfessional({
+                id: '1',
+                display_name: 'Dra. Ana Souza',
+                has_ongoing_absence: true,
+            }),
+            makeProfessional({
+                id: '2',
+                display_name: 'Dr. Bruno Lima',
+                has_ongoing_absence: false,
+            }),
+        ];
+        const wrapper = mount(Index, { props: { professionals } });
+
+        await wrapper.find('input[type="checkbox"]').setValue(true);
+
+        expect(wrapper.text()).toContain('Dra. Ana Souza');
+        expect(wrapper.text()).not.toContain('Dr. Bruno Lima');
+    });
+
+    it('shows the operational status label alongside each professional', () => {
+        const wrapper = mount(Index, {
+            props: {
+                professionals: [
+                    makeProfessional({ operational_status: 'operational' }),
+                ],
+            },
+        });
+
+        expect(wrapper.text()).toContain('Operacional');
     });
 
     it('hides actions the user is not authorized for by only rendering what the row-actions component allows', () => {

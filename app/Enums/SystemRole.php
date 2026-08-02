@@ -112,8 +112,16 @@ enum SystemRole: string
                 PermissionKey::ProfessionalRegistrationsView,
                 PermissionKey::ProfessionalRegistrationsManage,
                 PermissionKey::ProfessionalRegistrationsViewSensitive,
+                PermissionKey::ProfessionalAvailabilityView,
+                PermissionKey::ProfessionalAvailabilityManage,
+                PermissionKey::ProfessionalTimeBlocksView,
+                PermissionKey::ProfessionalTimeBlocksManage,
             ],
 
+            // Gerente de unidade recebe as permissões de gestão de jornada/
+            // bloqueios, mas fica restrito às unidades em que possui
+            // UnitMembership com is_manager=true — ver
+            // App\Policies\ProfessionalPolicy::manageAvailability()/manageTimeBlocks().
             self::UnitManager => [
                 PermissionKey::DashboardView,
                 PermissionKey::UnitsView,
@@ -131,6 +139,10 @@ enum SystemRole: string
                 PermissionKey::ServicesView,
                 PermissionKey::ProfessionalsView,
                 PermissionKey::ProfessionalRegistrationsView,
+                PermissionKey::ProfessionalAvailabilityView,
+                PermissionKey::ProfessionalAvailabilityManage,
+                PermissionKey::ProfessionalTimeBlocksView,
+                PermissionKey::ProfessionalTimeBlocksManage,
             ],
 
             self::Reception => [
@@ -170,6 +182,8 @@ enum SystemRole: string
                 PermissionKey::ProfessionalsView,
                 PermissionKey::ProfessionalRegistrationsView,
                 PermissionKey::ProfessionalRegistrationsViewSensitive,
+                PermissionKey::ProfessionalAvailabilityView,
+                PermissionKey::ProfessionalTimeBlocksView,
             ],
         };
     }

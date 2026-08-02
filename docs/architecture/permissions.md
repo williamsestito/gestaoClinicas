@@ -94,6 +94,19 @@ ter sempre tudo).
 | Visualizar registros profissionais | ✓ | ✓ | | | | ✓ |
 | Gerenciar registros profissionais | ✓ | | | | | |
 | Visualizar número completo do registro | ✓ | | | | | ✓ |
+| **Jornada e disponibilidade** | | | | | | |
+| Visualizar jornada e disponibilidade | ✓ | ✓ | | | | ✓ |
+| Gerenciar jornada e disponibilidade | ✓ | ✓¹ | | | | |
+| **Ausências e bloqueios** | | | | | | |
+| Visualizar ausências e bloqueios | ✓ | ✓ | | | | ✓ |
+| Gerenciar ausências e bloqueios | ✓ | ✓¹ | | | | |
+
+¹ Gerente de unidade só gerencia jornada/bloqueios de profissionais em
+unidades onde possui `UnitMembership.is_manager = true` — diferente das
+demais permissões desta tabela (que hoje são sempre org-wide), esta é a
+primeira permissão com escopo restrito a unidades específicas, verificado
+em `App\Policies\ProfessionalPolicy::manageAvailability()`/
+`manageTimeBlocks()` além da checagem usual de `PermissionChecker`.
 
 ## Onde isso é aplicado
 

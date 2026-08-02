@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -121,6 +122,24 @@ class Professional extends Model
     }
 
     /**
+     * Jornada regular do profissional, através de todos os vínculos com
+     * unidade — conveniente para listagens; consultas de conflito/
+     * sobreposição usam junções explícitas para precisão sobre soft delete.
+     *
+     * @return HasManyThrough<ProfessionalWorkingHour, ProfessionalUnit, $this>
+     */
+    public function workingHours(): HasManyThrough
+    {
+        return $this->hasManyThrough(ProfessionalWorkingHour::class, ProfessionalUnit::class);
+    }
+
+    /** @return HasMany<ProfessionalTimeBlock, $this> */
+    public function timeBlocks(): HasMany
+    {
+        return $this->hasMany(ProfessionalTimeBlock::class);
+    }
+
+    /**
      * Unidades onde o profissional está ativo — base para a restrição de
      * compatibilidade de App\Models\ProfessionalService::compatibleUnitIds().
      * Independe de vigência (agendada/encerrada): considera apenas o
@@ -131,5 +150,18 @@ class Professional extends Model
     public function activeUnitIds(): Collection
     {
         return $this->unitLinks()->where('status', RecordStatus::Active)->pluck('unit_id');
+    }
+
+    /**
+     * Fuso de referência para interpretar datas/horas civis quando não há
+     * uma única unidade envolvida (bloqueios de escopo "todas as
+     * unidades") — a unidade principal do profissional, com o fuso padrão
+     * do negócio como reserva quando não há unidade principal definida.
+     * Nunca ambíguo: sempre resolve para um único fuso explicável ao
+     * usuário, nunca um instante UTC arbitrário.
+     */
+    public function referenceTimezone(): string
+    {
+        return $this->primaryUnitLink?->unit->timezone ?? config('business.default_timezone');
     }
 }

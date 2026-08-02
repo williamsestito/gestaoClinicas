@@ -13,7 +13,9 @@ use App\Models\ProfessionalRegistration;
 use App\Models\ProfessionalService;
 use App\Models\ProfessionalServiceUnit;
 use App\Models\ProfessionalSpecialty;
+use App\Models\ProfessionalTimeBlock;
 use App\Models\ProfessionalUnit;
+use App\Models\ProfessionalWorkingHour;
 use App\Models\Role;
 use App\Models\Service;
 use App\Models\ServiceSpecialty;
@@ -131,6 +133,8 @@ class AppServiceProvider extends ServiceProvider
             'service_specialty' => ServiceSpecialty::class,
             'service_unit' => ServiceUnit::class,
             'professional_service_unit' => ProfessionalServiceUnit::class,
+            'professional_working_hour' => ProfessionalWorkingHour::class,
+            'professional_time_block' => ProfessionalTimeBlock::class,
         ]);
     }
 
