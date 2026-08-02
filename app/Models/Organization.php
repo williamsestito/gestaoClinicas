@@ -86,4 +86,22 @@ class Organization extends Model
     {
         return $this->hasMany(Invitation::class);
     }
+
+    /** @return HasMany<Specialty, $this> */
+    public function specialties(): HasMany
+    {
+        return $this->hasMany(Specialty::class);
+    }
+
+    /** @return HasMany<Service, $this> */
+    public function services(): HasMany
+    {
+        return $this->hasMany(Service::class);
+    }
+
+    /** @return HasMany<Professional, $this> */
+    public function professionals(): HasMany
+    {
+        return $this->hasMany(Professional::class);
+    }
 }

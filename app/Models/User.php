@@ -87,4 +87,16 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Pas
     {
         return $this->hasMany(OrganizationMembership::class);
     }
+
+    /**
+     * Cadastros operacionais de profissional vinculados a este usuário.
+     * Vínculo meramente informativo — nunca concede acesso/permissões por
+     * si só (ver App\Support\Authorization\PermissionChecker).
+     *
+     * @return HasMany<Professional, $this>
+     */
+    public function professionals(): HasMany
+    {
+        return $this->hasMany(Professional::class);
+    }
 }

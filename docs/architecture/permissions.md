@@ -78,6 +78,20 @@ ter sempre tudo).
 | **Configurações** | | | | | | |
 | Visualizar configurações | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Editar configurações | ✓ | | | | | |
+| **Especialidades** | | | | | | |
+| Visualizar especialidades | ✓ | ✓ | | | | ✓ |
+| Gerenciar especialidades | ✓ | | | | | |
+| **Serviços** | | | | | | |
+| Visualizar serviços | ✓ | ✓ | | | | ✓ |
+| Gerenciar serviços | ✓ | | | | | |
+| **Profissionais** | | | | | | |
+| Visualizar profissionais | ✓ | ✓ | | | | ✓ |
+| Gerenciar profissionais | ✓ | | | | | |
+| Gerenciar vínculos com unidades | ✓ | | | | | |
+| Gerenciar vínculos com serviços | ✓ | | | | | |
+| **Registros profissionais** | | | | | | |
+| Visualizar registros profissionais | ✓ | ✓ | | | | ✓ |
+| Gerenciar registros profissionais | ✓ | | | | | |
 
 ## Onde isso é aplicado
 

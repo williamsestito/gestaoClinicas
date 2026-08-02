@@ -62,6 +62,20 @@ enum PermissionKey: string
     case SettingsView = 'settings.view';
     case SettingsUpdate = 'settings.update';
 
+    case SpecialtiesView = 'specialties.view';
+    case SpecialtiesManage = 'specialties.manage';
+
+    case ServicesView = 'services.view';
+    case ServicesManage = 'services.manage';
+
+    case ProfessionalsView = 'professionals.view';
+    case ProfessionalsManage = 'professionals.manage';
+    case ProfessionalsManageUnits = 'professionals.manage-units';
+    case ProfessionalsManageServices = 'professionals.manage-services';
+
+    case ProfessionalRegistrationsView = 'professional-registrations.view';
+    case ProfessionalRegistrationsManage = 'professional-registrations.manage';
+
     public function label(): string
     {
         return match ($this) {
@@ -114,6 +128,20 @@ enum PermissionKey: string
 
             self::SettingsView => 'Visualizar configurações',
             self::SettingsUpdate => 'Editar configurações',
+
+            self::SpecialtiesView => 'Visualizar especialidades',
+            self::SpecialtiesManage => 'Gerenciar especialidades',
+
+            self::ServicesView => 'Visualizar serviços',
+            self::ServicesManage => 'Gerenciar serviços',
+
+            self::ProfessionalsView => 'Visualizar profissionais',
+            self::ProfessionalsManage => 'Gerenciar profissionais',
+            self::ProfessionalsManageUnits => 'Gerenciar vínculos de profissionais com unidades',
+            self::ProfessionalsManageServices => 'Gerenciar vínculos de profissionais com serviços',
+
+            self::ProfessionalRegistrationsView => 'Visualizar registros profissionais',
+            self::ProfessionalRegistrationsManage => 'Gerenciar registros profissionais',
         };
     }
 
@@ -131,6 +159,10 @@ enum PermissionKey: string
             str_starts_with($this->value, 'seo.') => 'SEO e marketing',
             $this === self::AuditView => 'Auditoria',
             str_starts_with($this->value, 'settings.') => 'Configurações',
+            str_starts_with($this->value, 'specialties.') => 'Especialidades',
+            str_starts_with($this->value, 'services.') => 'Serviços',
+            str_starts_with($this->value, 'professional-registrations.') => 'Registros profissionais',
+            str_starts_with($this->value, 'professionals.') => 'Profissionais',
             default => 'Geral',
         };
     }

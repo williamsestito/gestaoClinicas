@@ -29,7 +29,7 @@ class AuditLogger
     ];
 
     /** @var list<string> chaves mascaradas (mantém os 2 últimos caracteres), em qualquer profundidade */
-    private const MASKED_KEYS = ['document', 'cpf', 'cnpj'];
+    private const MASKED_KEYS = ['document', 'cpf', 'cnpj', 'registration_number'];
 
     /**
      * @param  array<string, mixed>  $before

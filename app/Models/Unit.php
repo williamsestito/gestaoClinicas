@@ -83,4 +83,16 @@ class Unit extends Model
     {
         return $this->hasMany(UnitMembership::class);
     }
+
+    /**
+     * Profissionais que ATUAM nesta unidade (App\Models\ProfessionalUnit) —
+     * não confundir com `memberships()`, que são usuários com ACESSO ao
+     * sistema nesta unidade.
+     *
+     * @return HasMany<ProfessionalUnit, $this>
+     */
+    public function professionalLinks(): HasMany
+    {
+        return $this->hasMany(ProfessionalUnit::class);
+    }
 }

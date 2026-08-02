@@ -100,6 +100,16 @@ enum SystemRole: string
                 PermissionKey::AuditView,
                 PermissionKey::SettingsView,
                 PermissionKey::SettingsUpdate,
+                PermissionKey::SpecialtiesView,
+                PermissionKey::SpecialtiesManage,
+                PermissionKey::ServicesView,
+                PermissionKey::ServicesManage,
+                PermissionKey::ProfessionalsView,
+                PermissionKey::ProfessionalsManage,
+                PermissionKey::ProfessionalsManageUnits,
+                PermissionKey::ProfessionalsManageServices,
+                PermissionKey::ProfessionalRegistrationsView,
+                PermissionKey::ProfessionalRegistrationsManage,
             ],
 
             self::UnitManager => [
@@ -115,6 +125,10 @@ enum SystemRole: string
                 PermissionKey::SeoView,
                 PermissionKey::AuditView,
                 PermissionKey::SettingsView,
+                PermissionKey::SpecialtiesView,
+                PermissionKey::ServicesView,
+                PermissionKey::ProfessionalsView,
+                PermissionKey::ProfessionalRegistrationsView,
             ],
 
             self::Reception => [
@@ -149,6 +163,10 @@ enum SystemRole: string
                 PermissionKey::SeoView,
                 PermissionKey::AuditView,
                 PermissionKey::SettingsView,
+                PermissionKey::SpecialtiesView,
+                PermissionKey::ServicesView,
+                PermissionKey::ProfessionalsView,
+                PermissionKey::ProfessionalRegistrationsView,
             ],
         };
     }
