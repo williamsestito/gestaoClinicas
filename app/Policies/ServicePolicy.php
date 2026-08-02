@@ -44,6 +44,18 @@ class ServicePolicy
             || $this->permissionChecker->can($user, PermissionKey::ServicesManage, $service->organization_id);
     }
 
+    public function activate(User $user, Service $service): bool
+    {
+        return $this->hasActiveMembership($user, $service->organization_id, requireOwner: true)
+            || $this->permissionChecker->can($user, PermissionKey::ServicesManage, $service->organization_id);
+    }
+
+    public function deactivate(User $user, Service $service): bool
+    {
+        return $this->hasActiveMembership($user, $service->organization_id, requireOwner: true)
+            || $this->permissionChecker->can($user, PermissionKey::ServicesManage, $service->organization_id);
+    }
+
     public function delete(User $user, Service $service): bool
     {
         return $this->hasActiveMembership($user, $service->organization_id, requireOwner: true)

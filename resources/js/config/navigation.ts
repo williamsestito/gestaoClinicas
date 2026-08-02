@@ -1,4 +1,5 @@
 import {
+    Briefcase,
     Building2,
     FileText,
     Globe,
@@ -7,15 +8,20 @@ import {
     MapPin,
     Search,
     ShieldCheck,
+    Stethoscope,
+    UserRound,
     Users,
 } from '@lucide/vue';
 import { dashboard } from '@/routes';
 import { index as indexAudit } from '@/routes/settings/audit';
 import { index as indexLegalEntities } from '@/routes/settings/legal-entities';
 import { edit as editOrganization } from '@/routes/settings/organization';
+import { index as indexProfessionals } from '@/routes/settings/professionals';
 import { index as indexRoles } from '@/routes/settings/roles';
 import { edit as editSeo } from '@/routes/settings/seo';
+import { index as indexServices } from '@/routes/settings/services';
 import { edit as editSite } from '@/routes/settings/site';
+import { index as indexSpecialties } from '@/routes/settings/specialties';
 import { index as indexUnits } from '@/routes/settings/units';
 import { index as indexUsers } from '@/routes/settings/users';
 import type { NavGroup } from '@/types';
@@ -61,6 +67,29 @@ export function buildNavGroups(permissions: string[]): NavGroup[] {
                     href: indexLegalEntities(),
                     icon: FileText,
                     permission: 'legal-entities.view',
+                },
+            ],
+        },
+        {
+            title: 'Equipe e serviços',
+            items: [
+                {
+                    title: 'Profissionais',
+                    href: indexProfessionals(),
+                    icon: UserRound,
+                    permission: 'professionals.view',
+                },
+                {
+                    title: 'Especialidades',
+                    href: indexSpecialties(),
+                    icon: Stethoscope,
+                    permission: 'specialties.view',
+                },
+                {
+                    title: 'Serviços e procedimentos',
+                    href: indexServices(),
+                    icon: Briefcase,
+                    permission: 'services.view',
                 },
             ],
         },

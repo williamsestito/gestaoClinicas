@@ -8,8 +8,10 @@ use App\Http\Controllers\Organization\LegalEntityController;
 use App\Http\Controllers\Organization\OnboardingController;
 use App\Http\Controllers\Organization\OrganizationContextController;
 use App\Http\Controllers\Organization\OrganizationSettingsController;
+use App\Http\Controllers\Organization\ProfessionalController;
 use App\Http\Controllers\Organization\RoleController;
 use App\Http\Controllers\Organization\SeoMarketingController;
+use App\Http\Controllers\Organization\ServiceController;
 use App\Http\Controllers\Organization\SiteBenefitController;
 use App\Http\Controllers\Organization\SiteContentController;
 use App\Http\Controllers\Organization\SiteFaqController;
@@ -19,6 +21,7 @@ use App\Http\Controllers\Organization\SiteProfessionalController;
 use App\Http\Controllers\Organization\SiteSectionsController;
 use App\Http\Controllers\Organization\SiteServiceController;
 use App\Http\Controllers\Organization\SiteTestimonialController;
+use App\Http\Controllers\Organization\SpecialtyController;
 use App\Http\Controllers\Organization\UnitContextController;
 use App\Http\Controllers\Organization\UnitController;
 use App\Http\Controllers\Organization\UserManagementController;
@@ -122,6 +125,85 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
                 ->name('settings.legal-entities.primary');
             Route::delete('settings/legal-entities/{legalEntity}', [LegalEntityController::class, 'destroy'])
                 ->name('settings.legal-entities.destroy');
+        });
+
+        // Especialidades, serviços e profissionais são dados de clínica
+        // (não exigem unidade ativa) — mesmo padrão de rotas usado por
+        // legal-entities: create/store/restore fora do grupo de membership
+        // (registro pode estar excluído logicamente ou ainda não existir),
+        // edit/update/status/destroy dentro dele.
+        Route::get('settings/specialties', [SpecialtyController::class, 'index'])
+            ->name('settings.specialties.index');
+        Route::get('settings/specialties/create', [SpecialtyController::class, 'create'])
+            ->name('settings.specialties.create');
+        Route::post('settings/specialties', [SpecialtyController::class, 'store'])
+            ->name('settings.specialties.store');
+        Route::post('settings/specialties/{specialty}/restore', [SpecialtyController::class, 'restore'])
+            ->name('settings.specialties.restore');
+
+        Route::middleware('tenant.specialty-membership')->group(function () {
+            Route::get('settings/specialties/{specialty}/edit', [SpecialtyController::class, 'edit'])
+                ->name('settings.specialties.edit');
+            Route::put('settings/specialties/{specialty}', [SpecialtyController::class, 'update'])
+                ->name('settings.specialties.update');
+            Route::patch('settings/specialties/{specialty}/activate', [SpecialtyController::class, 'activate'])
+                ->name('settings.specialties.activate');
+            Route::patch('settings/specialties/{specialty}/deactivate', [SpecialtyController::class, 'deactivate'])
+                ->name('settings.specialties.deactivate');
+            Route::delete('settings/specialties/{specialty}', [SpecialtyController::class, 'destroy'])
+                ->name('settings.specialties.destroy');
+        });
+
+        Route::get('settings/services', [ServiceController::class, 'index'])
+            ->name('settings.services.index');
+        Route::get('settings/services/create', [ServiceController::class, 'create'])
+            ->name('settings.services.create');
+        Route::post('settings/services', [ServiceController::class, 'store'])
+            ->name('settings.services.store');
+        Route::post('settings/services/{service}/restore', [ServiceController::class, 'restore'])
+            ->name('settings.services.restore');
+
+        Route::middleware('tenant.service-membership')->group(function () {
+            Route::get('settings/services/{service}/edit', [ServiceController::class, 'edit'])
+                ->name('settings.services.edit');
+            Route::put('settings/services/{service}', [ServiceController::class, 'update'])
+                ->name('settings.services.update');
+            Route::patch('settings/services/{service}/activate', [ServiceController::class, 'activate'])
+                ->name('settings.services.activate');
+            Route::patch('settings/services/{service}/deactivate', [ServiceController::class, 'deactivate'])
+                ->name('settings.services.deactivate');
+            Route::delete('settings/services/{service}', [ServiceController::class, 'destroy'])
+                ->name('settings.services.destroy');
+        });
+
+        Route::get('settings/professionals', [ProfessionalController::class, 'index'])
+            ->name('settings.professionals.index');
+        Route::get('settings/professionals/create', [ProfessionalController::class, 'create'])
+            ->name('settings.professionals.create');
+        Route::post('settings/professionals', [ProfessionalController::class, 'store'])
+            ->name('settings.professionals.store');
+        Route::post('settings/professionals/{professional}/restore', [ProfessionalController::class, 'restore'])
+            ->name('settings.professionals.restore');
+
+        Route::middleware('tenant.professional-membership')->group(function () {
+            Route::get('settings/professionals/{professional}/edit', [ProfessionalController::class, 'edit'])
+                ->name('settings.professionals.edit');
+            Route::put('settings/professionals/{professional}', [ProfessionalController::class, 'update'])
+                ->name('settings.professionals.update');
+            Route::patch('settings/professionals/{professional}/activate', [ProfessionalController::class, 'activate'])
+                ->name('settings.professionals.activate');
+            Route::patch('settings/professionals/{professional}/deactivate', [ProfessionalController::class, 'deactivate'])
+                ->name('settings.professionals.deactivate');
+            Route::put('settings/professionals/{professional}/user', [ProfessionalController::class, 'linkUser'])
+                ->name('settings.professionals.user.update');
+            Route::delete('settings/professionals/{professional}/user', [ProfessionalController::class, 'unlinkUser'])
+                ->name('settings.professionals.user.destroy');
+            Route::post('settings/professionals/{professional}/photo', [ProfessionalController::class, 'updatePhoto'])
+                ->name('settings.professionals.photo.update');
+            Route::delete('settings/professionals/{professional}/photo', [ProfessionalController::class, 'destroyPhoto'])
+                ->name('settings.professionals.photo.destroy');
+            Route::delete('settings/professionals/{professional}', [ProfessionalController::class, 'destroy'])
+                ->name('settings.professionals.destroy');
         });
 
         Route::get('settings/roles', [RoleController::class, 'index'])

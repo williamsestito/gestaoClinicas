@@ -1,0 +1,126 @@
+<script setup lang="ts">
+import { router, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import InputError from '@/components/InputError.vue';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    destroy as unlinkRoute,
+    update as linkRoute,
+} from '@/routes/settings/professionals/user';
+import type { EligibleUser } from './ProfessionalForm.vue';
+
+const props = defineProps<{
+    professionalId: string;
+    linkedUser: { id: number; name: string } | null;
+    eligibleUsers: EligibleUser[];
+}>();
+
+const form = useForm({ user_id: undefined as number | undefined });
+const unlinkDialogOpen = ref(false);
+const unlinking = ref(false);
+
+function link() {
+    if (!form.user_id) {
+        return;
+    }
+
+    form.put(linkRoute(props.professionalId).url, {
+        preserveScroll: true,
+    });
+}
+
+function confirmUnlink() {
+    unlinking.value = true;
+    router.delete(unlinkRoute(props.professionalId).url, {
+        preserveScroll: true,
+        onFinish: () => {
+            unlinking.value = false;
+            unlinkDialogOpen.value = false;
+        },
+    });
+}
+</script>
+
+<template>
+    <div class="grid gap-3">
+        <div
+            v-if="linkedUser"
+            class="flex items-center justify-between gap-2 rounded-md border p-3"
+        >
+            <div>
+                <p class="text-sm font-medium">{{ linkedUser.name }}</p>
+                <p class="text-xs text-muted-foreground">
+                    Vincular ou remover o usuário não altera papéis, permissões
+                    ou o acesso dele à clínica.
+                </p>
+            </div>
+            <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                @click="unlinkDialogOpen = true"
+            >
+                Remover vínculo
+            </Button>
+        </div>
+
+        <form v-else class="flex items-end gap-2" @submit.prevent="link">
+            <div class="grid flex-1 gap-2">
+                <label for="link-user" class="text-sm font-medium"
+                    >Vincular a um usuário existente</label
+                >
+                <select
+                    id="link-user"
+                    v-model="form.user_id"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                >
+                    <option :value="undefined">Selecione um usuário</option>
+                    <option
+                        v-for="eligibleUser in eligibleUsers"
+                        :key="eligibleUser.id"
+                        :value="eligibleUser.id"
+                    >
+                        {{ eligibleUser.name }} ({{ eligibleUser.email }})
+                    </option>
+                </select>
+                <InputError :message="form.errors.user_id" />
+            </div>
+            <Button type="submit" :disabled="form.processing || !form.user_id">
+                Vincular
+            </Button>
+        </form>
+
+        <Dialog v-model:open="unlinkDialogOpen">
+            <DialogContent>
+                <DialogHeader class="space-y-3">
+                    <DialogTitle>Remover vínculo com o usuário?</DialogTitle>
+                    <DialogDescription>
+                        O usuário não será excluído nem desativado — apenas
+                        deixará de estar associado a este profissional.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter class="gap-2">
+                    <DialogClose as-child>
+                        <Button variant="secondary">Cancelar</Button>
+                    </DialogClose>
+                    <Button
+                        variant="destructive"
+                        :disabled="unlinking"
+                        @click="confirmUnlink"
+                    >
+                        Remover vínculo
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    </div>
+</template>

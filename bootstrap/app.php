@@ -5,6 +5,9 @@ use App\Http\Middleware\EnsureActiveUnit;
 use App\Http\Middleware\EnsureLegalEntityMembership;
 use App\Http\Middleware\EnsureNoActiveOrganization;
 use App\Http\Middleware\EnsureOrganizationMembership;
+use App\Http\Middleware\EnsureProfessionalMembership;
+use App\Http\Middleware\EnsureServiceMembership;
+use App\Http\Middleware\EnsureSpecialtyMembership;
 use App\Http\Middleware\EnsureUnitMembership;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleAppearance;
@@ -66,6 +69,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.organization-membership' => EnsureOrganizationMembership::class,
             'tenant.unit-membership' => EnsureUnitMembership::class,
             'tenant.legal-entity-membership' => EnsureLegalEntityMembership::class,
+            'tenant.specialty-membership' => EnsureSpecialtyMembership::class,
+            'tenant.service-membership' => EnsureServiceMembership::class,
+            'tenant.professional-membership' => EnsureProfessionalMembership::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

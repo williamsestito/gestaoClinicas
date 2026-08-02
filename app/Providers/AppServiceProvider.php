@@ -8,7 +8,15 @@ use App\Models\LegalEntity;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\Permission;
+use App\Models\Professional;
+use App\Models\ProfessionalRegistration;
+use App\Models\ProfessionalService;
+use App\Models\ProfessionalSpecialty;
+use App\Models\ProfessionalUnit;
 use App\Models\Role;
+use App\Models\Service;
+use App\Models\ServiceSpecialty;
+use App\Models\ServiceUnit;
 use App\Models\SiteBenefit;
 use App\Models\SiteFaq;
 use App\Models\SiteGalleryItem;
@@ -17,6 +25,7 @@ use App\Models\SiteProfessional;
 use App\Models\SiteService;
 use App\Models\SiteSetting;
 use App\Models\SiteTestimonial;
+use App\Models\Specialty;
 use App\Models\Unit;
 use App\Models\UnitMembership;
 use App\Models\User;
@@ -111,6 +120,15 @@ class AppServiceProvider extends ServiceProvider
             'site_testimonial' => SiteTestimonial::class,
             'site_faq' => SiteFaq::class,
             'appointment_request' => AppointmentRequest::class,
+            'specialty' => Specialty::class,
+            'service' => Service::class,
+            'professional' => Professional::class,
+            'professional_registration' => ProfessionalRegistration::class,
+            'professional_specialty' => ProfessionalSpecialty::class,
+            'professional_unit' => ProfessionalUnit::class,
+            'professional_service' => ProfessionalService::class,
+            'service_specialty' => ServiceSpecialty::class,
+            'service_unit' => ServiceUnit::class,
         ]);
     }
 

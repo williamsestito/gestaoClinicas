@@ -46,6 +46,24 @@ class ProfessionalPolicy
             || $this->permissionChecker->can($user, PermissionKey::ProfessionalsManage, $professional->organization_id);
     }
 
+    public function activate(User $user, Professional $professional): bool
+    {
+        return $this->hasActiveMembership($user, $professional->organization_id, requireOwner: true)
+            || $this->permissionChecker->can($user, PermissionKey::ProfessionalsManage, $professional->organization_id);
+    }
+
+    public function deactivate(User $user, Professional $professional): bool
+    {
+        return $this->hasActiveMembership($user, $professional->organization_id, requireOwner: true)
+            || $this->permissionChecker->can($user, PermissionKey::ProfessionalsManage, $professional->organization_id);
+    }
+
+    public function linkUser(User $user, Professional $professional): bool
+    {
+        return $this->hasActiveMembership($user, $professional->organization_id, requireOwner: true)
+            || $this->permissionChecker->can($user, PermissionKey::ProfessionalsManage, $professional->organization_id);
+    }
+
     public function delete(User $user, Professional $professional): bool
     {
         return $this->hasActiveMembership($user, $professional->organization_id, requireOwner: true)

@@ -44,6 +44,18 @@ class SpecialtyPolicy
             || $this->permissionChecker->can($user, PermissionKey::SpecialtiesManage, $specialty->organization_id);
     }
 
+    public function activate(User $user, Specialty $specialty): bool
+    {
+        return $this->hasActiveMembership($user, $specialty->organization_id, requireOwner: true)
+            || $this->permissionChecker->can($user, PermissionKey::SpecialtiesManage, $specialty->organization_id);
+    }
+
+    public function deactivate(User $user, Specialty $specialty): bool
+    {
+        return $this->hasActiveMembership($user, $specialty->organization_id, requireOwner: true)
+            || $this->permissionChecker->can($user, PermissionKey::SpecialtiesManage, $specialty->organization_id);
+    }
+
     public function delete(User $user, Specialty $specialty): bool
     {
         return $this->hasActiveMembership($user, $specialty->organization_id, requireOwner: true)

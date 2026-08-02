@@ -62,4 +62,10 @@ class Specialty extends Model
     {
         return $this->hasMany(ProfessionalSpecialty::class);
     }
+
+    /** @return HasMany<ServiceSpecialty, $this> */
+    public function serviceLinks(): HasMany
+    {
+        return $this->hasMany(ServiceSpecialty::class);
+    }
 }

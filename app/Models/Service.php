@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\RecordStatus;
+use App\Enums\ServiceAvailabilityScope;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -34,6 +35,7 @@ use Illuminate\Support\Carbon;
  * @property bool $is_public
  * @property bool $requires_manual_confirmation
  * @property string|null $internal_notes
+ * @property ServiceAvailabilityScope $unit_availability_scope
  * @property Carbon|null $deleted_at
  */
 class Service extends Model
@@ -55,6 +57,7 @@ class Service extends Model
         'is_public',
         'requires_manual_confirmation',
         'internal_notes',
+        'unit_availability_scope',
     ];
 
     protected function casts(): array
@@ -67,6 +70,7 @@ class Service extends Model
             'default_price_cents' => 'integer',
             'is_public' => 'boolean',
             'requires_manual_confirmation' => 'boolean',
+            'unit_availability_scope' => ServiceAvailabilityScope::class,
         ];
     }
 
@@ -80,5 +84,17 @@ class Service extends Model
     public function professionalLinks(): HasMany
     {
         return $this->hasMany(ProfessionalService::class);
+    }
+
+    /** @return HasMany<ServiceSpecialty, $this> */
+    public function specialtyLinks(): HasMany
+    {
+        return $this->hasMany(ServiceSpecialty::class);
+    }
+
+    /** @return HasMany<ServiceUnit, $this> */
+    public function unitLinks(): HasMany
+    {
+        return $this->hasMany(ServiceUnit::class);
     }
 }
