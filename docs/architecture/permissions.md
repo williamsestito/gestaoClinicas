@@ -87,11 +87,13 @@ ter sempre tudo).
 | **Profissionais** | | | | | | |
 | Visualizar profissionais | ✓ | ✓ | | | | ✓ |
 | Gerenciar profissionais | ✓ | | | | | |
+| Gerenciar especialidades do profissional | ✓ | | | | | |
 | Gerenciar vínculos com unidades | ✓ | | | | | |
 | Gerenciar vínculos com serviços | ✓ | | | | | |
 | **Registros profissionais** | | | | | | |
 | Visualizar registros profissionais | ✓ | ✓ | | | | ✓ |
 | Gerenciar registros profissionais | ✓ | | | | | |
+| Visualizar número completo do registro | ✓ | | | | | ✓ |
 
 ## Onde isso é aplicado
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ProfessionalUnitVigencyStatus;
 use App\Enums\RecordStatus;
 use Database\Factories\ProfessionalUnitFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -74,5 +75,20 @@ class ProfessionalUnit extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function vigencyStatus(): ProfessionalUnitVigencyStatus
+    {
+        $today = Carbon::today();
+
+        if ($this->starts_on !== null && $this->starts_on->gt($today)) {
+            return ProfessionalUnitVigencyStatus::Scheduled;
+        }
+
+        if ($this->ends_on !== null && $this->ends_on->lt($today)) {
+            return ProfessionalUnitVigencyStatus::Ended;
+        }
+
+        return ProfessionalUnitVigencyStatus::InEffect;
     }
 }

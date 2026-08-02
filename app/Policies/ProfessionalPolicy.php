@@ -76,6 +76,12 @@ class ProfessionalPolicy
             || $this->permissionChecker->can($user, PermissionKey::ProfessionalsManage, $professional->organization_id);
     }
 
+    public function manageSpecialties(User $user, Professional $professional): bool
+    {
+        return $this->hasActiveMembership($user, $professional->organization_id, requireOwner: true)
+            || $this->permissionChecker->can($user, PermissionKey::ProfessionalsManageSpecialties, $professional->organization_id);
+    }
+
     public function manageUnits(User $user, Professional $professional): bool
     {
         return $this->hasActiveMembership($user, $professional->organization_id, requireOwner: true)

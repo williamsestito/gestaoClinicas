@@ -16,6 +16,9 @@ enum AuditAction: string
     case HeadquartersChanged = 'headquarters_changed';
     case OrganizationContextSwitched = 'organization_context_switched';
     case UnitContextSwitched = 'unit_context_switched';
+    case PrimaryProfessionalSpecialtyChanged = 'primary_professional_specialty_changed';
+    case PrimaryProfessionalRegistrationChanged = 'primary_professional_registration_changed';
+    case PrimaryProfessionalUnitChanged = 'primary_professional_unit_changed';
 
     public function label(): string
     {
@@ -30,6 +33,9 @@ enum AuditAction: string
             self::HeadquartersChanged => 'Troca de unidade matriz',
             self::OrganizationContextSwitched => 'Troca de organização ativa',
             self::UnitContextSwitched => 'Troca de unidade ativa',
+            self::PrimaryProfessionalSpecialtyChanged => 'Troca de especialidade principal do profissional',
+            self::PrimaryProfessionalRegistrationChanged => 'Troca de registro profissional principal',
+            self::PrimaryProfessionalUnitChanged => 'Troca de unidade principal do profissional',
         };
     }
 }

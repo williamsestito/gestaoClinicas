@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Serviço/procedimento operacional prestado pela clínica. Cadastro de
@@ -96,5 +97,24 @@ class Service extends Model
     public function unitLinks(): HasMany
     {
         return $this->hasMany(ServiceUnit::class);
+    }
+
+    /**
+     * Unidades em que este serviço está disponível, conforme
+     * `unit_availability_scope` — nunca ambíguo: `AllUnits` resolve para
+     * todas as unidades ativas da organização, `SelectedUnits` para os
+     * vínculos ativos em `unitLinks()`, e `None` para nenhuma.
+     *
+     * @return Collection<int, string>
+     */
+    public function availableUnitIds(): Collection
+    {
+        return match ($this->unit_availability_scope) {
+            ServiceAvailabilityScope::AllUnits => $this->organization->units()
+                ->where('status', RecordStatus::Active)
+                ->pluck('id'),
+            ServiceAvailabilityScope::SelectedUnits => $this->unitLinks()->pluck('unit_id'),
+            ServiceAvailabilityScope::None => collect(),
+        };
     }
 }

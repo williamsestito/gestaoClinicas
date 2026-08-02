@@ -23,6 +23,10 @@ use App\Http\Requests\Organization\UpdateProfessionalPhotoRequest;
 use App\Http\Requests\Organization\UpdateProfessionalRequest;
 use App\Models\OrganizationMembership;
 use App\Models\Professional;
+use App\Models\ProfessionalRegistration;
+use App\Models\ProfessionalService;
+use App\Models\ProfessionalSpecialty;
+use App\Models\ProfessionalUnit;
 use App\Support\Documents\Document;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
@@ -202,6 +206,149 @@ class ProfessionalController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Profissional restaurado com sucesso.']);
 
         return back();
+    }
+
+    /**
+     * Página "Especialidades e registros" do perfil operacional do
+     * profissional — especialidade e registro em conselho são conceitos
+     * diferentes (ver App\Models\ProfessionalSpecialty/ProfessionalRegistration),
+     * agrupados na mesma seção de navegação por estarem relacionados.
+     */
+    public function specialties(Professional $professional): Response
+    {
+        $this->authorize('view', $professional);
+
+        $professional->load(['specialtyLinks' => fn ($query) => $query->withTrashed()->with('specialty:id,name,status')]);
+        $professional->load(['registrations' => fn ($query) => $query->withTrashed()]);
+
+        $canViewSensitive = request()->user()?->can('viewSensitive', new ProfessionalRegistration(['organization_id' => $professional->organization_id])) === true;
+
+        $linkedSpecialtyIds = $professional->specialtyLinks
+            ->reject(fn (ProfessionalSpecialty $link) => $link->trashed())
+            ->pluck('specialty_id');
+
+        $eligibleSpecialties = $professional->organization
+            ->specialties()
+            ->where('status', 'active')
+            ->whereNotIn('id', $linkedSpecialtyIds)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn ($specialty) => ['id' => $specialty->id, 'name' => $specialty->name]);
+
+        return Inertia::render('settings/professionals/Specialties', [
+            'professional' => $this->professionalSummary($professional),
+            'specialtyLinks' => $professional->specialtyLinks->map(fn (ProfessionalSpecialty $link) => [
+                'id' => $link->id,
+                'specialty' => ['id' => $link->specialty->id, 'name' => $link->specialty->name],
+                'is_primary' => $link->is_primary,
+                'status' => $link->status->value,
+                'deleted_at' => $link->deleted_at,
+            ]),
+            'eligibleSpecialties' => $eligibleSpecialties,
+            'registrations' => $professional->registrations->map(fn (ProfessionalRegistration $registration) => [
+                'id' => $registration->id,
+                'council' => $registration->council,
+                'registration_type' => $registration->registration_type,
+                'masked_registration_number' => $registration->maskedRegistrationNumber(),
+                'state' => $registration->state?->value,
+                'issued_at' => $registration->issued_at?->format('Y-m-d'),
+                'expires_at' => $registration->expires_at?->format('Y-m-d'),
+                'validity_status' => $registration->validityStatus()->value,
+                'is_primary' => $registration->is_primary,
+                'status' => $registration->status->value,
+                'deleted_at' => $registration->deleted_at,
+            ]),
+            'canViewSensitiveRegistrations' => $canViewSensitive,
+        ]);
+    }
+
+    public function units(Professional $professional): Response
+    {
+        $this->authorize('view', $professional);
+
+        $professional->load(['unitLinks' => fn ($query) => $query->withTrashed()->with('unit:id,name,code,status')]);
+
+        $linkedUnitIds = $professional->unitLinks
+            ->reject(fn (ProfessionalUnit $link) => $link->trashed())
+            ->pluck('unit_id');
+
+        $eligibleUnits = $professional->organization
+            ->units()
+            ->where('status', 'active')
+            ->whereNotIn('id', $linkedUnitIds)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn ($unit) => ['id' => $unit->id, 'name' => $unit->name]);
+
+        return Inertia::render('settings/professionals/Units', [
+            'professional' => $this->professionalSummary($professional),
+            'unitLinks' => $professional->unitLinks->map(fn (ProfessionalUnit $link) => [
+                'id' => $link->id,
+                'unit' => ['id' => $link->unit->id, 'name' => $link->unit->name],
+                'is_primary' => $link->is_primary,
+                'status' => $link->status->value,
+                'starts_on' => $link->starts_on?->format('Y-m-d'),
+                'ends_on' => $link->ends_on?->format('Y-m-d'),
+                'vigency_status' => $link->vigencyStatus()->value,
+                'deleted_at' => $link->deleted_at,
+            ]),
+            'eligibleUnits' => $eligibleUnits,
+        ]);
+    }
+
+    public function services(Professional $professional): Response
+    {
+        $this->authorize('view', $professional);
+
+        $professional->load(['serviceLinks' => fn ($query) => $query->withTrashed()->with(['service.organization:id', 'unitLinks.unit:id,name'])]);
+        $professional->serviceLinks->each(fn (ProfessionalService $link) => $link->setRelation('professional', $professional));
+
+        $linkedServiceIds = $professional->serviceLinks
+            ->reject(fn (ProfessionalService $link) => $link->trashed())
+            ->pluck('service_id');
+
+        $eligibleServices = $professional->organization
+            ->services()
+            ->where('status', 'active')
+            ->whereNotIn('id', $linkedServiceIds)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn ($service) => ['id' => $service->id, 'name' => $service->name]);
+
+        $professionalUnits = $professional->unitLinks()
+            ->where('status', 'active')
+            ->with('unit:id,name')
+            ->get()
+            ->map(fn (ProfessionalUnit $link) => ['id' => $link->unit->id, 'name' => $link->unit->name]);
+
+        return Inertia::render('settings/professionals/Services', [
+            'professional' => $this->professionalSummary($professional),
+            'serviceLinks' => $professional->serviceLinks->map(fn (ProfessionalService $link) => [
+                'id' => $link->id,
+                'service' => ['id' => $link->service->id, 'name' => $link->service->name],
+                'status' => $link->status->value,
+                'unit_scope' => $link->unit_scope->value,
+                'selected_unit_ids' => $link->unitLinks->pluck('unit_id'),
+                'compatible_units' => $link->trashed() ? [] : $link->compatibleUnitIds()->values(),
+                'duration_minutes' => ['default' => $link->service->default_duration_minutes, 'custom' => $link->custom_duration_minutes, 'effective' => $link->effectiveDurationMinutes(), 'is_inherited' => $link->isDurationInherited()],
+                'price_cents' => ['default' => $link->service->default_price_cents, 'custom' => $link->custom_price_cents, 'effective' => $link->effectivePriceCents(), 'is_inherited' => $link->isPriceInherited()],
+                'buffer_before_minutes' => ['default' => $link->service->buffer_before_minutes, 'custom' => $link->custom_buffer_before_minutes, 'effective' => $link->effectiveBufferBeforeMinutes(), 'is_inherited' => $link->isBufferBeforeInherited()],
+                'buffer_after_minutes' => ['default' => $link->service->buffer_after_minutes, 'custom' => $link->custom_buffer_after_minutes, 'effective' => $link->effectiveBufferAfterMinutes(), 'is_inherited' => $link->isBufferAfterInherited()],
+                'deleted_at' => $link->deleted_at,
+            ]),
+            'eligibleServices' => $eligibleServices,
+            'professionalUnits' => $professionalUnits,
+        ]);
+    }
+
+    /** @return array{id: string, display_name: string, status: string} */
+    private function professionalSummary(Professional $professional): array
+    {
+        return [
+            'id' => $professional->id,
+            'display_name' => $professional->display_name,
+            'status' => $professional->status->value,
+        ];
     }
 
     /** @return array<int, array{id: int, name: string, email: string}> */

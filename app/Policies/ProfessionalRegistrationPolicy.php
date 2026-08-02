@@ -43,6 +43,31 @@ class ProfessionalRegistrationPolicy
             || $this->permissionChecker->can($user, PermissionKey::ProfessionalRegistrationsManage, $registration->organization_id);
     }
 
+    public function activate(User $user, ProfessionalRegistration $registration): bool
+    {
+        return $this->hasActiveMembership($user, $registration->organization_id, requireOwner: true)
+            || $this->permissionChecker->can($user, PermissionKey::ProfessionalRegistrationsManage, $registration->organization_id);
+    }
+
+    public function deactivate(User $user, ProfessionalRegistration $registration): bool
+    {
+        return $this->hasActiveMembership($user, $registration->organization_id, requireOwner: true)
+            || $this->permissionChecker->can($user, PermissionKey::ProfessionalRegistrationsManage, $registration->organization_id);
+    }
+
+    public function setPrimary(User $user, ProfessionalRegistration $registration): bool
+    {
+        return $this->hasActiveMembership($user, $registration->organization_id, requireOwner: true)
+            || $this->permissionChecker->can($user, PermissionKey::ProfessionalRegistrationsManage, $registration->organization_id);
+    }
+
+    /** Ver o número completo (não mascarado) do registro. */
+    public function viewSensitive(User $user, ProfessionalRegistration $registration): bool
+    {
+        return $this->hasActiveMembership($user, $registration->organization_id, requireOwner: true)
+            || $this->permissionChecker->can($user, PermissionKey::ProfessionalRegistrationsViewSensitive, $registration->organization_id);
+    }
+
     public function delete(User $user, ProfessionalRegistration $registration): bool
     {
         return $this->hasActiveMembership($user, $registration->organization_id, requireOwner: true)

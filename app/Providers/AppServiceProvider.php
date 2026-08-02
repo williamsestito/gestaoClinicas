@@ -11,6 +11,7 @@ use App\Models\Permission;
 use App\Models\Professional;
 use App\Models\ProfessionalRegistration;
 use App\Models\ProfessionalService;
+use App\Models\ProfessionalServiceUnit;
 use App\Models\ProfessionalSpecialty;
 use App\Models\ProfessionalUnit;
 use App\Models\Role;
@@ -129,6 +130,7 @@ class AppServiceProvider extends ServiceProvider
             'professional_service' => ProfessionalService::class,
             'service_specialty' => ServiceSpecialty::class,
             'service_unit' => ServiceUnit::class,
+            'professional_service_unit' => ProfessionalServiceUnit::class,
         ]);
     }
 

@@ -9,6 +9,10 @@ use App\Http\Controllers\Organization\OnboardingController;
 use App\Http\Controllers\Organization\OrganizationContextController;
 use App\Http\Controllers\Organization\OrganizationSettingsController;
 use App\Http\Controllers\Organization\ProfessionalController;
+use App\Http\Controllers\Organization\ProfessionalRegistrationController;
+use App\Http\Controllers\Organization\ProfessionalServiceController;
+use App\Http\Controllers\Organization\ProfessionalSpecialtyController;
+use App\Http\Controllers\Organization\ProfessionalUnitController;
 use App\Http\Controllers\Organization\RoleController;
 use App\Http\Controllers\Organization\SeoMarketingController;
 use App\Http\Controllers\Organization\ServiceController;
@@ -198,6 +202,75 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
                 ->name('settings.professionals.user.update');
             Route::delete('settings/professionals/{professional}/user', [ProfessionalController::class, 'unlinkUser'])
                 ->name('settings.professionals.user.destroy');
+
+            // Etapa 2.5 — especialidades e registros profissionais.
+            Route::get('settings/professionals/{professional}/specialties', [ProfessionalController::class, 'specialties'])
+                ->name('settings.professionals.specialties.index');
+            Route::post('settings/professionals/{professional}/specialties', [ProfessionalSpecialtyController::class, 'store'])
+                ->name('settings.professionals.specialties.store');
+            Route::patch('settings/professionals/{professional}/specialties/{professionalSpecialty}/primary', [ProfessionalSpecialtyController::class, 'setPrimary'])
+                ->name('settings.professionals.specialties.primary');
+            Route::patch('settings/professionals/{professional}/specialties/{professionalSpecialty}/activate', [ProfessionalSpecialtyController::class, 'activate'])
+                ->name('settings.professionals.specialties.activate');
+            Route::patch('settings/professionals/{professional}/specialties/{professionalSpecialty}/deactivate', [ProfessionalSpecialtyController::class, 'deactivate'])
+                ->name('settings.professionals.specialties.deactivate');
+            Route::delete('settings/professionals/{professional}/specialties/{professionalSpecialty}', [ProfessionalSpecialtyController::class, 'destroy'])
+                ->name('settings.professionals.specialties.destroy');
+            Route::post('settings/professionals/{professional}/specialties/{professionalSpecialty}/restore', [ProfessionalSpecialtyController::class, 'restore'])
+                ->name('settings.professionals.specialties.restore');
+
+            Route::post('settings/professionals/{professional}/registrations', [ProfessionalRegistrationController::class, 'store'])
+                ->name('settings.professionals.registrations.store');
+            Route::put('settings/professionals/{professional}/registrations/{professionalRegistration}', [ProfessionalRegistrationController::class, 'update'])
+                ->name('settings.professionals.registrations.update');
+            Route::patch('settings/professionals/{professional}/registrations/{professionalRegistration}/primary', [ProfessionalRegistrationController::class, 'setPrimary'])
+                ->name('settings.professionals.registrations.primary');
+            Route::patch('settings/professionals/{professional}/registrations/{professionalRegistration}/activate', [ProfessionalRegistrationController::class, 'activate'])
+                ->name('settings.professionals.registrations.activate');
+            Route::patch('settings/professionals/{professional}/registrations/{professionalRegistration}/deactivate', [ProfessionalRegistrationController::class, 'deactivate'])
+                ->name('settings.professionals.registrations.deactivate');
+            Route::delete('settings/professionals/{professional}/registrations/{professionalRegistration}', [ProfessionalRegistrationController::class, 'destroy'])
+                ->name('settings.professionals.registrations.destroy');
+            Route::post('settings/professionals/{professional}/registrations/{professionalRegistration}/restore', [ProfessionalRegistrationController::class, 'restore'])
+                ->name('settings.professionals.registrations.restore');
+            Route::get('settings/professionals/{professional}/registrations/{professionalRegistration}/reveal', [ProfessionalRegistrationController::class, 'reveal'])
+                ->middleware('throttle:20,1')
+                ->name('settings.professionals.registrations.reveal');
+
+            // Etapa 2.6 — unidades de atuação do profissional.
+            Route::get('settings/professionals/{professional}/units', [ProfessionalController::class, 'units'])
+                ->name('settings.professionals.units.index');
+            Route::post('settings/professionals/{professional}/units', [ProfessionalUnitController::class, 'store'])
+                ->name('settings.professionals.units.store');
+            Route::put('settings/professionals/{professional}/units/{professionalUnit}', [ProfessionalUnitController::class, 'update'])
+                ->name('settings.professionals.units.update');
+            Route::patch('settings/professionals/{professional}/units/{professionalUnit}/primary', [ProfessionalUnitController::class, 'setPrimary'])
+                ->name('settings.professionals.units.primary');
+            Route::patch('settings/professionals/{professional}/units/{professionalUnit}/activate', [ProfessionalUnitController::class, 'activate'])
+                ->name('settings.professionals.units.activate');
+            Route::patch('settings/professionals/{professional}/units/{professionalUnit}/deactivate', [ProfessionalUnitController::class, 'deactivate'])
+                ->name('settings.professionals.units.deactivate');
+            Route::delete('settings/professionals/{professional}/units/{professionalUnit}', [ProfessionalUnitController::class, 'destroy'])
+                ->name('settings.professionals.units.destroy');
+            Route::post('settings/professionals/{professional}/units/{professionalUnit}/restore', [ProfessionalUnitController::class, 'restore'])
+                ->name('settings.professionals.units.restore');
+
+            // Etapa 2.7 — serviços executados pelo profissional.
+            Route::get('settings/professionals/{professional}/services', [ProfessionalController::class, 'services'])
+                ->name('settings.professionals.services.index');
+            Route::post('settings/professionals/{professional}/services', [ProfessionalServiceController::class, 'store'])
+                ->name('settings.professionals.services.store');
+            Route::put('settings/professionals/{professional}/services/{professionalService}', [ProfessionalServiceController::class, 'update'])
+                ->name('settings.professionals.services.update');
+            Route::patch('settings/professionals/{professional}/services/{professionalService}/activate', [ProfessionalServiceController::class, 'activate'])
+                ->name('settings.professionals.services.activate');
+            Route::patch('settings/professionals/{professional}/services/{professionalService}/deactivate', [ProfessionalServiceController::class, 'deactivate'])
+                ->name('settings.professionals.services.deactivate');
+            Route::delete('settings/professionals/{professional}/services/{professionalService}', [ProfessionalServiceController::class, 'destroy'])
+                ->name('settings.professionals.services.destroy');
+            Route::post('settings/professionals/{professional}/services/{professionalService}/restore', [ProfessionalServiceController::class, 'restore'])
+                ->name('settings.professionals.services.restore');
+
             Route::post('settings/professionals/{professional}/photo', [ProfessionalController::class, 'updatePhoto'])
                 ->name('settings.professionals.photo.update');
             Route::delete('settings/professionals/{professional}/photo', [ProfessionalController::class, 'destroyPhoto'])

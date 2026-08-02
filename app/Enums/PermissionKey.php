@@ -70,11 +70,13 @@ enum PermissionKey: string
 
     case ProfessionalsView = 'professionals.view';
     case ProfessionalsManage = 'professionals.manage';
+    case ProfessionalsManageSpecialties = 'professionals.manage-specialties';
     case ProfessionalsManageUnits = 'professionals.manage-units';
     case ProfessionalsManageServices = 'professionals.manage-services';
 
     case ProfessionalRegistrationsView = 'professional-registrations.view';
     case ProfessionalRegistrationsManage = 'professional-registrations.manage';
+    case ProfessionalRegistrationsViewSensitive = 'professional-registrations.view-sensitive';
 
     public function label(): string
     {
@@ -137,11 +139,13 @@ enum PermissionKey: string
 
             self::ProfessionalsView => 'Visualizar profissionais',
             self::ProfessionalsManage => 'Gerenciar profissionais',
+            self::ProfessionalsManageSpecialties => 'Gerenciar especialidades do profissional',
             self::ProfessionalsManageUnits => 'Gerenciar vínculos de profissionais com unidades',
             self::ProfessionalsManageServices => 'Gerenciar vínculos de profissionais com serviços',
 
             self::ProfessionalRegistrationsView => 'Visualizar registros profissionais',
             self::ProfessionalRegistrationsManage => 'Gerenciar registros profissionais',
+            self::ProfessionalRegistrationsViewSensitive => 'Visualizar número completo de registros profissionais',
         };
     }
 

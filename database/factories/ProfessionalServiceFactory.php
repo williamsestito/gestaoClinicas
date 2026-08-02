@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\ProfessionalServiceUnitScope;
 use App\Enums\RecordStatus;
 use App\Models\Professional;
 use App\Models\ProfessionalService;
@@ -27,6 +28,7 @@ class ProfessionalServiceFactory extends Factory
             'custom_price_cents' => null,
             'custom_buffer_before_minutes' => null,
             'custom_buffer_after_minutes' => null,
+            'unit_scope' => ProfessionalServiceUnitScope::AllCompatibleUnits,
             'status' => RecordStatus::Active,
         ];
     }

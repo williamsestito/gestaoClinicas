@@ -106,10 +106,12 @@ enum SystemRole: string
                 PermissionKey::ServicesManage,
                 PermissionKey::ProfessionalsView,
                 PermissionKey::ProfessionalsManage,
+                PermissionKey::ProfessionalsManageSpecialties,
                 PermissionKey::ProfessionalsManageUnits,
                 PermissionKey::ProfessionalsManageServices,
                 PermissionKey::ProfessionalRegistrationsView,
                 PermissionKey::ProfessionalRegistrationsManage,
+                PermissionKey::ProfessionalRegistrationsViewSensitive,
             ],
 
             self::UnitManager => [
@@ -167,6 +169,7 @@ enum SystemRole: string
                 PermissionKey::ServicesView,
                 PermissionKey::ProfessionalsView,
                 PermissionKey::ProfessionalRegistrationsView,
+                PermissionKey::ProfessionalRegistrationsViewSensitive,
             ],
         };
     }

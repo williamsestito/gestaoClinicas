@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ProfessionalRegistrationValidityStatus;
 use App\Enums\RecordStatus;
 use App\Support\Documents\BrazilianState;
 use Database\Factories\ProfessionalRegistrationFactory;
@@ -27,7 +28,7 @@ use Illuminate\Support\Carbon;
  * @property string $council
  * @property string|null $registration_type
  * @property string $registration_number
- * @property BrazilianState $state
+ * @property BrazilianState|null $state
  * @property Carbon|null $issued_at
  * @property Carbon|null $expires_at
  * @property RecordStatus $status
@@ -75,5 +76,42 @@ class ProfessionalRegistration extends Model
     public function professional(): BelongsTo
     {
         return $this->belongsTo(Professional::class);
+    }
+
+    /**
+     * Situação de validade calculada a partir de `expires_at` e da data
+     * corrente — nunca persistida. "Próximo do vencimento" considera uma
+     * janela de 30 dias.
+     */
+    public function validityStatus(): ProfessionalRegistrationValidityStatus
+    {
+        if ($this->expires_at === null) {
+            return ProfessionalRegistrationValidityStatus::NoExpiration;
+        }
+
+        $today = Carbon::today();
+
+        if ($this->expires_at->lt($today)) {
+            return ProfessionalRegistrationValidityStatus::Expired;
+        }
+
+        if ($this->expires_at->lte($today->copy()->addDays(30))) {
+            return ProfessionalRegistrationValidityStatus::ExpiringSoon;
+        }
+
+        return ProfessionalRegistrationValidityStatus::Valid;
+    }
+
+    /** Mantém apenas os últimos caracteres visíveis — nunca exibir o número completo sem permissão específica. */
+    public function maskedRegistrationNumber(): string
+    {
+        $visible = 4;
+        $length = strlen($this->registration_number);
+
+        if ($length <= $visible) {
+            return str_repeat('•', $length);
+        }
+
+        return str_repeat('•', $length - $visible).substr($this->registration_number, -$visible);
     }
 }

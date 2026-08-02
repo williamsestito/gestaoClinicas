@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Cadastro operacional de um profissional da clínica. Entidade própria —
@@ -95,15 +96,40 @@ class Professional extends Model
         return $this->hasMany(ProfessionalSpecialty::class);
     }
 
+    /** @return HasOne<ProfessionalSpecialty, $this> */
+    public function primarySpecialtyLink(): HasOne
+    {
+        return $this->hasOne(ProfessionalSpecialty::class)->where('is_primary', true);
+    }
+
     /** @return HasMany<ProfessionalUnit, $this> */
     public function unitLinks(): HasMany
     {
         return $this->hasMany(ProfessionalUnit::class);
     }
 
+    /** @return HasOne<ProfessionalUnit, $this> */
+    public function primaryUnitLink(): HasOne
+    {
+        return $this->hasOne(ProfessionalUnit::class)->where('is_primary', true);
+    }
+
     /** @return HasMany<ProfessionalService, $this> */
     public function serviceLinks(): HasMany
     {
         return $this->hasMany(ProfessionalService::class);
+    }
+
+    /**
+     * Unidades onde o profissional está ativo — base para a restrição de
+     * compatibilidade de App\Models\ProfessionalService::compatibleUnitIds().
+     * Independe de vigência (agendada/encerrada): considera apenas o
+     * status do vínculo.
+     *
+     * @return Collection<int, string>
+     */
+    public function activeUnitIds(): Collection
+    {
+        return $this->unitLinks()->where('status', RecordStatus::Active)->pluck('unit_id');
     }
 }
