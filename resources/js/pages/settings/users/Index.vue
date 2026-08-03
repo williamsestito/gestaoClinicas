@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { Plus, Search } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { Check, Copy, Plus, Search } from '@lucide/vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { toast } from 'vue-sonner';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
     Sheet,
@@ -148,6 +157,43 @@ function openEditSheet(membership: Membership) {
 
 function onFormSuccess() {
     sheetOpen.value = false;
+}
+
+// O token bruto do convite só existe em memória na resposta de criação
+// (o backend guarda apenas o hash) — por isso ele chega aqui via "flash"
+// (não como prop normal, para nunca ficar preso no histórico de navegação)
+// e só pode ser copiado agora; depois de fechar este diálogo, não há como
+// recuperá-lo — é preciso reenviar o convite.
+const inviteLink = ref<{ email: string; url: string } | null>(null);
+const linkCopied = ref(false);
+
+let stopFlashListener: (() => void) | undefined;
+
+onMounted(() => {
+    stopFlashListener = router.on('flash', (event) => {
+        const flash = (event as CustomEvent).detail?.flash as
+            | { inviteLink?: { email: string; url: string } }
+            | undefined;
+
+        if (flash?.inviteLink) {
+            inviteLink.value = flash.inviteLink;
+            linkCopied.value = false;
+        }
+    });
+});
+
+onUnmounted(() => {
+    stopFlashListener?.();
+});
+
+async function copyInviteLink() {
+    if (!inviteLink.value) {
+        return;
+    }
+
+    await navigator.clipboard.writeText(inviteLink.value.url);
+    linkCopied.value = true;
+    toast.success('Link copiado!');
 }
 
 function toggleStatus(membership: Membership) {
@@ -548,5 +594,40 @@ function resendInvitation(invitation: Invitation) {
                 </div>
             </SheetContent>
         </Sheet>
+
+        <Dialog
+            :open="inviteLink !== null"
+            @update:open="(open) => !open && (inviteLink = null)"
+        >
+            <DialogContent>
+                <DialogHeader class="space-y-3">
+                    <DialogTitle>Convite criado</DialogTitle>
+                    <DialogDescription>
+                        Enviamos um e-mail para {{ inviteLink?.email }}, mas
+                        você também pode copiar o link abaixo e enviar
+                        diretamente por WhatsApp ou pessoalmente. A pessoa
+                        define a própria senha ao abrir o link.
+                    </DialogDescription>
+                </DialogHeader>
+                <div class="flex items-center gap-2">
+                    <Input :model-value="inviteLink?.url" readonly />
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        aria-label="Copiar link do convite"
+                        @click="copyInviteLink"
+                    >
+                        <Check v-if="linkCopied" class="size-4" />
+                        <Copy v-else class="size-4" />
+                    </Button>
+                </div>
+                <DialogFooter>
+                    <Button type="button" @click="inviteLink = null">
+                        Fechar
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>

@@ -7,6 +7,7 @@ namespace App\Models;
 use Database\Factories\SiteServiceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -15,7 +16,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * apenas para apresentação — não é um módulo clínico (sem agenda,
  * disponibilidade ou prontuário, que ficam para fase futura).
  *
+ * Pode opcionalmente referenciar um App\Models\Service (cadastro
+ * operacional) via `service_id` — vínculo puramente informativo, ver
+ * docs/modules/public-integration.md.
+ *
  * @property int $id
+ * @property string|null $service_id operational Service id — não confundir com AppointmentRequest.service_id, que referencia este próprio registro
  * @property string $name
  * @property string|null $short_description
  * @property string|null $description
@@ -28,6 +34,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property bool $is_featured
  * @property int $order
  * @property bool $is_active
+ * @property-read Service|null $service
  */
 class SiteService extends Model
 {
@@ -64,5 +71,11 @@ class SiteService extends Model
     public function appointmentRequests(): HasMany
     {
         return $this->hasMany(AppointmentRequest::class, 'service_id');
+    }
+
+    /** @return BelongsTo<Service, $this> */
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(Service::class);
     }
 }

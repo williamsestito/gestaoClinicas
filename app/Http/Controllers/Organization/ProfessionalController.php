@@ -30,6 +30,7 @@ use App\Models\ProfessionalSpecialty;
 use App\Models\ProfessionalTimeBlock;
 use App\Models\ProfessionalUnit;
 use App\Models\ProfessionalWorkingHour;
+use App\Queries\ProfessionalAgendaSummaryQuery;
 use App\Queries\ProfessionalListQuery;
 use App\Services\Professionals\ProfessionalOperationalStatusResolver;
 use App\Support\Availability\WorkingHourOpeningHoursGuard;
@@ -60,6 +61,25 @@ class ProfessionalController extends Controller
             'eligibleUsers' => $this->eligibleUsers($tenant),
             'units' => $this->activeUnitOptions($tenant),
             'specialties' => $this->activeSpecialtyOptions($tenant),
+            'services' => $this->activeServiceOptions($tenant),
+        ]);
+    }
+
+    /**
+     * Visualização consolidada das agendas dos profissionais — somente
+     * leitura para o administrador da clínica. Alteração continua exigindo
+     * as Actions/rotas dedicadas de jornada e bloqueios, autorizadas por
+     * ProfessionalPolicy::manageAvailability()/manageTimeBlocks().
+     */
+    public function agendas(TenantContext $tenant, ProfessionalAgendaSummaryQuery $query): Response
+    {
+        $this->authorize('viewAny', [Professional::class, $tenant->organization()]);
+
+        return Inertia::render('settings/professionals/Agendas', [
+            'professionals' => $query->forOrganization($tenant->organization()),
+            'units' => $this->activeUnitOptions($tenant),
+            'specialties' => $this->activeSpecialtyOptions($tenant),
+            'services' => $this->activeServiceOptions($tenant),
         ]);
     }
 
@@ -99,6 +119,7 @@ class ProfessionalController extends Controller
                 'birth_date' => $professional->birth_date?->format('Y-m-d'),
                 'bio' => $professional->bio,
                 'photo_url' => $professional->photo_path ? Storage::disk('public')->url($professional->photo_path) : null,
+                'is_public' => $professional->is_public,
                 'status' => $professional->status->value,
                 'linked_user' => $professional->user ? ['id' => $professional->user->id, 'name' => $professional->user->name] : null,
             ],
@@ -538,6 +559,18 @@ class ProfessionalController extends Controller
             ->orderBy('name')
             ->get(['id', 'name'])
             ->map(fn ($specialty) => ['id' => $specialty->id, 'name' => $specialty->name])
+            ->all();
+    }
+
+    /** @return array<int, array{id: string, name: string}> */
+    private function activeServiceOptions(TenantContext $tenant): array
+    {
+        return $tenant->organization()
+            ->services()
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn ($service) => ['id' => $service->id, 'name' => $service->name])
             ->all();
     }
 

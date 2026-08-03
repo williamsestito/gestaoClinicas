@@ -94,7 +94,7 @@ const SECTION_COMPONENTS: Record<
         component: defineAsyncComponent(
             () => import('@/components/landing/LandingSchedulingSection.vue'),
         ),
-        props: () => ({ services: props.services }),
+        props: () => ({}),
     },
     contact: {
         component: defineAsyncComponent(

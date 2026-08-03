@@ -10,6 +10,12 @@ export interface SiteBenefit extends SiteCollectionItemBase {
     description: string | null;
 }
 
+export interface LinkedOperationalRecord {
+    id: string;
+    name: string;
+    is_operational: boolean;
+}
+
 export interface SiteService extends SiteCollectionItemBase {
     name: string;
     short_description: string | null;
@@ -21,6 +27,8 @@ export interface SiteService extends SiteCollectionItemBase {
     starting_price_cents: number | null;
     cta_text: string | null;
     is_featured: boolean;
+    service_id: string | null;
+    linked_service: LinkedOperationalRecord | null;
 }
 
 export interface SiteProfessional extends SiteCollectionItemBase {
@@ -33,6 +41,8 @@ export interface SiteProfessional extends SiteCollectionItemBase {
     facebook_url: string | null;
     instagram_url: string | null;
     linkedin_url: string | null;
+    professional_id: string | null;
+    linked_professional: LinkedOperationalRecord | null;
 }
 
 export interface SiteGalleryItem extends SiteCollectionItemBase {
@@ -197,7 +207,8 @@ export interface PublicService {
 }
 
 export interface PublicProfessional {
-    id: number;
+    id: string;
+    professional_id: string | null;
     name: string;
     role_title: string | null;
     specialty: string | null;
@@ -207,6 +218,7 @@ export interface PublicProfessional {
     facebook_url: string | null;
     instagram_url: string | null;
     linkedin_url: string | null;
+    order: number;
 }
 
 export interface PublicGalleryItem {

@@ -14,6 +14,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Organization\CreateServiceRequest;
 use App\Http\Requests\Organization\UpdateServiceRequest;
 use App\Models\Service;
+use App\Queries\ServiceListQuery;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -21,34 +22,12 @@ use Inertia\Response;
 
 class ServiceController extends Controller
 {
-    public function index(TenantContext $tenant): Response
+    public function index(TenantContext $tenant, ServiceListQuery $query): Response
     {
         $this->authorize('viewAny', [Service::class, $tenant->organization()]);
 
-        $services = $tenant->organization()
-            ->services()
-            ->withTrashed()
-            ->withCount('professionalLinks')
-            ->with(['specialtyLinks.specialty:id,name'])
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Service $service) => [
-                'id' => $service->id,
-                'name' => $service->name,
-                'code' => $service->code,
-                'default_duration_minutes' => $service->default_duration_minutes,
-                'default_price_cents' => $service->default_price_cents,
-                'status' => $service->status->value,
-                'is_public' => $service->is_public,
-                'unit_availability_scope' => $service->unit_availability_scope->value,
-                'specialties' => $service->specialtyLinks->map(fn ($link) => $link->specialty?->name)->filter()->values(),
-                'professionals_count' => $service->professional_links_count,
-                'deleted_at' => $service->deleted_at,
-                'updated_at' => $service->updated_at,
-            ]);
-
         return Inertia::render('settings/services/Index', [
-            'services' => $services,
+            'services' => $query->forOrganization($tenant->organization()),
             'specialties' => $this->activeSpecialtyOptions($tenant),
             'units' => $this->activeUnitOptions($tenant),
         ]);

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useLandingScheduling } from '@/composables/useLandingScheduling';
+import { formatCurrencyBrl } from '@/lib/masks';
 import type { PublicService } from '@/types/site';
 
 const props = defineProps<{
@@ -20,7 +21,9 @@ const activeCategory = ref(ALL_CATEGORIES);
 // suas livremente no campo `category` de cada serviço.
 const categories = computed(() => {
     const found = new Set(
-        props.services.map((service) => service.category).filter((c): c is string => Boolean(c)),
+        props.services
+            .map((service) => service.category)
+            .filter((c): c is string => Boolean(c)),
     );
 
     return found.size > 0 ? [ALL_CATEGORIES, ...found] : [];
@@ -31,18 +34,13 @@ const filteredServices = computed(() => {
         return props.services;
     }
 
-    return props.services.filter((service) => service.category === activeCategory.value);
+    return props.services.filter(
+        (service) => service.category === activeCategory.value,
+    );
 });
 
 function formatPrice(cents: number | null): string | null {
-    if (cents === null) {
-        return null;
-    }
-
-    return (cents / 100).toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-    });
+    return cents === null ? null : formatCurrencyBrl(cents);
 }
 
 function selectService(id: number) {
@@ -65,7 +63,7 @@ function selectService(id: number) {
 
         <div
             v-if="categories.length > 1"
-            class="mb-8 flex justify-start gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:justify-center [&::-webkit-scrollbar]:hidden"
+            class="mb-8 flex [scrollbar-width:none] justify-start gap-2 overflow-x-auto pb-1 sm:justify-center [&::-webkit-scrollbar]:hidden"
             role="tablist"
             aria-label="Filtrar serviços por categoria"
         >

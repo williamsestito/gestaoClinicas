@@ -78,7 +78,7 @@ function cancel() {
 
             <div>
                 <h3 class="mb-1 text-sm font-medium">Usuário vinculado</h3>
-                <p class="text-muted-foreground mb-3 text-sm">
+                <p class="mb-3 text-sm text-muted-foreground">
                     Vínculo opcional — não concede acesso nem permissões por si
                     só.
                 </p>

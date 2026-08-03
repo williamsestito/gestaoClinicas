@@ -4,6 +4,7 @@ import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import AddressFields from '@/components/organization/AddressFields.vue';
 import OpeningHoursFields from '@/components/organization/OpeningHoursFields.vue';
+import PhoneInput from '@/components/PhoneInput.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -125,12 +126,12 @@ function dayLabel(day: number): string {
 
                 <div class="grid gap-2">
                     <Label for="unit-phone">Telefone (opcional)</Label>
-                    <Input id="unit-phone" v-model="form.phone" />
+                    <PhoneInput id="unit-phone" v-model="form.phone" />
                     <InputError :message="form.errors.phone" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="unit-whatsapp">WhatsApp (opcional)</Label>
-                    <Input id="unit-whatsapp" v-model="form.whatsapp" />
+                    <PhoneInput id="unit-whatsapp" v-model="form.whatsapp" />
                     <InputError :message="form.errors.whatsapp" />
                 </div>
 

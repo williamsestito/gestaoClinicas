@@ -4,10 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Organization;
 
+use App\Actions\Site\CopyServicePublicDataAction;
+use App\Actions\Site\LinkSiteServiceToServiceAction;
 use App\Actions\Site\SiteCollectionItemAction;
+use App\Actions\Site\UnlinkSiteServiceAction;
+use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Organization\CopySiteServiceDataRequest;
+use App\Http\Requests\Organization\LinkSiteServiceRequest;
 use App\Http\Requests\Organization\ReorderSiteCollectionRequest;
 use App\Http\Requests\Organization\SiteServiceRequest;
+use App\Models\Service;
 use App\Models\SiteService;
 use App\Models\SiteSetting;
 use App\Support\Tenancy\TenantContext;
@@ -25,6 +32,7 @@ class SiteServiceController extends Controller
 
         return Inertia::render('settings/site/services/Index', [
             'services' => SiteService::query()
+                ->with('service:id,name,status,deleted_at')
                 ->orderBy('order')
                 ->orderBy('id')
                 ->get()
@@ -42,9 +50,60 @@ class SiteServiceController extends Controller
                     'is_featured' => $service->is_featured,
                     'order' => $service->order,
                     'is_active' => $service->is_active,
+                    'service_id' => $service->service_id,
+                    'linked_service' => $service->service === null ? null : [
+                        'id' => $service->service->id,
+                        'name' => $service->service->name,
+                        'is_operational' => $service->service->status === RecordStatus::Active
+                            && $service->service->deleted_at === null,
+                    ],
                 ])
                 ->all(),
+            'operationalServices' => $organization
+                ->services()
+                ->where('status', RecordStatus::Active)
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (Service $service) => ['id' => $service->id, 'name' => $service->name])
+                ->all(),
         ]);
+    }
+
+    public function link(LinkSiteServiceRequest $request, SiteService $siteService, TenantContext $tenant, LinkSiteServiceToServiceAction $action): RedirectResponse
+    {
+        $organization = $tenant->organization();
+        $service = Service::query()->where('organization_id', $organization->id)->findOrFail((string) $request->validated('service_id'));
+
+        $action->handle($siteService, $service, $organization);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Serviço operacional vinculado com sucesso.']);
+
+        return back();
+    }
+
+    public function unlink(TenantContext $tenant, SiteService $siteService, UnlinkSiteServiceAction $action): RedirectResponse
+    {
+        $this->authorize('update', [SiteSetting::class, $tenant->organization()]);
+
+        $action->handle($siteService, $tenant->organization());
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'O vínculo foi removido. O conteúdo público foi preservado.']);
+
+        return back();
+    }
+
+    public function copyPublicData(CopySiteServiceDataRequest $request, SiteService $siteService, TenantContext $tenant, CopyServicePublicDataAction $action): RedirectResponse
+    {
+        abort_if($siteService->service_id === null, 422, 'Este item não está vinculado a um serviço operacional.');
+
+        $organization = $tenant->organization();
+        $service = Service::query()->where('organization_id', $organization->id)->findOrFail($siteService->service_id);
+
+        $action->handle($siteService, $service, $organization, $request->validated('fields'));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Os dados públicos selecionados foram atualizados. Nenhum dado interno foi publicado.']);
+
+        return back();
     }
 
     public function store(SiteServiceRequest $request, SiteCollectionItemAction $action): RedirectResponse

@@ -30,6 +30,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { formatCurrencyBrl } from '@/lib/masks';
 import { dashboard } from '@/routes';
 import {
     activate,
@@ -48,7 +49,10 @@ export type ServiceRow = {
     status: 'active' | 'inactive';
     is_public: boolean;
     unit_availability_scope: string;
+    specialty_ids: string[];
     specialties: string[];
+    unit_ids: string[];
+    has_available_unit: boolean;
     professionals_count: number;
     deleted_at: string | null;
     updated_at: string;
@@ -75,6 +79,11 @@ const unitOptions = computed(() => props.units ?? []);
 
 const search = ref('');
 const statusFilter = ref<'all' | 'active' | 'inactive' | 'deleted'>('all');
+const specialtyFilter = ref('all');
+const unitFilter = ref('all');
+const professionalsFilter = ref<'all' | 'with' | 'without'>('all');
+const publicFilter = ref<'all' | 'public' | 'private'>('all');
+const availabilityFilter = ref<'all' | 'available' | 'unavailable'>('all');
 
 const indicators = computed(() => ({
     total: props.services.length,
@@ -104,14 +113,55 @@ const filteredServices = computed(() => {
                   : !service.deleted_at &&
                     service.status === statusFilter.value;
 
-        return matchesSearch && matchesStatus;
+        const matchesSpecialty =
+            specialtyFilter.value === 'all' ||
+            service.specialty_ids.includes(specialtyFilter.value);
+
+        const matchesUnit =
+            unitFilter.value === 'all' ||
+            service.unit_ids.includes(unitFilter.value);
+
+        const matchesProfessionals =
+            professionalsFilter.value === 'all' ||
+            (professionalsFilter.value === 'with'
+                ? service.professionals_count > 0
+                : service.professionals_count === 0);
+
+        const matchesPublic =
+            publicFilter.value === 'all' ||
+            (publicFilter.value === 'public'
+                ? service.is_public
+                : !service.is_public);
+
+        const matchesAvailability =
+            availabilityFilter.value === 'all' ||
+            (availabilityFilter.value === 'available'
+                ? service.has_available_unit
+                : !service.has_available_unit);
+
+        return (
+            matchesSearch &&
+            matchesStatus &&
+            matchesSpecialty &&
+            matchesUnit &&
+            matchesProfessionals &&
+            matchesPublic &&
+            matchesAvailability
+        );
     });
 });
 
 const hasAny = computed(() => props.services.length > 0);
 const hasFilteredResults = computed(() => filteredServices.value.length > 0);
 const hasActiveFilters = computed(
-    () => search.value.trim() !== '' || statusFilter.value !== 'all',
+    () =>
+        search.value.trim() !== '' ||
+        statusFilter.value !== 'all' ||
+        specialtyFilter.value !== 'all' ||
+        unitFilter.value !== 'all' ||
+        professionalsFilter.value !== 'all' ||
+        publicFilter.value !== 'all' ||
+        availabilityFilter.value !== 'all',
 );
 
 const sheetOpen = ref(false);
@@ -170,10 +220,7 @@ function formatPrice(cents: number | null): string {
         return '—';
     }
 
-    return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-    }).format(cents / 100);
+    return formatCurrencyBrl(cents);
 }
 
 function formatDuration(minutes: number): string {
@@ -262,6 +309,66 @@ function formatDuration(minutes: number): string {
                 <option value="active">Ativos</option>
                 <option value="inactive">Inativos</option>
                 <option value="deleted">Excluídos</option>
+            </select>
+
+            <select
+                v-model="specialtyFilter"
+                aria-label="Filtrar serviços por especialidade"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+                <option value="all">Todas as especialidades</option>
+                <option
+                    v-for="specialty in specialtyOptions"
+                    :key="specialty.id"
+                    :value="specialty.id"
+                >
+                    {{ specialty.name }}
+                </option>
+            </select>
+
+            <select
+                v-model="unitFilter"
+                aria-label="Filtrar serviços por unidade"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+                <option value="all">Todas as unidades</option>
+                <option
+                    v-for="unit in unitOptions"
+                    :key="unit.id"
+                    :value="unit.id"
+                >
+                    {{ unit.name }}
+                </option>
+            </select>
+
+            <select
+                v-model="professionalsFilter"
+                aria-label="Filtrar serviços por vínculo com profissionais"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+                <option value="all">Profissionais: todos</option>
+                <option value="with">Com profissionais vinculados</option>
+                <option value="without">Sem profissionais vinculados</option>
+            </select>
+
+            <select
+                v-model="publicFilter"
+                aria-label="Filtrar serviços por exibição pública"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+                <option value="all">Exibição pública: todos</option>
+                <option value="public">Exibição pública ativada</option>
+                <option value="private">Exibição pública desativada</option>
+            </select>
+
+            <select
+                v-model="availabilityFilter"
+                aria-label="Filtrar serviços por disponibilidade operacional"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+                <option value="all">Disponibilidade: todas</option>
+                <option value="available">Disponível em alguma unidade</option>
+                <option value="unavailable">Sem unidade disponível</option>
             </select>
         </div>
 

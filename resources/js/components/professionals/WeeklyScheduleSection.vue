@@ -34,6 +34,7 @@ import {
 } from '@/routes/settings/professionals/working-hours';
 import type { EditableWorkingHour } from './WorkingHourForm.vue';
 import WorkingHourForm from './WorkingHourForm.vue';
+import WorkingHourWizard from './WorkingHourWizard.vue';
 
 export type WorkingHourRow = {
     id: string;
@@ -118,6 +119,12 @@ function onFormSuccess() {
     sheetOpen.value = false;
 }
 
+const wizardOpen = ref(false);
+
+function onWizardSuccess() {
+    wizardOpen.value = false;
+}
+
 function toggleActivate(row: WorkingHourRow) {
     processingId.value = row.id;
     const routeFn = row.status === 'active' ? deactivate : activate;
@@ -157,10 +164,12 @@ const copyDialogOpen = ref(false);
 const copySourceWeekday = ref<number | null>(null);
 const copyTargetWeekdays = ref<number[]>([]);
 const copyProcessing = ref(false);
+const copyErrors = ref<string[]>([]);
 
 function openCopyDialog(weekday: number) {
     copySourceWeekday.value = weekday;
     copyTargetWeekdays.value = [];
+    copyErrors.value = [];
     copyDialogOpen.value = true;
 }
 
@@ -189,6 +198,7 @@ function submitCopy() {
     }
 
     copyProcessing.value = true;
+    copyErrors.value = [];
     router.post(
         copy([props.professionalId, props.unit.professional_unit_id]).url,
         {
@@ -197,9 +207,19 @@ function submitCopy() {
         },
         {
             preserveScroll: true,
+            // A cópia é tudo-ou-nada: se qualquer dia de destino conflitar
+            // (fora do funcionamento da unidade, sobreposição etc.), nada é
+            // copiado — o diálogo precisa continuar aberto mostrando o
+            // motivo, nunca fechar silenciosamente como se tivesse
+            // funcionado.
+            onSuccess: () => {
+                copyDialogOpen.value = false;
+            },
+            onError: (errors) => {
+                copyErrors.value = Object.values(errors);
+            },
             onFinish: () => {
                 copyProcessing.value = false;
-                copyDialogOpen.value = false;
             },
         },
     );
@@ -211,132 +231,195 @@ function submitCopy() {
         <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
                 <h3 class="text-sm font-semibold">{{ unit.unit.name }}</h3>
-                <p class="text-muted-foreground text-xs">
+                <p class="text-xs text-muted-foreground">
                     Fuso: {{ unit.unit.timezone }}
                     <span v-if="unit.unit_link_status === 'inactive'">
                         · Vínculo inativo</span
                     >
                 </p>
             </div>
+            <Button
+                v-if="unit.can_manage"
+                type="button"
+                variant="outline"
+                size="sm"
+                @click="wizardOpen = true"
+            >
+                Configurar vigência
+            </Button>
         </div>
 
-        <div class="grid gap-2">
-            <div
-                v-for="day in WEEKDAYS"
-                :key="day.value"
-                class="grid gap-2 rounded-md border p-3"
-            >
-                <div class="flex items-center justify-between gap-2">
-                    <p class="text-sm font-medium">{{ day.label }}</p>
-                    <div v-if="unit.can_manage" class="flex items-center gap-2">
-                        <Button
-                            v-if="intervalsFor(day.value).length > 0"
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            @click="openCopyDialog(day.value)"
-                        >
-                            Copiar
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            :aria-label="`Adicionar intervalo em ${day.label}`"
-                            @click="openCreate(day.value)"
-                        >
-                            <Plus class="size-4" />
-                        </Button>
-                    </div>
-                </div>
-
-                <p
-                    v-if="openingHoursFor(day.value).length === 0"
-                    class="text-muted-foreground text-xs"
+        <div class="overflow-x-auto rounded-md border">
+            <table class="w-full text-sm">
+                <thead
+                    class="border-b bg-muted/50 text-left text-muted-foreground"
                 >
-                    Unidade fechada neste dia.
-                </p>
-
-                <div
-                    v-if="intervalsFor(day.value).length === 0"
-                    class="text-muted-foreground text-xs"
-                >
-                    Nenhum horário cadastrado.
-                </div>
-
-                <ul v-else class="grid gap-2">
-                    <li
-                        v-for="row in intervalsFor(day.value)"
-                        :key="row.id"
-                        class="flex items-center justify-between gap-2 rounded border px-3 py-2"
-                    >
-                        <div>
-                            <p class="text-sm">
-                                {{ row.starts_at }} às {{ row.ends_at }}
-                            </p>
-                            <p class="text-muted-foreground text-xs">
-                                {{
-                                    row.deleted_at
-                                        ? 'Excluído'
-                                        : row.status === 'active'
-                                          ? 'Ativo'
-                                          : 'Inativo'
-                                }}
-                                · {{ vigencyLabels[row.vigency_status] }}
-                            </p>
-                            <p
-                                v-if="!row.is_within_opening_hours"
-                                class="text-xs text-amber-600 dark:text-amber-400"
+                    <tr>
+                        <th class="px-3 py-2 font-medium">Dia da semana</th>
+                        <th class="px-3 py-2 font-medium">Início</th>
+                        <th class="px-3 py-2 font-medium">Término</th>
+                        <th class="px-3 py-2 font-medium">Status</th>
+                        <th class="px-3 py-2 font-medium">
+                            <span class="sr-only">Ações</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template v-for="day in WEEKDAYS" :key="day.value">
+                        <tr
+                            v-if="intervalsFor(day.value).length === 0"
+                            class="border-b last:border-0"
+                        >
+                            <td class="px-3 py-2.5 align-top font-medium">
+                                {{ day.label }}
+                            </td>
+                            <td
+                                colspan="3"
+                                class="px-3 py-2.5 align-top text-muted-foreground"
                             >
-                                Fora do funcionamento atual da unidade.
-                            </p>
-                        </div>
-
-                        <DropdownMenu v-if="unit.can_manage">
-                            <DropdownMenuTrigger as-child>
+                                {{
+                                    openingHoursFor(day.value).length === 0
+                                        ? 'Unidade fechada neste dia.'
+                                        : 'Nenhum horário cadastrado.'
+                                }}
+                            </td>
+                            <td class="px-3 py-2.5 text-right align-top">
                                 <Button
+                                    v-if="unit.can_manage"
+                                    type="button"
                                     variant="ghost"
-                                    size="icon"
-                                    :disabled="processingId === row.id"
-                                    :aria-label="`Ações para o intervalo de ${row.starts_at} às ${row.ends_at}`"
+                                    size="sm"
+                                    :aria-label="`Adicionar intervalo em ${day.label}`"
+                                    @click="openCreate(day.value)"
                                 >
-                                    <MoreHorizontal class="size-4" />
+                                    <Plus class="size-4" />
+                                    Adicionar
                                 </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <template v-if="row.deleted_at">
-                                    <DropdownMenuItem @select="restore(row)">
-                                        Restaurar
-                                    </DropdownMenuItem>
-                                </template>
-                                <template v-else>
-                                    <DropdownMenuItem @select="openEdit(row)">
-                                        Editar
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        v-if="row.status === 'active'"
-                                        @select="toggleActivate(row)"
+                            </td>
+                        </tr>
+
+                        <tr
+                            v-for="(row, index) in intervalsFor(day.value)"
+                            :key="row.id"
+                            class="border-b last:border-0"
+                        >
+                            <td class="px-3 py-2.5 align-top font-medium">
+                                {{ index === 0 ? day.label : '' }}
+                            </td>
+                            <td class="px-3 py-2.5 align-top">
+                                {{ row.starts_at }}
+                            </td>
+                            <td class="px-3 py-2.5 align-top">
+                                {{ row.ends_at }}
+                            </td>
+                            <td class="px-3 py-2.5 align-top">
+                                <p>
+                                    {{
+                                        row.deleted_at
+                                            ? 'Excluído'
+                                            : row.status === 'active'
+                                              ? 'Ativo'
+                                              : 'Inativo'
+                                    }}
+                                    · {{ vigencyLabels[row.vigency_status] }}
+                                </p>
+                                <p
+                                    v-if="!row.is_within_opening_hours"
+                                    class="text-xs text-amber-600 dark:text-amber-400"
+                                >
+                                    Fora do funcionamento atual da unidade.
+                                </p>
+                            </td>
+                            <td class="px-3 py-2.5 text-right align-top">
+                                <div
+                                    class="flex items-center justify-end gap-1"
+                                >
+                                    <template
+                                        v-if="unit.can_manage && index === 0"
                                     >
-                                        Inativar
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        v-else
-                                        @select="toggleActivate(row)"
-                                    >
-                                        Ativar
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        variant="destructive"
-                                        @select="pendingRemoval = row"
-                                    >
-                                        Excluir
-                                    </DropdownMenuItem>
-                                </template>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </li>
-                </ul>
-            </div>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            @click="openCopyDialog(day.value)"
+                                        >
+                                            Copiar
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            :aria-label="`Adicionar intervalo em ${day.label}`"
+                                            @click="openCreate(day.value)"
+                                        >
+                                            <Plus class="size-4" />
+                                        </Button>
+                                    </template>
+
+                                    <DropdownMenu v-if="unit.can_manage">
+                                        <DropdownMenuTrigger as-child>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                :disabled="
+                                                    processingId === row.id
+                                                "
+                                                :aria-label="`Ações para o intervalo de ${row.starts_at} às ${row.ends_at}`"
+                                            >
+                                                <MoreHorizontal
+                                                    class="size-4"
+                                                />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <template v-if="row.deleted_at">
+                                                <DropdownMenuItem
+                                                    @select="restore(row)"
+                                                >
+                                                    Restaurar
+                                                </DropdownMenuItem>
+                                            </template>
+                                            <template v-else>
+                                                <DropdownMenuItem
+                                                    @select="openEdit(row)"
+                                                >
+                                                    Editar
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    v-if="
+                                                        row.status === 'active'
+                                                    "
+                                                    @select="
+                                                        toggleActivate(row)
+                                                    "
+                                                >
+                                                    Inativar
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    v-else
+                                                    @select="
+                                                        toggleActivate(row)
+                                                    "
+                                                >
+                                                    Ativar
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    variant="destructive"
+                                                    @select="
+                                                        pendingRemoval = row
+                                                    "
+                                                >
+                                                    Excluir
+                                                </DropdownMenuItem>
+                                            </template>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
         </div>
 
         <Sheet v-model:open="sheetOpen">
@@ -366,6 +449,29 @@ function submitCopy() {
                         :working-hour="editingWorkingHour ?? undefined"
                         @success="onFormSuccess"
                         @cancel="sheetOpen = false"
+                    />
+                </div>
+            </SheetContent>
+        </Sheet>
+
+        <Sheet v-model:open="wizardOpen">
+            <SheetContent side="right" class="w-full gap-0 sm:max-w-lg">
+                <SheetHeader>
+                    <SheetTitle>Configurar vigência em lote</SheetTitle>
+                    <SheetDescription>
+                        Defina de uma vez a vigência, os dias da semana e os
+                        intervalos para {{ unit.unit.name }} (fuso
+                        {{ unit.unit.timezone }}). Para ajustes pontuais, use
+                        "Adicionar intervalo" em um único dia.
+                    </SheetDescription>
+                </SheetHeader>
+                <div class="px-4 pb-6">
+                    <WorkingHourWizard
+                        v-if="wizardOpen"
+                        :professional-id="professionalId"
+                        :professional-unit-id="unit.professional_unit_id"
+                        @success="onWizardSuccess"
+                        @cancel="wizardOpen = false"
                     />
                 </div>
             </SheetContent>
@@ -422,6 +528,15 @@ function submitCopy() {
                         />
                         {{ day.label }}
                     </label>
+                </div>
+                <div
+                    v-if="copyErrors.length > 0"
+                    role="alert"
+                    class="grid gap-1 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+                >
+                    <p v-for="(message, index) in copyErrors" :key="index">
+                        {{ message }}
+                    </p>
                 </div>
                 <DialogFooter class="gap-2">
                     <DialogClose as-child>

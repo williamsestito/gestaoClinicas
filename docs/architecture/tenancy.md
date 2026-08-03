@@ -8,6 +8,16 @@ unidade também carregam `unit_id`. Não há pacote externo de multi-tenancy
 — o isolamento é feito por convenção de query + autorização, nunca por
 Global Scope silencioso (que esconderia dados em comandos administrativos).
 
+**Exceção documentada**: as tabelas do módulo "site da clínica"
+(`site_settings`, `site_professionals`, `site_services` e demais coleções
+promocionais) são singleton por instalação — sem `organization_id` (ver
+[ADR-010](../decisions/ADR-010-single-tenant-install-and-seo.md)). Onde
+essas tabelas referenciam um registro multiempresa (ex.: o vínculo opcional
+`site_professionals.professional_id`), o isolamento não pode ser expresso
+como FK composta e é revalidado no domínio contra
+`TenantContext::organization()` — ver
+[public-integration.md](../modules/public-integration.md).
+
 ## Contexto ativo
 
 `App\Support\Tenancy\TenantContext` (singleton por requisição) expõe a

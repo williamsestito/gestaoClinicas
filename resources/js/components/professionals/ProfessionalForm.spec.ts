@@ -60,6 +60,7 @@ describe('ProfessionalForm', () => {
                     document: '***.***.***-12',
                     birth_date: null,
                     bio: null,
+                    is_public: false,
                 },
             },
         });
@@ -80,13 +81,13 @@ describe('ProfessionalForm', () => {
                     document: '***.***.***-12',
                     birth_date: null,
                     bio: null,
+                    is_public: false,
                 },
             },
         });
 
-        const documentInput = wrapper.find(
-            '#professional-document',
-        ).element as HTMLInputElement;
+        const documentInput = wrapper.find('#professional-document')
+            .element as HTMLInputElement;
         expect(documentInput.value).toBe('');
         expect(documentInput.placeholder).toContain('***.***.***-12');
     });

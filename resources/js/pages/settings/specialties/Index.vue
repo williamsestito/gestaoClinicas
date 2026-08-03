@@ -27,6 +27,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { formatDateTimeBr } from '@/lib/masks';
 import { dashboard } from '@/routes';
 import {
     activate,
@@ -59,6 +60,8 @@ defineOptions({
 
 const search = ref('');
 const statusFilter = ref<'all' | 'active' | 'inactive' | 'deleted'>('all');
+const professionalsFilter = ref<'all' | 'with' | 'without'>('all');
+const servicesFilter = ref<'all' | 'with' | 'without'>('all');
 
 const indicators = computed(() => ({
     total: props.specialties.length,
@@ -91,14 +94,35 @@ const filteredSpecialties = computed(() => {
                   : !specialty.deleted_at &&
                     specialty.status === statusFilter.value;
 
-        return matchesSearch && matchesStatus;
+        const matchesProfessionals =
+            professionalsFilter.value === 'all' ||
+            (professionalsFilter.value === 'with'
+                ? specialty.professionals_count > 0
+                : specialty.professionals_count === 0);
+
+        const matchesServices =
+            servicesFilter.value === 'all' ||
+            (servicesFilter.value === 'with'
+                ? specialty.services_count > 0
+                : specialty.services_count === 0);
+
+        return (
+            matchesSearch &&
+            matchesStatus &&
+            matchesProfessionals &&
+            matchesServices
+        );
     });
 });
 
 const hasAny = computed(() => props.specialties.length > 0);
 const hasFilteredResults = computed(() => filteredSpecialties.value.length > 0);
 const hasActiveFilters = computed(
-    () => search.value.trim() !== '' || statusFilter.value !== 'all',
+    () =>
+        search.value.trim() !== '' ||
+        statusFilter.value !== 'all' ||
+        professionalsFilter.value !== 'all' ||
+        servicesFilter.value !== 'all',
 );
 
 const sheetOpen = ref(false);
@@ -159,11 +183,7 @@ function restore(specialty: SpecialtyRow) {
 }
 
 function formatDate(value: string): string {
-    return new Intl.DateTimeFormat('pt-BR', {
-        dateStyle: 'short',
-        timeStyle: 'short',
-        timeZone: 'America/Sao_Paulo',
-    }).format(new Date(value));
+    return formatDateTimeBr(value);
 }
 </script>
 
@@ -241,6 +261,26 @@ function formatDate(value: string): string {
                 <option value="active">Ativas</option>
                 <option value="inactive">Inativas</option>
                 <option value="deleted">Excluídas</option>
+            </select>
+
+            <select
+                v-model="professionalsFilter"
+                aria-label="Filtrar especialidades por vínculo com profissionais"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+                <option value="all">Profissionais: todas</option>
+                <option value="with">Com profissionais vinculados</option>
+                <option value="without">Sem profissionais vinculados</option>
+            </select>
+
+            <select
+                v-model="servicesFilter"
+                aria-label="Filtrar especialidades por vínculo com serviços"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+                <option value="all">Serviços: todas</option>
+                <option value="with">Com serviços vinculados</option>
+                <option value="without">Sem serviços vinculados</option>
             </select>
         </div>
 

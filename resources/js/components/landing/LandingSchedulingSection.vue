@@ -3,6 +3,7 @@ import { useForm } from '@inertiajs/vue3';
 import { CheckCircle2 } from '@lucide/vue';
 import { watch } from 'vue';
 import InputError from '@/components/InputError.vue';
+import PhoneInput from '@/components/PhoneInput.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -18,19 +19,29 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { useLandingScheduling } from '@/composables/useLandingScheduling';
 import { store } from '@/routes/appointment-requests';
-import type { PublicService } from '@/types/site';
+import LandingAvailabilitySearch from './LandingAvailabilitySearch.vue';
 
-defineProps<{
-    services: PublicService[];
-}>();
-
-const { selectedServiceId, selectedProfessionalName } = useLandingScheduling();
+const { selectedServiceId, selectedProfessionalName, preferredDate, preferredPeriod } =
+    useLandingScheduling();
 
 const STEPS = [
-    { title: 'Escolha o serviço', description: 'Selecione o tratamento de interesse (opcional).' },
-    { title: 'Preencha seus dados', description: 'Nome e telefone/WhatsApp para contato.' },
-    { title: 'Indique sua preferência', description: 'Data e período aproximados — não é uma reserva.' },
-    { title: 'Aguarde a confirmação', description: 'Nossa equipe confirma o horário pelo telefone ou WhatsApp.' },
+    {
+        title: 'Escolha o serviço',
+        description: 'Selecione o tratamento de interesse (opcional).',
+    },
+    {
+        title: 'Preencha seus dados',
+        description: 'Nome e telefone/WhatsApp para contato.',
+    },
+    {
+        title: 'Indique sua preferência',
+        description: 'Data e período aproximados — não é uma reserva.',
+    },
+    {
+        title: 'Aguarde a confirmação',
+        description:
+            'Nossa equipe confirma o horário pelo telefone ou WhatsApp.',
+    },
 ];
 
 const PERIOD_OPTIONS = ['Manhã', 'Tarde', 'Noite'];
@@ -113,19 +124,54 @@ watch(
 
 // Não há seleção real de profissional no formulário (só o serviço tem
 // coluna própria em `appointment_requests`) — clicar em "Agendar" num
-// profissional só preenche as observações, sem sobrescrever o que a
-// pessoa já tiver escrito.
+// profissional, ou num horário da busca de disponibilidade, preenche as
+// observações automaticamente. Cliques repetidos (ex.: escolher outro
+// horário) continuam atualizando o texto — só paramos de sobrescrever
+// quando a pessoa edita as observações com as próprias palavras.
+let lastAutoFilledNotes = '';
+
 watch(
     selectedProfessionalName,
     (name) => {
-        if (name && !form.notes) {
+        if (!name) {
+            return;
+        }
+
+        if (form.notes === '' || form.notes === lastAutoFilledNotes) {
             form.notes = `Gostaria de agendar com ${name}.`;
+            lastAutoFilledNotes = form.notes;
+        }
+    },
+    { immediate: true },
+);
+
+// Data/período são campos estruturados (não texto livre), então sempre
+// refletem o último horário escolhido na busca de disponibilidade —
+// diferente das observações, aqui não faz sentido "proteger" contra
+// sobrescrita: cada clique num horário representa a escolha atual.
+watch(
+    preferredDate,
+    (date) => {
+        if (date) {
+            form.preferred_date = date;
+        }
+    },
+    { immediate: true },
+);
+
+watch(
+    preferredPeriod,
+    (period) => {
+        if (period) {
+            form.preferred_period = period;
         }
     },
     { immediate: true },
 );
 
 function submit() {
+    // A validação (nome, telefone, aceite dos termos etc.) só acontece
+    // aqui, ao confirmar — nunca antes, ao escolher serviço/horário.
     // form.recentlySuccessful já protege contra clique duplo (botão fica
     // desabilitado enquanto form.processing é true).
     form.post(store().url, {
@@ -174,16 +220,19 @@ function submit() {
             </li>
         </ol>
 
+        <LandingAvailabilitySearch />
+
         <div
             v-if="form.recentlySuccessful"
             class="flex flex-col items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 p-6 text-center"
             role="status"
         >
             <CheckCircle2 class="size-8 text-primary" />
-            <p class="font-medium">Solicitação enviada!</p>
+            <p class="font-medium">Pré-agendamento enviado!</p>
             <p class="text-sm text-muted-foreground">
-                Recebemos seu pedido de agendamento. Nossa equipe entrará em
-                contato em breve.
+                Sua solicitação foi encaminhada à clínica. Você receberá a
+                confirmação do procedimento em breve, pelo telefone ou
+                WhatsApp informado.
             </p>
         </div>
 
@@ -192,30 +241,6 @@ function submit() {
             class="grid gap-5 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8"
             @submit.prevent="submit"
         >
-            <div v-if="services.length > 0" class="grid gap-2">
-                <Label for="service_id">Serviço de interesse</Label>
-                <Select
-                    :model-value="form.service_id?.toString() ?? undefined"
-                    @update:model-value="
-                        (v) => (form.service_id = v ? Number(v) : null)
-                    "
-                >
-                    <SelectTrigger id="service_id" class="w-full">
-                        <SelectValue placeholder="Selecione (opcional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem
-                            v-for="service in services"
-                            :key="service.id"
-                            :value="service.id.toString()"
-                        >
-                            {{ service.name }}
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
-                <InputError :message="form.errors.service_id" />
-            </div>
-
             <div class="grid gap-2">
                 <Label for="name">Nome completo</Label>
                 <Input
@@ -230,12 +255,11 @@ function submit() {
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div class="grid gap-2">
                     <Label for="phone">Telefone / WhatsApp</Label>
-                    <Input
+                    <PhoneInput
                         id="phone"
                         v-model="form.phone"
                         required
                         autocomplete="tel"
-                        placeholder="(00) 00000-0000"
                     />
                     <InputError :message="form.errors.phone" />
                 </div>
@@ -253,7 +277,9 @@ function submit() {
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div class="grid gap-2">
-                    <Label for="preferred_date">Data preferencial (opcional)</Label>
+                    <Label for="preferred_date"
+                        >Data preferencial (opcional)</Label
+                    >
                     <Input
                         id="preferred_date"
                         v-model="form.preferred_date"
@@ -321,12 +347,11 @@ function submit() {
 
             <Button type="submit" size="lg" :disabled="form.processing">
                 <Spinner v-if="form.processing" />
-                Solicitar agendamento
+                Criar pré-agendamento
             </Button>
             <p class="text-center text-xs text-muted-foreground">
-                O envio não garante reserva do horário — nossa equipe
-                confirmará a disponibilidade pelo telefone ou WhatsApp
-                informado.
+                O envio não garante reserva do horário — nossa equipe confirmará
+                a disponibilidade pelo telefone ou WhatsApp informado.
             </p>
         </form>
     </section>

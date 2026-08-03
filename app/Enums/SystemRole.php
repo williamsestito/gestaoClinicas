@@ -158,6 +158,10 @@ enum SystemRole: string
                 PermissionKey::DashboardView,
                 PermissionKey::UnitsView,
                 PermissionKey::SettingsView,
+                PermissionKey::ProfessionalOwnAvailabilityView,
+                PermissionKey::ProfessionalOwnAvailabilityManage,
+                PermissionKey::ProfessionalOwnTimeBlocksView,
+                PermissionKey::ProfessionalOwnTimeBlocksManage,
             ],
 
             self::Finance => [

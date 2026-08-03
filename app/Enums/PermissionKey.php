@@ -83,6 +83,11 @@ enum PermissionKey: string
     case ProfessionalTimeBlocksView = 'professional-time-blocks.view';
     case ProfessionalTimeBlocksManage = 'professional-time-blocks.manage';
 
+    case ProfessionalOwnAvailabilityView = 'professional-availability.view-own';
+    case ProfessionalOwnAvailabilityManage = 'professional-availability.manage-own';
+    case ProfessionalOwnTimeBlocksView = 'professional-time-blocks.view-own';
+    case ProfessionalOwnTimeBlocksManage = 'professional-time-blocks.manage-own';
+
     public function label(): string
     {
         return match ($this) {
@@ -156,6 +161,10 @@ enum PermissionKey: string
             self::ProfessionalAvailabilityManage => 'Gerenciar jornada e disponibilidade',
             self::ProfessionalTimeBlocksView => 'Visualizar ausências e bloqueios',
             self::ProfessionalTimeBlocksManage => 'Gerenciar ausências e bloqueios',
+            self::ProfessionalOwnAvailabilityView => 'Visualizar a própria jornada e disponibilidade',
+            self::ProfessionalOwnAvailabilityManage => 'Gerenciar a própria jornada e disponibilidade',
+            self::ProfessionalOwnTimeBlocksView => 'Visualizar as próprias ausências e bloqueios',
+            self::ProfessionalOwnTimeBlocksManage => 'Gerenciar as próprias ausências e bloqueios',
         };
     }
 

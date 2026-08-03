@@ -39,6 +39,27 @@ it('lets the owner invite a user and sends the invitation notification', functio
     Notification::assertSentOnDemand(OrganizationInvitationNotification::class);
 });
 
+it('flashes a copyable invite link alongside the email, since the raw token only exists in this request', function () {
+    Notification::fake();
+    $ctx = ownerActingInOrganization();
+    seedSystemRoles($ctx['organization']);
+    $role = Role::query()->where('organization_id', $ctx['organization']->id)->where('slug', SystemRole::Reception->value)->firstOrFail();
+
+    $this->actingAs($ctx['user'])
+        ->post(route('settings.users.invite'), [
+            'email' => 'nova-link@example.com',
+            'role_id' => $role->id,
+            'unit_ids' => [$ctx['headquarters']->id],
+        ])
+        ->assertSessionHasNoErrors();
+
+    $flash = session('inertia.flash_data');
+
+    expect($flash)->toHaveKey('inviteLink')
+        ->and($flash['inviteLink']['email'])->toBe('nova-link@example.com')
+        ->and($flash['inviteLink']['url'])->toContain('/invitations/');
+});
+
 it('never lets an invited user become a platform admin on acceptance', function () {
     $organization = Organization::factory()->create();
     $inviter = User::factory()->create();

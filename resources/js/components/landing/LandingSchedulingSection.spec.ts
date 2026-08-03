@@ -1,8 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { reactive } from 'vue';
+import { nextTick, reactive } from 'vue';
 import { useLandingScheduling } from '@/composables/useLandingScheduling';
-import type { PublicService } from '@/types/site';
 import LandingSchedulingSection from './LandingSchedulingSection.vue';
 
 const { formState, postMock } = vi.hoisted(() => ({
@@ -43,37 +42,27 @@ vi.mock('@inertiajs/vue3', () => ({
     },
 }));
 
-const services: PublicService[] = [
-    {
-        id: 1,
-        name: 'Limpeza de pele',
-        short_description: null,
-        description: null,
-        image_url: null,
-        icon: null,
-        category: null,
-        duration_minutes: 60,
-        starting_price_cents: 12000,
-        cta_text: null,
-        is_featured: false,
-    },
-];
-
 beforeEach(() => {
     postMock.mockReset();
     formState.processing = false;
     formState.recentlySuccessful = false;
     formState.service_id = null;
+    formState.name = '';
+    formState.phone = '';
+    formState.terms_accepted = false;
     formState.notes = '';
+    formState.preferred_date = '';
+    formState.preferred_period = '';
+    formState.errors = {};
     useLandingScheduling().selectedServiceId.value = null;
     useLandingScheduling().selectedProfessionalName.value = null;
+    useLandingScheduling().preferredDate.value = null;
+    useLandingScheduling().preferredPeriod.value = null;
 });
 
 describe('LandingSchedulingSection', () => {
     it('renders the required fields for a lead: name and phone', () => {
-        const wrapper = mount(LandingSchedulingSection, {
-            props: { services: [] },
-        });
+        const wrapper = mount(LandingSchedulingSection);
 
         expect(wrapper.find('#name').exists()).toBe(true);
         expect(wrapper.find('#phone').exists()).toBe(true);
@@ -81,11 +70,27 @@ describe('LandingSchedulingSection', () => {
         expect(wrapper.find('#phone').attributes('required')).toBeDefined();
     });
 
-    it('disables the submit button while the request is processing, preventing duplicate submissions', async () => {
+    it('masks the phone field as the person types, with no manual formatting required', async () => {
+        const wrapper = mount(LandingSchedulingSection);
+
+        const phoneInput = wrapper.find('#phone');
+        await phoneInput.setValue('47996961511');
+
+        expect((phoneInput.element as HTMLInputElement).value).toBe(
+            '(47) 99696-1511',
+        );
+    });
+
+    it('no longer shows a manual "Serviço de interesse" picker — service is only pre-filled via the shared composable', () => {
+        const wrapper = mount(LandingSchedulingSection);
+
+        expect(wrapper.text()).not.toContain('Serviço de interesse');
+        expect(wrapper.find('#service_id').exists()).toBe(false);
+    });
+
+    it('disables the submit button while the request is processing, preventing duplicate submissions', () => {
         formState.processing = true;
-        const wrapper = mount(LandingSchedulingSection, {
-            props: { services: [] },
-        });
+        const wrapper = mount(LandingSchedulingSection);
 
         const button = wrapper.find('button[type="submit"]');
         expect(button.attributes('disabled')).toBeDefined();
@@ -93,26 +98,32 @@ describe('LandingSchedulingSection', () => {
 
     it('shows a success message and hides the form once the submission succeeds', () => {
         formState.recentlySuccessful = true;
-        const wrapper = mount(LandingSchedulingSection, {
-            props: { services: [] },
-        });
+        const wrapper = mount(LandingSchedulingSection);
 
-        expect(wrapper.text()).toContain('Solicitação enviada!');
+        expect(wrapper.text()).toContain('Pré-agendamento enviado!');
+        expect(wrapper.text()).toContain('encaminhada à clínica');
         expect(wrapper.find('form').exists()).toBe(false);
     });
 
-    it('pre-selects the service chosen on the services section via the shared composable', () => {
+    it('labels the submit button "Criar pré-agendamento" and only validates/submits on that click', () => {
+        const wrapper = mount(LandingSchedulingSection);
+
+        expect(wrapper.find('button[type="submit"]').text()).toContain(
+            'Criar pré-agendamento',
+        );
+        expect(postMock).not.toHaveBeenCalled();
+    });
+
+    it('pre-fills the hidden service_id from the shared composable (set by "Agendar" elsewhere on the page)', () => {
         useLandingScheduling().selectedServiceId.value = 1;
 
-        mount(LandingSchedulingSection, { props: { services } });
+        mount(LandingSchedulingSection);
 
         expect(formState.service_id).toBe(1);
     });
 
     it('renders an optional preferred date field bounded to a sensible window', () => {
-        const wrapper = mount(LandingSchedulingSection, {
-            props: { services: [] },
-        });
+        const wrapper = mount(LandingSchedulingSection);
 
         const dateInput = wrapper.find('#preferred_date');
         expect(dateInput.exists()).toBe(true);
@@ -122,30 +133,22 @@ describe('LandingSchedulingSection', () => {
     });
 
     it('keeps the honeypot field unreachable by keyboard and hidden from screen readers', () => {
-        const wrapper = mount(LandingSchedulingSection, {
-            props: { services: [] },
-        });
+        const wrapper = mount(LandingSchedulingSection);
 
         const honeypot = wrapper.find('#website');
         expect(honeypot.exists()).toBe(true);
         expect(honeypot.attributes('tabindex')).toBe('-1');
-        expect(
-            honeypot.element.closest('[aria-hidden="true"]'),
-        ).not.toBeNull();
+        expect(honeypot.element.closest('[aria-hidden="true"]')).not.toBeNull();
     });
 
     it('clarifies that submitting the form does not guarantee a reservation', () => {
-        const wrapper = mount(LandingSchedulingSection, {
-            props: { services: [] },
-        });
+        const wrapper = mount(LandingSchedulingSection);
 
         expect(wrapper.text()).toContain('não garante reserva');
     });
 
     it('shows the four-step explainer of how the request flow works', () => {
-        const wrapper = mount(LandingSchedulingSection, {
-            props: { services: [] },
-        });
+        const wrapper = mount(LandingSchedulingSection);
 
         expect(wrapper.findAll('ol > li')).toHaveLength(4);
         expect(wrapper.text()).toContain('Escolha o serviço');
@@ -155,9 +158,36 @@ describe('LandingSchedulingSection', () => {
     it('prefills the notes with the professional chosen on the team section, without overwriting existing notes', () => {
         useLandingScheduling().selectedProfessionalName.value = 'Dra. Ana';
 
-        mount(LandingSchedulingSection, { props: { services: [] } });
+        mount(LandingSchedulingSection);
 
         expect(formState.notes).toBe('Gostaria de agendar com Dra. Ana.');
+    });
+
+    it('updates the notes again when a different time slot is chosen, but stops once the person edits them by hand', async () => {
+        const scheduling = useLandingScheduling();
+        scheduling.selectedProfessionalName.value =
+            'Dra. Ana — Consulta, 09:00';
+
+        mount(LandingSchedulingSection);
+        expect(formState.notes).toBe(
+            'Gostaria de agendar com Dra. Ana — Consulta, 09:00.',
+        );
+
+        // Escolher outro horário deve atualizar o texto gerado automaticamente.
+        scheduling.selectedProfessionalName.value =
+            'Dra. Ana — Consulta, 10:00';
+        await nextTick();
+        expect(formState.notes).toBe(
+            'Gostaria de agendar com Dra. Ana — Consulta, 10:00.',
+        );
+
+        // Depois que a pessoa edita manualmente, uma nova escolha de horário
+        // não sobrescreve o que ela escreveu.
+        formState.notes = 'Prefiro de manhã, se possível.';
+        scheduling.selectedProfessionalName.value =
+            'Dra. Ana — Consulta, 11:00';
+        await nextTick();
+        expect(formState.notes).toBe('Prefiro de manhã, se possível.');
     });
 
     it('captures utm parameters and the referrer when the form is submitted', () => {
@@ -171,7 +201,7 @@ describe('LandingSchedulingSection', () => {
             },
         });
 
-        mount(LandingSchedulingSection, { props: { services: [] } });
+        mount(LandingSchedulingSection);
 
         expect(formState.utm).toMatchObject({
             utm_source: 'google',
@@ -182,5 +212,47 @@ describe('LandingSchedulingSection', () => {
             configurable: true,
             value: originalLocation,
         });
+    });
+
+    it('pre-fills the preferred date and period chosen on the availability search, without submitting anything', () => {
+        const scheduling = useLandingScheduling();
+        scheduling.preferredDate.value = '2026-08-10';
+        scheduling.preferredPeriod.value = 'Manhã';
+
+        mount(LandingSchedulingSection);
+
+        expect(formState.preferred_date).toBe('2026-08-10');
+        expect(formState.preferred_period).toBe('Manhã');
+        expect(postMock).not.toHaveBeenCalled();
+    });
+
+    it('updates the preferred date/period again when a different time slot is chosen', async () => {
+        const scheduling = useLandingScheduling();
+        scheduling.preferredDate.value = '2026-08-10';
+        scheduling.preferredPeriod.value = 'Manhã';
+
+        mount(LandingSchedulingSection);
+        expect(formState.preferred_period).toBe('Manhã');
+
+        scheduling.preferredDate.value = '2026-08-11';
+        scheduling.preferredPeriod.value = 'Tarde';
+        await nextTick();
+
+        expect(formState.preferred_date).toBe('2026-08-11');
+        expect(formState.preferred_period).toBe('Tarde');
+    });
+
+    it('never validates or submits just from choosing a service, professional or time slot — only the submit button does', async () => {
+        const scheduling = useLandingScheduling();
+        scheduling.selectedServiceId.value = 7;
+        scheduling.selectedProfessionalName.value = 'Dra. Ana Souza — Consulta, 09:00';
+        scheduling.preferredDate.value = '2026-08-10';
+        scheduling.preferredPeriod.value = 'Manhã';
+
+        mount(LandingSchedulingSection);
+        await nextTick();
+
+        expect(postMock).not.toHaveBeenCalled();
+        expect(formState.errors).toEqual({});
     });
 });

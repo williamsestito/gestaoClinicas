@@ -83,12 +83,23 @@ describe('WeeklyScheduleSection', () => {
         expect(wrapper.text()).toContain('Nenhum horário cadastrado.');
     });
 
-    it('shows the configured interval under the correct weekday', () => {
+    it('shows the configured interval, as start and end columns, under the correct weekday', () => {
         const wrapper = mount(WeeklyScheduleSection, {
             props: { professionalId: 'prof-1', unit: makeUnit() },
         });
 
-        expect(wrapper.text()).toContain('08:00 às 12:00');
+        const row = wrapper
+            .findAll('tbody tr')
+            .find((tr) => tr.text().startsWith('Segunda-feira'));
+        const cells = row?.findAll('td').map((td) => td.text());
+
+        expect(cells).toEqual([
+            'Segunda-feira',
+            '08:00',
+            '12:00',
+            'Ativo · Vigente',
+            expect.stringContaining('Copiar'),
+        ]);
     });
 
     it('shows a closed-day message when the unit has no opening hours for that day', () => {
@@ -229,5 +240,75 @@ describe('WeeklyScheduleSection', () => {
             expect.objectContaining({ source_weekday: 1 }),
             expect.objectContaining({ preserveScroll: true }),
         );
+    });
+
+    it('closes the copy dialog only on success, never silently on failure', async () => {
+        const wrapper = mountAttached(makeUnit());
+
+        await wrapper
+            .findAll('button')
+            .find((button) => button.text() === 'Copiar')
+            ?.trigger('click');
+        await wrapper.vm.$nextTick();
+
+        const checkbox = Array.from(document.body.querySelectorAll('label'))
+            .find((label) => label.textContent?.includes('Terça-feira'))
+            ?.querySelector('input[type="checkbox"]');
+        await new DOMWrapper(checkbox as Element).setValue(true);
+
+        await new DOMWrapper(
+            Array.from(document.body.querySelectorAll('button')).find(
+                (button) => button.textContent?.trim() === 'Copiar horários',
+            ) as Element,
+        ).trigger('click');
+
+        // Simula o backend rejeitando a cópia (dia de destino em conflito).
+        const options = routerMock.post.mock.calls[0][2];
+        options.onError({
+            'target_weekdays.Terça-feira':
+                'Terça-feira: O horário informado está fora do funcionamento da unidade.',
+        });
+        options.onFinish();
+        await wrapper.vm.$nextTick();
+
+        // O diálogo continua aberto, mostrando exatamente por que falhou —
+        // nunca fecha como se a cópia tivesse funcionado.
+        expect(document.body.textContent ?? '').toContain('Copiar horários');
+        expect(document.body.textContent ?? '').toContain(
+            'Terça-feira: O horário informado está fora do funcionamento da unidade.',
+        );
+
+        const alert = document.body.querySelector('[role="alert"]');
+        expect(alert?.textContent).toContain('fora do funcionamento');
+    });
+
+    it('clears the previous error and closes the dialog when a retry succeeds', async () => {
+        const wrapper = mountAttached(makeUnit());
+
+        await wrapper
+            .findAll('button')
+            .find((button) => button.text() === 'Copiar')
+            ?.trigger('click');
+        await wrapper.vm.$nextTick();
+
+        const checkbox = Array.from(document.body.querySelectorAll('label'))
+            .find((label) => label.textContent?.includes('Terça-feira'))
+            ?.querySelector('input[type="checkbox"]');
+        await new DOMWrapper(checkbox as Element).setValue(true);
+
+        await new DOMWrapper(
+            Array.from(document.body.querySelectorAll('button')).find(
+                (button) => button.textContent?.trim() === 'Copiar horários',
+            ) as Element,
+        ).trigger('click');
+
+        routerMock.post.mock.calls[0][2].onSuccess();
+        await wrapper.vm.$nextTick();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        const dialogTitle = Array.from(
+            document.body.querySelectorAll('h2, [role="heading"]'),
+        ).find((el) => el.textContent?.trim() === 'Copiar horários');
+        expect(dialogTitle).toBeUndefined();
     });
 });

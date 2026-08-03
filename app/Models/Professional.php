@@ -36,6 +36,7 @@ use Illuminate\Support\Collection;
  * @property Carbon|null $birth_date
  * @property string|null $bio
  * @property string|null $photo_path
+ * @property bool $is_public decisão explícita de publicação no site público — nunca implícita
  * @property RecordStatus $status
  * @property Carbon|null $deleted_at
  */
@@ -56,6 +57,7 @@ class Professional extends Model
         'birth_date',
         'bio',
         'photo_path',
+        'is_public',
         'status',
     ];
 
@@ -64,6 +66,7 @@ class Professional extends Model
         return [
             'status' => RecordStatus::class,
             'birth_date' => 'date',
+            'is_public' => 'boolean',
         ];
     }
 

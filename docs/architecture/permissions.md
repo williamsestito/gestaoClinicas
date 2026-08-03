@@ -67,6 +67,7 @@ ter sempre tudo).
 | **Site da clínica** | | | | | | |
 | Visualizar o site da clínica | ✓ | ✓ | | | | ✓ |
 | Editar o site da clínica | ✓ | | | | | |
+| Vincular/desvincular/copiar dados públicos (Etapa 2.11)² | ✓ | | | | | |
 | Publicar/despublicar o site | ✓ | | | | | |
 | Visualizar solicitações de agendamento | ✓ | ✓ | ✓ | | | ✓ |
 | Gerenciar solicitações de agendamento | ✓ | | ✓ | | | |
@@ -108,11 +109,23 @@ primeira permissão com escopo restrito a unidades específicas, verificado
 em `App\Policies\ProfessionalPolicy::manageAvailability()`/
 `manageTimeBlocks()` além da checagem usual de `PermissionChecker`.
 
+² Reaproveita a permissão `SiteUpdate` já existente — vincular, desvincular
+e copiar dados públicos de um `Professional`/`Service` operacional para o
+respectivo `SiteProfessional`/`SiteService` promocional é considerado parte
+de "editar o site da clínica", sem justificar uma nova `PermissionKey`
+dedicada. Ver [public-integration.md](../modules/public-integration.md).
+
 ## Onde isso é aplicado
 
 - **Backend**: toda Policy consulta `App\Support\Authorization\PermissionChecker`
   para o `PermissionKey` correspondente — nunca compara `role.name`
   diretamente.
+- **Filament**: `SpecialtyPolicy`/`ServicePolicy`/`ProfessionalPolicy::viewAny()`
+  aceitam `?Organization $organization = null` — quando chamadas pela
+  navegação do painel da plataforma (sem organização de contexto), apenas
+  `is_platform_admin` autoriza; quando chamadas pelas telas Inertia (com a
+  organização ativa), a checagem de membership ativo de sempre se aplica.
+  Mesmo padrão já usado por `OrganizationMembershipPolicy::viewAny()`.
 - **Frontend**: a tela `/settings/organization` usa `canUpdate` (calculado
   a partir de `OrganizationUpdate`) para habilitar/desabilitar o
   formulário — corrigido nesta fase (Etapa 0.9) para não depender apenas

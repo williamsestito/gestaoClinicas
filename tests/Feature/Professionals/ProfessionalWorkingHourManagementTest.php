@@ -232,9 +232,35 @@ it('saves nothing when copying to a conflicting target day', function () {
     $this->actingAs($user)->post("/settings/professionals/{$professional->id}/units/{$link->id}/working-hours/copy", [
         'source_weekday' => 1,
         'target_weekdays' => [2],
-    ])->assertSessionHasErrors('target_weekdays');
+    ])->assertSessionHasErrors('target_weekdays.Terça-feira');
 
     expect(ProfessionalWorkingHour::query()->where('weekday', 2)->count())->toBe(1);
+});
+
+it('reports a distinct error per conflicting target day, never dropping the reason for any of them', function () {
+    [$user, , $professional, , $link] = workingHourSetup();
+    $unit = $link->unit;
+    // Terça tem funcionamento compatível; quarta não tem nenhum
+    // funcionamento cadastrado — ambas devem aparecer no erro, cada uma
+    // com sua própria mensagem.
+    $unit->openingHours()->create(['organization_id' => $professional->organization_id, 'day_of_week' => 2, 'opens_at' => '08:00', 'closes_at' => '18:00']);
+
+    $this->actingAs($user)->post("/settings/professionals/{$professional->id}/units/{$link->id}/working-hours", [
+        'weekday' => 1, 'starts_at' => '08:00', 'ends_at' => '12:00',
+    ])->assertRedirect();
+    $this->actingAs($user)->post("/settings/professionals/{$professional->id}/units/{$link->id}/working-hours", [
+        'weekday' => 2, 'starts_at' => '09:00', 'ends_at' => '11:00',
+    ])->assertRedirect();
+
+    $response = $this->actingAs($user)->post("/settings/professionals/{$professional->id}/units/{$link->id}/working-hours/copy", [
+        'source_weekday' => 1,
+        'target_weekdays' => [2, 3],
+    ]);
+
+    $response->assertSessionHasErrors(['target_weekdays.Terça-feira', 'target_weekdays.Quarta-feira']);
+    $errors = session('errors')->getBag('default');
+    expect($errors->first('target_weekdays.Terça-feira'))->toContain('sobrepõe')
+        ->and($errors->first('target_weekdays.Quarta-feira'))->toContain('fora do funcionamento');
 });
 
 it('logically deletes a working hour and preserves history', function () {
@@ -356,4 +382,120 @@ it('blocks access to a professional belonging to another organization', function
 
     $this->actingAs($user)->get("/settings/professionals/{$foreignProfessional->id}/availability")
         ->assertNotFound();
+});
+
+it('configures a full working week in a single batch operation, atomically', function () {
+    [$user, $organization, $professional, $unit, $link] = workingHourSetup();
+
+    foreach ([2, 3, 4, 5] as $weekday) {
+        $unit->openingHours()->create([
+            'organization_id' => $organization->id,
+            'day_of_week' => $weekday,
+            'opens_at' => '08:00',
+            'closes_at' => '18:00',
+        ]);
+    }
+
+    $this->actingAs($user)->post("/settings/professionals/{$professional->id}/units/{$link->id}/working-hours/configure", [
+        'weekdays' => [1, 2, 3, 4, 5],
+        'intervals' => [
+            ['starts_at' => '08:00', 'ends_at' => '12:00'],
+            ['starts_at' => '13:30', 'ends_at' => '18:00'],
+        ],
+        'effective_from' => '2026-08-01',
+        'effective_until' => '2026-08-30',
+    ])->assertRedirect();
+
+    expect(ProfessionalWorkingHour::query()->where('professional_unit_id', $link->id)->count())->toBe(10)
+        ->and(AuditLog::query()->where('action', AuditAction::Created)->latest()->first()->after_data)
+        ->toMatchArray(['weekdays' => [1, 2, 3, 4, 5], 'intervals_count' => 2, 'created_count' => 10]);
+});
+
+it('includes saturday and sunday in the batch only when explicitly selected, auditing the inclusion', function () {
+    [$user, $organization, $professional, $unit, $link] = workingHourSetup();
+
+    foreach ([0, 6] as $weekday) {
+        $unit->openingHours()->create([
+            'organization_id' => $organization->id,
+            'day_of_week' => $weekday,
+            'opens_at' => '09:00',
+            'closes_at' => '13:00',
+        ]);
+    }
+
+    $this->actingAs($user)->post("/settings/professionals/{$professional->id}/units/{$link->id}/working-hours/configure", [
+        'weekdays' => [6, 0],
+        'intervals' => [['starts_at' => '09:00', 'ends_at' => '13:00']],
+        'effective_from' => '2026-08-01',
+        'effective_until' => '2026-08-30',
+    ])->assertRedirect();
+
+    $log = AuditLog::query()->where('action', AuditAction::Created)->latest()->first();
+    expect(ProfessionalWorkingHour::query()->where('professional_unit_id', $link->id)->count())->toBe(2)
+        ->and($log->after_data['includes_saturday'])->toBeTrue()
+        ->and($log->after_data['includes_sunday'])->toBeTrue();
+});
+
+it('does not save anything when any day in the batch conflicts with the unit opening hours', function () {
+    [$user, $organization, $professional, $unit, $link] = workingHourSetup();
+    // weekday 2 (Tuesday) has no opening hours configured on purpose.
+
+    $this->actingAs($user)->post("/settings/professionals/{$professional->id}/units/{$link->id}/working-hours/configure", [
+        'weekdays' => [1, 2],
+        'intervals' => [['starts_at' => '08:00', 'ends_at' => '12:00']],
+        'effective_from' => '2026-08-01',
+        'effective_until' => '2026-08-30',
+    ])->assertSessionHasErrors('weekdays');
+
+    expect(ProfessionalWorkingHour::query()->where('professional_unit_id', $link->id)->count())->toBe(0);
+});
+
+it('rejects overlapping intervals within the same batch submission', function () {
+    [$user, , $professional, , $link] = workingHourSetup();
+
+    $this->actingAs($user)->post("/settings/professionals/{$professional->id}/units/{$link->id}/working-hours/configure", [
+        'weekdays' => [1],
+        'intervals' => [
+            ['starts_at' => '08:00', 'ends_at' => '12:00'],
+            ['starts_at' => '11:00', 'ends_at' => '15:00'],
+        ],
+        'effective_from' => '2026-08-01',
+        'effective_until' => '2026-08-30',
+    ])->assertSessionHasErrors('intervals');
+
+    expect(ProfessionalWorkingHour::query()->where('professional_unit_id', $link->id)->count())->toBe(0);
+});
+
+it('rejects a batch vigency without both start and end dates', function () {
+    [$user, , $professional, , $link] = workingHourSetup();
+
+    $this->actingAs($user)->post("/settings/professionals/{$professional->id}/units/{$link->id}/working-hours/configure", [
+        'weekdays' => [1],
+        'intervals' => [['starts_at' => '08:00', 'ends_at' => '12:00']],
+        'effective_from' => '2026-08-01',
+    ])->assertSessionHasErrors('effective_until');
+});
+
+it('rejects a batch vigency exceeding the maximum allowed period', function () {
+    [$user, , $professional, , $link] = workingHourSetup();
+
+    $this->actingAs($user)->post("/settings/professionals/{$professional->id}/units/{$link->id}/working-hours/configure", [
+        'weekdays' => [1],
+        'intervals' => [['starts_at' => '08:00', 'ends_at' => '12:00']],
+        'effective_from' => '2020-01-01',
+        'effective_until' => '2030-01-01',
+    ])->assertSessionHasErrors('effective_until');
+});
+
+it('blocks a member without the manage-own permission from configuring another professional agenda in batch', function () {
+    [, $organization, $professional, , $link] = workingHourSetup();
+    $member = User::factory()->create();
+    OrganizationMembership::factory()->for($organization)->for($member)->create(['status' => OrganizationMembershipStatus::Active]);
+
+    $this->actingAs($member)->post("/settings/professionals/{$professional->id}/units/{$link->id}/working-hours/configure", [
+        'weekdays' => [1],
+        'intervals' => [['starts_at' => '08:00', 'ends_at' => '12:00']],
+        'effective_from' => '2026-08-01',
+        'effective_until' => '2026-08-30',
+    ])->assertForbidden();
 });

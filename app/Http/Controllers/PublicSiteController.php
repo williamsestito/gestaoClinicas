@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\RecordStatus;
 use App\Models\Organization;
+use App\Models\Professional;
+use App\Models\Service;
 use App\Models\SiteBenefit;
 use App\Models\SiteFaq;
 use App\Models\SiteGalleryItem;
@@ -14,6 +16,7 @@ use App\Models\SiteProfessional;
 use App\Models\SiteService;
 use App\Models\SiteSetting;
 use App\Models\SiteTestimonial;
+use App\Queries\PublicProfessionalQuery;
 use App\Support\Seo\SeoMetaBuilder;
 use App\Support\Site\LandingSections;
 use Illuminate\Support\Facades\Storage;
@@ -22,7 +25,10 @@ use Inertia\Response;
 
 class PublicSiteController extends Controller
 {
-    public function __construct(private readonly SeoMetaBuilder $seoMetaBuilder) {}
+    public function __construct(
+        private readonly SeoMetaBuilder $seoMetaBuilder,
+        private readonly PublicProfessionalQuery $publicProfessionalQuery,
+    ) {}
 
     public function home(): Response
     {
@@ -73,8 +79,8 @@ class PublicSiteController extends Controller
             ] : null,
             'sections' => $site ? LandingSections::normalize($site->sections_config) : [],
             'benefits' => $site ? $this->activeBenefits() : [],
-            'services' => $site ? $this->activeServices() : [],
-            'professionals' => $site ? $this->activeProfessionals() : [],
+            'services' => $site ? $this->activeServices($organization) : [],
+            'professionals' => $site ? $this->activeProfessionals($organization) : [],
             'gallery' => $site ? $this->activeGallery() : [],
             'testimonials' => $site ? $this->activeTestimonials() : [],
             'faqs' => $site ? $this->activeFaqs() : [],
@@ -123,15 +129,38 @@ class PublicSiteController extends Controller
     }
 
     /**
+     * Um item promocional sem vínculo aparece sempre (comportamento
+     * inalterado). Um item vinculado só aparece se o registro operacional
+     * ainda existir, não estiver excluído, estiver ativo e pertencer à
+     * organização carregada nesta instância — nunca apaga o conteúdo
+     * promocional, apenas oculta a publicação enquanto a situação
+     * operacional não permitir.
+     */
+    private function isPubliclyEligible(Professional|Service|null $linked, ?Organization $organization): bool
+    {
+        if ($linked === null) {
+            return true;
+        }
+
+        return $organization !== null
+            && $linked->organization_id === $organization->id
+            && $linked->deleted_at === null
+            && $linked->status === RecordStatus::Active;
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
-    private function activeServices(): array
+    private function activeServices(?Organization $organization): array
     {
         return SiteService::query()
             ->where('is_active', true)
+            ->with(['service' => fn ($query) => $query->withTrashed()->select(['id', 'organization_id', 'status', 'deleted_at'])])
             ->orderBy('order')
             ->orderBy('id')
             ->get()
+            ->filter(fn (SiteService $service) => $this->isPubliclyEligible($service->service, $organization))
+            ->values()
             ->map(fn (SiteService $service) => [
                 'id' => $service->id,
                 'name' => $service->name,
@@ -149,28 +178,20 @@ class PublicSiteController extends Controller
     }
 
     /**
+     * Fonte única e normalizada (SiteProfessional + Professional público,
+     * deduplicados) — ver App\Queries\PublicProfessionalQuery. A mesma
+     * fonte alimenta o filtro de profissional da busca de disponibilidade
+     * pública, nunca uma consulta divergente.
+     *
      * @return array<int, array<string, mixed>>
      */
-    private function activeProfessionals(): array
+    private function activeProfessionals(?Organization $organization): array
     {
-        return SiteProfessional::query()
-            ->where('is_active', true)
-            ->orderBy('order')
-            ->orderBy('id')
-            ->get()
-            ->map(fn (SiteProfessional $professional) => [
-                'id' => $professional->id,
-                'name' => $professional->name,
-                'role_title' => $professional->role_title,
-                'specialty' => $professional->specialty,
-                'professional_register' => $professional->professional_register,
-                'bio' => $professional->bio,
-                'photo_url' => $professional->photo_path ? Storage::disk('public')->url($professional->photo_path) : null,
-                'facebook_url' => $professional->facebook_url,
-                'instagram_url' => $professional->instagram_url,
-                'linkedin_url' => $professional->linkedin_url,
-            ])
-            ->all();
+        if ($organization === null) {
+            return [];
+        }
+
+        return $this->publicProfessionalQuery->forOrganization($organization)->all();
     }
 
     /**
@@ -265,7 +286,7 @@ class PublicSiteController extends Controller
      */
     private function statistics(?Organization $organization): array
     {
-        $professionalsCount = SiteProfessional::query()->where('is_active', true)->count();
+        $professionalsCount = $organization ? $this->publicProfessionalQuery->forOrganization($organization)->count() : 0;
 
         $specialtiesCount = SiteProfessional::query()
             ->where('is_active', true)

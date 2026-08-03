@@ -72,12 +72,16 @@ class CopyProfessionalWorkingHoursAction
             }
 
             if ($conflictsByDay !== []) {
-                throw ValidationException::withMessages([
-                    'target_weekdays' => collect($conflictsByDay)
-                        ->map(fn (?string $message, string $day) => "{$day}: {$message}")
-                        ->values()
-                        ->all(),
-                ]);
+                // Uma chave por dia (não um único "target_weekdays" com
+                // várias mensagens) — o Inertia só repassa a primeira
+                // mensagem de cada chave ao frontend, então agrupar tudo
+                // numa chave só faz o motivo dos demais dias em conflito
+                // desaparecer silenciosamente.
+                throw ValidationException::withMessages(
+                    collect($conflictsByDay)
+                        ->mapWithKeys(fn (?string $message, string $day) => ["target_weekdays.{$day}" => "{$day}: {$message}"])
+                        ->all()
+                );
             }
 
             $created = collect();

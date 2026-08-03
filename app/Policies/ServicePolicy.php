@@ -22,8 +22,17 @@ class ServicePolicy
 {
     public function __construct(private readonly PermissionChecker $permissionChecker) {}
 
-    public function viewAny(User $user, Organization $organization): bool
+    /**
+     * Chamado de duas formas: pela navegação do Filament, sem organização
+     * (protegida por `canAccessPanel`, exige apenas is_platform_admin), e
+     * pela tela settings/services (Inertia), com a organização ativa.
+     */
+    public function viewAny(User $user, ?Organization $organization = null): bool
     {
+        if ($organization === null) {
+            return $user->is_platform_admin;
+        }
+
         return $this->hasActiveMembership($user, $organization->id);
     }
 

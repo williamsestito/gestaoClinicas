@@ -6,10 +6,11 @@ import Heading from '@/components/Heading.vue';
 import ImageUploadField from '@/components/ImageUploadField.vue';
 import InputError from '@/components/InputError.vue';
 import AddressFields from '@/components/organization/AddressFields.vue';
+import PhoneInput from '@/components/PhoneInput.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { maskCpf, maskPhone } from '@/lib/masks';
+import { maskCpf } from '@/lib/masks';
 import { edit as editProfile, update as updateProfile } from '@/routes/profile';
 import { destroy as destroyPhoto, update as updatePhoto } from '@/routes/profile/photo';
 import { edit as editSecurity } from '@/routes/security';
@@ -215,15 +216,7 @@ function removePhoto() {
 
                 <div class="grid gap-2">
                     <Label for="phone">Telefone</Label>
-                    <Input
-                        id="phone"
-                        :model-value="form.phone"
-                        inputmode="numeric"
-                        placeholder="(00) 00000-0000"
-                        @update:model-value="
-                            (value) => (form.phone = maskPhone(String(value)))
-                        "
-                    />
+                    <PhoneInput id="phone" v-model="form.phone" />
                     <InputError :message="form.errors.phone" />
                 </div>
 

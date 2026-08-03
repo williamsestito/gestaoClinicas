@@ -6,39 +6,23 @@ import ClinicSettingsLayout from '@/layouts/settings/ClinicLayout.vue';
 import AccountSettingsLayout from '@/layouts/settings/Layout.vue';
 import SiteSettingsLayout from '@/layouts/settings/SiteLayout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
+import { resolveLayoutKind } from '@/lib/layoutResolution';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Gestão de Clínicas';
-
-// Páginas de configuração da clínica (dados da clínica, entidades legais,
-// unidades) usam um menu próprio — nunca o menu "Minha conta" (perfil,
-// segurança, aparência), que é exclusivamente pessoal.
-const clinicSettingsPages = [
-    'settings/Organization',
-    'settings/legal-entities/',
-    'settings/units/',
-    'settings/roles/',
-    'settings/users/',
-    'settings/site/',
-    'settings/seo/',
-    'settings/audit/',
-];
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
-        switch (true) {
-            case name === 'Welcome':
+        switch (resolveLayoutKind(name)) {
+            case 'none':
                 return null;
-            case name.startsWith('auth/'):
+            case 'auth':
                 return AuthLayout;
-            // Sub-área "Site da clínica" tem navegação própria (seções,
-            // benefícios, serviços, equipe, galeria, depoimentos, FAQ,
-            // agendamentos) — precisa vir antes do case geral abaixo.
-            case name.startsWith('settings/site/'):
+            case 'clinic-site':
                 return [AppLayout, ClinicSettingsLayout, SiteSettingsLayout];
-            case clinicSettingsPages.some((page) => name.startsWith(page)):
+            case 'clinic':
                 return [AppLayout, ClinicSettingsLayout];
-            case name.startsWith('settings/'):
+            case 'account':
                 return [AppLayout, AccountSettingsLayout];
             default:
                 return AppLayout;

@@ -3,6 +3,7 @@ import { useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import AddressFields from '@/components/organization/AddressFields.vue';
+import PhoneInput from '@/components/PhoneInput.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -188,7 +189,7 @@ function submit() {
 
             <div class="grid gap-2">
                 <Label for="entity-phone">Telefone (opcional)</Label>
-                <Input id="entity-phone" v-model="form.phone" />
+                <PhoneInput id="entity-phone" v-model="form.phone" />
                 <InputError :message="form.errors.phone" />
             </div>
         </div>

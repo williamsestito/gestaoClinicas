@@ -19,7 +19,11 @@ seja fácil de rastrear até o código que o gerou. Grava:
 - ator (usuário autenticado), organização, unidade;
 - ação (`App\Enums\AuditAction`: created, updated, activated, deactivated,
   deleted, restored, primary_legal_entity_changed, headquarters_changed,
-  organization_context_switched, unit_context_switched);
+  organization_context_switched, unit_context_switched,
+  primary_professional_specialty_changed,
+  primary_professional_registration_changed,
+  primary_professional_unit_changed, copied, conflict_detected, linked,
+  unlinked);
 - `before_data`/`after_data` (snapshot dos campos alterados);
 - IP e user agent da requisição.
 

@@ -1,6 +1,7 @@
 import {
     Briefcase,
     Building2,
+    CalendarClock,
     FileText,
     Globe,
     History,
@@ -15,6 +16,7 @@ import {
 import { dashboard } from '@/routes';
 import { index as indexAudit } from '@/routes/settings/audit';
 import { index as indexLegalEntities } from '@/routes/settings/legal-entities';
+import { availability as myAvailability } from '@/routes/settings/my-schedule';
 import { edit as editOrganization } from '@/routes/settings/organization';
 import { index as indexProfessionals } from '@/routes/settings/professionals';
 import { index as indexRoles } from '@/routes/settings/roles';
@@ -67,6 +69,17 @@ export function buildNavGroups(permissions: string[]): NavGroup[] {
                     href: indexLegalEntities(),
                     icon: FileText,
                     permission: 'legal-entities.view',
+                },
+            ],
+        },
+        {
+            title: 'Área profissional',
+            items: [
+                {
+                    title: 'Minha agenda',
+                    href: myAvailability(),
+                    icon: CalendarClock,
+                    permission: 'professional-availability.view-own',
                 },
             ],
         },

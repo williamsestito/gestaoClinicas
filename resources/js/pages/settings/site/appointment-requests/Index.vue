@@ -17,9 +17,14 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { formatDateBr, formatDateTimeBr } from '@/lib/masks';
 import { buildWhatsAppUrl } from '@/lib/whatsapp';
 import { dashboard } from '@/routes';
-import { index, notes, status } from '@/routes/settings/site/appointment-requests';
+import {
+    index,
+    notes,
+    status,
+} from '@/routes/settings/site/appointment-requests';
 import type {
     AppointmentRequestStatus,
     AppointmentRequestSummary,
@@ -118,20 +123,11 @@ function formatDate(value: string | null): string {
         return '—';
     }
 
-    return new Intl.DateTimeFormat('pt-BR', {
-        dateStyle: 'short',
-        timeStyle: 'short',
-    }).format(new Date(value));
+    return formatDateTimeBr(value);
 }
 
 function formatPreferredDate(value: string | null): string | null {
-    if (!value) {
-        return null;
-    }
-
-    return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(
-        new Date(`${value}T00:00:00`),
-    );
+    return value ? formatDateBr(value) : null;
 }
 
 function whatsappLink(request: AppointmentRequestSummary): string | null {
@@ -289,7 +285,9 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                             </p>
                         </div>
 
-                        <div class="flex flex-col items-stretch gap-2 sm:items-end">
+                        <div
+                            class="flex flex-col items-stretch gap-2 sm:items-end"
+                        >
                             <Select
                                 :model-value="request.status"
                                 :disabled="processingId === request.id"
@@ -335,8 +333,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
 
                     <div class="grid gap-2 border-t pt-3">
                         <Label :for="`internal-notes-${request.id}`"
-                            >Observação interna (não visível ao
-                            paciente)</Label
+                            >Observação interna (não visível ao paciente)</Label
                         >
                         <Textarea
                             :id="`internal-notes-${request.id}`"

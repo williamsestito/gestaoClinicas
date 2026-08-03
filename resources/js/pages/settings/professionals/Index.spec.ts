@@ -18,6 +18,7 @@ const { routerMock } = vi.hoisted(() => ({
 
 vi.mock('@inertiajs/vue3', () => ({
     Head: { template: '<div />' },
+    Link: { template: '<a><slot /></a>' },
     router: routerMock,
     useForm: (initial: Record<string, unknown>) =>
         reactive({
@@ -47,6 +48,7 @@ function makeProfessional(
         unit_names: [],
         specialty_ids: [],
         specialty_names: [],
+        service_ids: [],
         active_services_count: 0,
         has_active_unit: false,
         has_active_specialty: false,
@@ -292,6 +294,62 @@ describe('settings/professionals/Index', () => {
 
         expect(wrapper.text()).toContain('Dra. Ana Souza');
         expect(wrapper.text()).not.toContain('Dr. Bruno Lima');
+    });
+
+    it('filters the listing by service', async () => {
+        const professionals = [
+            makeProfessional({
+                id: '1',
+                display_name: 'Dra. Ana Souza',
+                service_ids: ['service-1'],
+            }),
+            makeProfessional({
+                id: '2',
+                display_name: 'Dr. Bruno Lima',
+                service_ids: ['service-2'],
+            }),
+        ];
+        const wrapper = mount(Index, {
+            props: {
+                professionals,
+                services: [
+                    { id: 'service-1', name: 'Consulta Padrão' },
+                    { id: 'service-2', name: 'Avaliação Física' },
+                ],
+            },
+        });
+
+        await wrapper
+            .find('select[aria-label="Filtrar profissionais por serviço"]')
+            .setValue('service-1');
+
+        expect(wrapper.text()).toContain('Dra. Ana Souza');
+        expect(wrapper.text()).not.toContain('Dr. Bruno Lima');
+    });
+
+    it('filters the listing by active unit presence', async () => {
+        const professionals = [
+            makeProfessional({
+                id: '1',
+                display_name: 'Dra. Ana Souza',
+                has_active_unit: true,
+            }),
+            makeProfessional({
+                id: '2',
+                display_name: 'Dr. Bruno Lima',
+                has_active_unit: false,
+            }),
+        ];
+        const wrapper = mount(Index, { props: { professionals } });
+
+        await wrapper
+            .find(
+                'select[aria-label="Filtrar profissionais por unidade ativa"]',
+            )
+            .setValue('without');
+
+        expect(wrapper.text()).toContain('Dr. Bruno Lima');
+        expect(wrapper.text()).not.toContain('Dra. Ana Souza');
     });
 
     it('shows the operational status label alongside each professional', () => {

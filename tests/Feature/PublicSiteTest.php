@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use App\Enums\IndexingPolicy;
+use App\Enums\RecordStatus;
 use App\Models\LegalEntity;
 use App\Models\Organization;
+use App\Models\Professional;
+use App\Models\Service;
 use App\Models\SiteBenefit;
 use App\Models\SiteFaq;
 use App\Models\SiteGalleryItem;
@@ -138,6 +141,70 @@ it('exposes active benefits, services, professionals, gallery, testimonials and 
             ->where('statistics.0', ['value' => '1', 'label' => 'Profissional'])
             ->where('contact.phone', '(47) 3222-1122')
         );
+});
+
+it('shows an unlinked professional or service regardless of any operational data', function () {
+    Organization::factory()->create();
+    SiteSetting::factory()->create();
+
+    SiteProfessional::factory()->create(['name' => 'Independente', 'is_active' => true, 'professional_id' => null]);
+    SiteService::factory()->create(['name' => 'Independente', 'is_active' => true, 'service_id' => null]);
+
+    $this->get('/')
+        ->assertInertia(fn ($page) => $page
+            ->has('professionals', 1)
+            ->has('services', 1)
+        );
+});
+
+it('hides a linked professional whose operational record is inactive, preserving the promotional row', function () {
+    $organization = Organization::factory()->create();
+    SiteSetting::factory()->create();
+    $professional = Professional::factory()->for($organization)->create(['status' => RecordStatus::Inactive]);
+    $siteProfessional = SiteProfessional::factory()->create(['is_active' => true, 'professional_id' => $professional->id]);
+
+    $this->get('/')->assertInertia(fn ($page) => $page->has('professionals', 0));
+
+    expect(SiteProfessional::query()->find($siteProfessional->id))->not->toBeNull();
+});
+
+it('hides a linked professional whose operational record was deleted, preserving the promotional row', function () {
+    $organization = Organization::factory()->create();
+    SiteSetting::factory()->create();
+    $professional = Professional::factory()->for($organization)->create();
+    $siteProfessional = SiteProfessional::factory()->create(['is_active' => true, 'professional_id' => $professional->id]);
+    $professional->delete();
+
+    $this->get('/')->assertInertia(fn ($page) => $page->has('professionals', 0));
+
+    expect(SiteProfessional::query()->find($siteProfessional->id))->not->toBeNull();
+});
+
+it('hides a linked service whose operational record is inactive or deleted', function () {
+    $organization = Organization::factory()->create();
+    SiteSetting::factory()->create();
+    $inactiveService = Service::factory()->for($organization)->create(['status' => RecordStatus::Inactive]);
+    $deletedService = Service::factory()->for($organization)->create();
+    $deletedService->delete();
+
+    SiteService::factory()->create(['is_active' => true, 'service_id' => $inactiveService->id]);
+    SiteService::factory()->create(['is_active' => true, 'service_id' => $deletedService->id]);
+
+    $this->get('/')->assertInertia(fn ($page) => $page->has('services', 0));
+});
+
+it('shows a linked professional and service when the operational record is active', function () {
+    $organization = Organization::factory()->create();
+    SiteSetting::factory()->create();
+    $professional = Professional::factory()->for($organization)->create(['status' => RecordStatus::Active]);
+    $service = Service::factory()->for($organization)->create(['status' => RecordStatus::Active]);
+    SiteProfessional::factory()->create(['is_active' => true, 'professional_id' => $professional->id]);
+    SiteService::factory()->create(['is_active' => true, 'service_id' => $service->id]);
+
+    $this->get('/')->assertInertia(fn ($page) => $page
+        ->has('professionals', 1)
+        ->has('services', 1)
+    );
 });
 
 it('orders public benefits by the order field, breaking ties by id', function () {

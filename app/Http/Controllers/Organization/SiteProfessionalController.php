@@ -4,10 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Organization;
 
+use App\Actions\Site\CopyProfessionalPublicDataAction;
+use App\Actions\Site\LinkSiteProfessionalToProfessionalAction;
 use App\Actions\Site\SiteCollectionItemAction;
+use App\Actions\Site\UnlinkSiteProfessionalAction;
+use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Organization\CopySiteProfessionalDataRequest;
+use App\Http\Requests\Organization\LinkSiteProfessionalRequest;
 use App\Http\Requests\Organization\ReorderSiteCollectionRequest;
 use App\Http\Requests\Organization\SiteProfessionalRequest;
+use App\Models\Professional;
 use App\Models\SiteProfessional;
 use App\Models\SiteSetting;
 use App\Support\Tenancy\TenantContext;
@@ -25,6 +32,7 @@ class SiteProfessionalController extends Controller
 
         return Inertia::render('settings/site/professionals/Index', [
             'professionals' => SiteProfessional::query()
+                ->with('professional:id,display_name,status,deleted_at')
                 ->orderBy('order')
                 ->orderBy('id')
                 ->get()
@@ -41,9 +49,60 @@ class SiteProfessionalController extends Controller
                     'linkedin_url' => $professional->linkedin_url,
                     'order' => $professional->order,
                     'is_active' => $professional->is_active,
+                    'professional_id' => $professional->professional_id,
+                    'linked_professional' => $professional->professional === null ? null : [
+                        'id' => $professional->professional->id,
+                        'name' => $professional->professional->display_name,
+                        'is_operational' => $professional->professional->status === RecordStatus::Active
+                            && $professional->professional->deleted_at === null,
+                    ],
                 ])
                 ->all(),
+            'operationalProfessionals' => $organization
+                ->professionals()
+                ->where('status', RecordStatus::Active)
+                ->orderBy('display_name')
+                ->get(['id', 'display_name'])
+                ->map(fn (Professional $professional) => ['id' => $professional->id, 'name' => $professional->display_name])
+                ->all(),
         ]);
+    }
+
+    public function link(LinkSiteProfessionalRequest $request, SiteProfessional $siteProfessional, TenantContext $tenant, LinkSiteProfessionalToProfessionalAction $action): RedirectResponse
+    {
+        $organization = $tenant->organization();
+        $professional = Professional::query()->where('organization_id', $organization->id)->findOrFail((string) $request->validated('professional_id'));
+
+        $action->handle($siteProfessional, $professional, $organization);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Profissional operacional vinculado com sucesso.']);
+
+        return back();
+    }
+
+    public function unlink(TenantContext $tenant, SiteProfessional $siteProfessional, UnlinkSiteProfessionalAction $action): RedirectResponse
+    {
+        $this->authorize('update', [SiteSetting::class, $tenant->organization()]);
+
+        $action->handle($siteProfessional, $tenant->organization());
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'O vínculo foi removido. O conteúdo público foi preservado.']);
+
+        return back();
+    }
+
+    public function copyPublicData(CopySiteProfessionalDataRequest $request, SiteProfessional $siteProfessional, TenantContext $tenant, CopyProfessionalPublicDataAction $action): RedirectResponse
+    {
+        abort_if($siteProfessional->professional_id === null, 422, 'Este item não está vinculado a um profissional operacional.');
+
+        $organization = $tenant->organization();
+        $professional = Professional::query()->where('organization_id', $organization->id)->findOrFail($siteProfessional->professional_id);
+
+        $action->handle($siteProfessional, $professional, $organization, $request->validated('fields'));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Os dados públicos selecionados foram atualizados. Nenhum dado interno foi publicado.']);
+
+        return back();
     }
 
     public function store(SiteProfessionalRequest $request, SiteCollectionItemAction $action): RedirectResponse

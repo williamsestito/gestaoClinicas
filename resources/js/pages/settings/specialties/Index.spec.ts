@@ -110,6 +110,48 @@ describe('settings/specialties/Index', () => {
         expect(wrapper.text()).not.toContain('Consulta Padrão');
     });
 
+    it('filters the listing by linked professionals', async () => {
+        const specialties = [
+            makeSpecialty({
+                id: '1',
+                name: 'Cardiologia',
+                professionals_count: 2,
+            }),
+            makeSpecialty({
+                id: '2',
+                name: 'Dermatologia',
+                professionals_count: 0,
+            }),
+        ];
+        const wrapper = mount(Index, { props: { specialties } });
+
+        await wrapper
+            .find(
+                'select[aria-label="Filtrar especialidades por vínculo com profissionais"]',
+            )
+            .setValue('without');
+
+        expect(wrapper.text()).toContain('Dermatologia');
+        expect(wrapper.text()).not.toContain('Cardiologia');
+    });
+
+    it('filters the listing by linked services', async () => {
+        const specialties = [
+            makeSpecialty({ id: '1', name: 'Cardiologia', services_count: 3 }),
+            makeSpecialty({ id: '2', name: 'Dermatologia', services_count: 0 }),
+        ];
+        const wrapper = mount(Index, { props: { specialties } });
+
+        await wrapper
+            .find(
+                'select[aria-label="Filtrar especialidades por vínculo com serviços"]',
+            )
+            .setValue('with');
+
+        expect(wrapper.text()).toContain('Cardiologia');
+        expect(wrapper.text()).not.toContain('Dermatologia');
+    });
+
     it('opens the create sheet with SpecialtyForm in create mode', async () => {
         const wrapper = mount(Index, {
             props: { specialties: [makeSpecialty()] },

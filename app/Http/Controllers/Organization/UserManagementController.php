@@ -69,7 +69,7 @@ class UserManagementController extends Controller
         $role = $data['role_id'] ?? null ? Role::query()->where('id', $data['role_id'])->first() : null;
         $units = Unit::query()->whereIn('id', $data['unit_ids'] ?? [])->get();
 
-        $action->handle(
+        $result = $action->handle(
             organization: $organization,
             invitedBy: $request->user(),
             email: $data['email'],
@@ -78,6 +78,16 @@ class UserManagementController extends Controller
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Convite enviado com sucesso.']);
+
+        // O token bruto só existe em memória nesta chamada (só o hash é
+        // persistido) — por isso o link só pode ser oferecido para cópia
+        // agora, nunca recuperado depois. Alternativa ao e-mail (que pode
+        // demorar/cair em spam): o admin copia e envia por WhatsApp ou
+        // pessoalmente.
+        Inertia::flash('inviteLink', [
+            'email' => $data['email'],
+            'url' => route('invitations.accept', ['token' => $result['token']]),
+        ]);
 
         return back();
     }

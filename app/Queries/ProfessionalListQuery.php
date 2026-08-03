@@ -32,6 +32,7 @@ final class ProfessionalListQuery
                 'user:id,name',
                 'unitLinks' => fn ($query) => $query->where('status', RecordStatus::Active)->with('unit:id,name'),
                 'specialtyLinks' => fn ($query) => $query->where('status', RecordStatus::Active)->with('specialty:id,name'),
+                'serviceLinks' => fn ($query) => $query->where('status', RecordStatus::Active),
             ])
             ->withCount([
                 'serviceLinks as active_services_count' => fn ($query) => $query->where('status', RecordStatus::Active),
@@ -72,6 +73,7 @@ final class ProfessionalListQuery
             'unit_names' => $professional->unitLinks->pluck('unit.name')->filter()->values(),
             'specialty_ids' => $professional->specialtyLinks->pluck('specialty_id')->values(),
             'specialty_names' => $professional->specialtyLinks->pluck('specialty.name')->filter()->values(),
+            'service_ids' => $professional->serviceLinks->pluck('service_id')->values(),
             'active_services_count' => (int) $professional->getAttribute('active_services_count'),
             'has_active_unit' => $hasActiveUnit,
             'has_active_specialty' => $hasActiveSpecialty,

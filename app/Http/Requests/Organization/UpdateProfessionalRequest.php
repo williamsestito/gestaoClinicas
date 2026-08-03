@@ -54,6 +54,7 @@ class UpdateProfessionalRequest extends FormRequest
             ],
             'birth_date' => ['nullable', 'date', 'before:today'],
             'bio' => ['nullable', 'string', 'max:2000'],
+            'is_public' => ['boolean'],
         ];
     }
 
@@ -82,6 +83,7 @@ class UpdateProfessionalRequest extends FormRequest
             'phone' => $this->input('phone'),
             'birth_date' => $this->input('birth_date'),
             'bio' => $this->input('bio'),
+            'is_public' => $this->boolean('is_public'),
         ];
 
         if ($this->filled('document')) {

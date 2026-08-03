@@ -5,6 +5,7 @@ import InputError from '@/components/InputError.vue';
 import AddressFields from '@/components/organization/AddressFields.vue';
 import OpeningHoursFields from '@/components/organization/OpeningHoursFields.vue';
 import WizardSteps from '@/components/organization/WizardSteps.vue';
+import PhoneInput from '@/components/PhoneInput.vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -15,7 +16,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { maskCpfCnpj, maskPhone } from '@/lib/masks';
+import { maskCpfCnpj } from '@/lib/masks';
 import { store } from '@/routes/onboarding/organization';
 import type { AddressForm, OpeningHourForm } from '@/types/organization';
 
@@ -314,27 +315,14 @@ const errorSummary = computed(() =>
                     </div>
                     <div class="grid gap-2">
                         <Label for="unit-phone">Telefone (opcional)</Label>
-                        <Input
-                            id="unit-phone"
-                            :model-value="form.unit_phone"
-                            @update:model-value="
-                                (value) =>
-                                    (form.unit_phone = maskPhone(String(value)))
-                            "
-                        />
+                        <PhoneInput id="unit-phone" v-model="form.unit_phone" />
                         <InputError :message="form.errors.unit_phone" />
                     </div>
                     <div class="grid gap-2">
                         <Label for="unit-whatsapp">WhatsApp (opcional)</Label>
-                        <Input
+                        <PhoneInput
                             id="unit-whatsapp"
-                            :model-value="form.unit_whatsapp"
-                            @update:model-value="
-                                (value) =>
-                                    (form.unit_whatsapp = maskPhone(
-                                        String(value),
-                                    ))
-                            "
+                            v-model="form.unit_whatsapp"
                         />
                         <InputError :message="form.errors.unit_whatsapp" />
                     </div>

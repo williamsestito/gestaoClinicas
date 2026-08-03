@@ -213,6 +213,34 @@ it('never exposes internal_notes in the listing props', function () {
     expect($response->viewData('page')['props']['services'][0])->not->toHaveKey('internal_notes');
 });
 
+it('exposes specialty, unit and availability filter data on the index page', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+
+    $unit = Unit::factory()->for($organization)->create(['status' => RecordStatus::Active]);
+    $specialty = Specialty::factory()->for($organization)->create();
+
+    $available = Service::factory()->for($organization)->create(['unit_availability_scope' => 'all_units', 'is_public' => true]);
+    ServiceSpecialty::factory()->for($organization)->for($available, 'service')->for($specialty)->create();
+
+    $unavailable = Service::factory()->for($organization)->create(['unit_availability_scope' => 'none', 'is_public' => false]);
+
+    $professional = Professional::factory()->for($organization)->create();
+    ProfessionalService::factory()->for($organization)->for($professional)->for($available, 'service')->create(['status' => RecordStatus::Active]);
+
+    $response = $this->actingAs($user)->get('/settings/services');
+
+    $services = collect($response->viewData('page')['props']['services'])->keyBy('id');
+
+    expect($services[$available->id]['specialty_ids'])->toContain($specialty->id)
+        ->and($services[$available->id]['unit_ids'])->toContain($unit->id)
+        ->and($services[$available->id]['has_available_unit'])->toBeTrue()
+        ->and($services[$available->id]['professionals_count'])->toBe(1)
+        ->and($services[$available->id]['is_public'])->toBeTrue()
+        ->and($services[$unavailable->id]['has_available_unit'])->toBeFalse()
+        ->and($services[$unavailable->id]['professionals_count'])->toBe(0);
+});
+
 it('blocks a member without the manage permission from creating a service', function () {
     $organization = Organization::factory()->create();
     $user = User::factory()->create();

@@ -6,7 +6,8 @@ import LandingProfessionalsSection from './LandingProfessionalsSection.vue';
 
 function makeProfessional(overrides: Partial<PublicProfessional> = {}): PublicProfessional {
     return {
-        id: 1,
+        id: 'site-1',
+        professional_id: null,
         name: 'Dra. Ana Souza',
         role_title: null,
         specialty: null,
@@ -16,6 +17,7 @@ function makeProfessional(overrides: Partial<PublicProfessional> = {}): PublicPr
         facebook_url: null,
         instagram_url: null,
         linkedin_url: null,
+        order: 0,
         ...overrides,
     };
 }

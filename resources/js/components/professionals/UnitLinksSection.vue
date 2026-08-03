@@ -140,7 +140,7 @@ function restore(link: UnitLink) {
 
 <template>
     <div class="grid gap-4">
-        <div v-if="links.length === 0" class="text-muted-foreground text-sm">
+        <div v-if="links.length === 0" class="text-sm text-muted-foreground">
             Nenhuma unidade vinculada ainda.
         </div>
 
@@ -155,11 +155,11 @@ function restore(link: UnitLink) {
                         {{ link.unit.name }}
                         <span
                             v-if="link.is_primary"
-                            class="bg-primary/10 text-primary ml-1 rounded px-1.5 py-0.5 text-xs"
+                            class="ml-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
                             >Principal</span
                         >
                     </p>
-                    <p class="text-muted-foreground text-xs">
+                    <p class="text-xs text-muted-foreground">
                         {{
                             link.deleted_at
                                 ? 'Excluído'
@@ -238,7 +238,7 @@ function restore(link: UnitLink) {
                 <select
                     id="unit-select"
                     v-model="assignForm.unit_id"
-                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                     <option value="">Selecione uma unidade</option>
                     <option
@@ -282,7 +282,7 @@ function restore(link: UnitLink) {
                 </Button>
             </div>
         </form>
-        <p v-else class="text-muted-foreground text-sm">
+        <p v-else class="text-sm text-muted-foreground">
             Não há unidades ativas disponíveis para adicionar.
         </p>
 

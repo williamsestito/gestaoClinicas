@@ -25,6 +25,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { formatCurrencyBrl } from '@/lib/masks';
 import {
     activate,
     deactivate,
@@ -80,14 +81,7 @@ function unitName(unitId: string): string {
 }
 
 function formatPrice(cents: number | null): string {
-    if (cents === null) {
-        return 'Sem preço definido';
-    }
-
-    return (cents / 100).toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-    });
+    return cents === null ? 'Sem preço definido' : formatCurrencyBrl(cents);
 }
 
 const sheetOpen = ref(false);
@@ -177,7 +171,7 @@ function restore(link: ServiceLink) {
 
 <template>
     <div class="grid gap-4">
-        <div v-if="links.length === 0" class="text-muted-foreground text-sm">
+        <div v-if="links.length === 0" class="text-sm text-muted-foreground">
             Nenhum serviço vinculado ainda.
         </div>
 
@@ -189,7 +183,7 @@ function restore(link: ServiceLink) {
             >
                 <div>
                     <p class="text-sm font-medium">{{ link.service.name }}</p>
-                    <p class="text-muted-foreground text-xs">
+                    <p class="text-xs text-muted-foreground">
                         {{
                             link.deleted_at
                                 ? 'Excluído'
@@ -209,7 +203,7 @@ function restore(link: ServiceLink) {
                                 : ' (personalizado)'
                         }}
                     </p>
-                    <p class="text-muted-foreground text-xs">
+                    <p class="text-xs text-muted-foreground">
                         {{ unitScopeLabels[link.unit_scope] }}
                         <span v-if="link.compatible_units.length > 0">
                             —

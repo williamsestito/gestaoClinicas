@@ -5,6 +5,7 @@ use App\Http\Controllers\Organization\AuditLogController;
 use App\Http\Controllers\Organization\DashboardController;
 use App\Http\Controllers\Organization\InvitationController;
 use App\Http\Controllers\Organization\LegalEntityController;
+use App\Http\Controllers\Organization\MyScheduleController;
 use App\Http\Controllers\Organization\OnboardingController;
 use App\Http\Controllers\Organization\OrganizationContextController;
 use App\Http\Controllers\Organization\OrganizationSettingsController;
@@ -182,8 +183,17 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
                 ->name('settings.services.destroy');
         });
 
+        // "Minha agenda" — nunca aceita {professional} na URL: o profissional
+        // é sempre resolvido a partir do usuário autenticado.
+        Route::get('settings/minha-agenda', [MyScheduleController::class, 'availability'])
+            ->name('settings.my-schedule.availability');
+        Route::get('settings/minha-agenda/ausencias', [MyScheduleController::class, 'timeBlocks'])
+            ->name('settings.my-schedule.time-blocks');
+
         Route::get('settings/professionals', [ProfessionalController::class, 'index'])
             ->name('settings.professionals.index');
+        Route::get('settings/professionals/agendas', [ProfessionalController::class, 'agendas'])
+            ->name('settings.professionals.agendas');
         Route::get('settings/professionals/create', [ProfessionalController::class, 'create'])
             ->name('settings.professionals.create');
         Route::post('settings/professionals', [ProfessionalController::class, 'store'])
@@ -280,6 +290,8 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
                 ->name('settings.professionals.working-hours.store');
             Route::post('settings/professionals/{professional}/units/{professionalUnit}/working-hours/copy', [ProfessionalWorkingHourController::class, 'copy'])
                 ->name('settings.professionals.working-hours.copy');
+            Route::post('settings/professionals/{professional}/units/{professionalUnit}/working-hours/configure', [ProfessionalWorkingHourController::class, 'configure'])
+                ->name('settings.professionals.working-hours.configure');
             Route::put('settings/professionals/{professional}/working-hours/{workingHour}', [ProfessionalWorkingHourController::class, 'update'])
                 ->name('settings.professionals.working-hours.update');
             Route::patch('settings/professionals/{professional}/working-hours/{workingHour}/activate', [ProfessionalWorkingHourController::class, 'activate'])
@@ -399,6 +411,23 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
             Route::delete("settings/site/{$segment}/{{$param}}", [$controller, 'destroy'])
                 ->name("settings.site.{$segment}.destroy");
         }
+
+        // Vínculo opcional com o cadastro operacional (Etapa 2.11) — só
+        // profissionais e serviços têm um cadastro operacional
+        // correspondente; os demais itens de coleção são só promocionais.
+        Route::post('settings/site/professionals/{siteProfessional}/link', [SiteProfessionalController::class, 'link'])
+            ->name('settings.site.professionals.link');
+        Route::delete('settings/site/professionals/{siteProfessional}/link', [SiteProfessionalController::class, 'unlink'])
+            ->name('settings.site.professionals.unlink');
+        Route::post('settings/site/professionals/{siteProfessional}/copy-public-data', [SiteProfessionalController::class, 'copyPublicData'])
+            ->name('settings.site.professionals.copy-public-data');
+
+        Route::post('settings/site/services/{siteService}/link', [SiteServiceController::class, 'link'])
+            ->name('settings.site.services.link');
+        Route::delete('settings/site/services/{siteService}/link', [SiteServiceController::class, 'unlink'])
+            ->name('settings.site.services.unlink');
+        Route::post('settings/site/services/{siteService}/copy-public-data', [SiteServiceController::class, 'copyPublicData'])
+            ->name('settings.site.services.copy-public-data');
 
         Route::get('settings/site/appointment-requests', [AppointmentRequestController::class, 'index'])
             ->name('settings.site.appointment-requests.index');

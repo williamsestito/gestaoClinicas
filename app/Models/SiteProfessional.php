@@ -7,6 +7,7 @@ namespace App\Models;
 use Database\Factories\SiteProfessionalFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -14,7 +15,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * marketing/apresentação — não tem relação com o vínculo de acesso ao
  * sistema (User/OrganizationMembership), que é um conceito diferente.
  *
+ * Pode opcionalmente referenciar um App\Models\Professional (cadastro
+ * operacional) via `professional_id` — vínculo puramente informativo, que
+ * nunca torna os dois cadastros um só: o conteúdo público continua
+ * existindo e sendo editável independente do vínculo. Ver
+ * docs/modules/public-integration.md.
+ *
  * @property int $id
+ * @property string|null $professional_id
  * @property string $name
  * @property string|null $role_title
  * @property string|null $specialty
@@ -26,6 +34,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $linkedin_url
  * @property int $order
  * @property bool $is_active
+ * @property-read Professional|null $professional
  */
 class SiteProfessional extends Model
 {
@@ -52,5 +61,11 @@ class SiteProfessional extends Model
             'order' => 'integer',
             'is_active' => 'boolean',
         ];
+    }
+
+    /** @return BelongsTo<Professional, $this> */
+    public function professional(): BelongsTo
+    {
+        return $this->belongsTo(Professional::class);
     }
 }

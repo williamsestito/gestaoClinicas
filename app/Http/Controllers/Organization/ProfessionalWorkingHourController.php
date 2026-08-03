@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Organization;
 
 use App\Actions\Organization\ActivateProfessionalWorkingHourAction;
+use App\Actions\Organization\ConfigureProfessionalWorkingHoursAction;
 use App\Actions\Organization\CopyProfessionalWorkingHoursAction;
 use App\Actions\Organization\CreateProfessionalWorkingHourAction;
 use App\Actions\Organization\DeactivateProfessionalWorkingHourAction;
@@ -13,6 +14,7 @@ use App\Actions\Organization\RestoreProfessionalWorkingHourAction;
 use App\Actions\Organization\UpdateProfessionalWorkingHourAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Organization\AssignProfessionalWorkingHourRequest;
+use App\Http\Requests\Organization\ConfigureProfessionalWorkingHoursRequest;
 use App\Http\Requests\Organization\CopyProfessionalWorkingHoursRequest;
 use App\Http\Requests\Organization\UpdateProfessionalWorkingHourRequest;
 use App\Models\Professional;
@@ -101,6 +103,17 @@ class ProfessionalWorkingHourController extends Controller
         $action->handle($professionalUnit, $request->attributesForAction());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Os horários foram copiados com sucesso.']);
+
+        return back();
+    }
+
+    public function configure(ConfigureProfessionalWorkingHoursRequest $request, Professional $professional, ProfessionalUnit $professionalUnit, ConfigureProfessionalWorkingHoursAction $action): RedirectResponse
+    {
+        $this->authorizeBelongsToProfessional($professional, $professionalUnit);
+
+        $action->handle($professionalUnit, $request->attributesForAction());
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Agenda configurada com sucesso.']);
 
         return back();
     }

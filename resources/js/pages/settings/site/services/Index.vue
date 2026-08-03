@@ -33,16 +33,22 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { dashboard } from '@/routes';
 import {
+    copyPublicData,
     destroy,
+    link as linkRoute,
     reorder,
     store,
     toggle,
+    unlink as unlinkRoute,
     update,
 } from '@/routes/settings/site/services';
 import type { SiteService } from '@/types/site';
 
+type OperationalServiceOption = { id: string; name: string };
+
 const props = defineProps<{
     services: SiteService[];
+    operationalServices?: OperationalServiceOption[];
 }>();
 
 defineOptions({
@@ -164,6 +170,83 @@ function confirmDelete() {
         },
     });
 }
+
+const linkSelection = ref<Record<number, string>>({});
+const linkingId = ref<number | null>(null);
+
+function submitLink(item: SiteService) {
+    const serviceId = linkSelection.value[item.id];
+
+    if (!serviceId) {
+        return;
+    }
+
+    linkingId.value = item.id;
+    router.post(
+        linkRoute(item.id).url,
+        { service_id: serviceId },
+        {
+            preserveScroll: true,
+            onFinish: () => (linkingId.value = null),
+        },
+    );
+}
+
+function unlink(item: SiteService) {
+    linkingId.value = item.id;
+    router.delete(unlinkRoute(item.id).url, {
+        preserveScroll: true,
+        onFinish: () => (linkingId.value = null),
+    });
+}
+
+const copyDialogItem = ref<SiteService | null>(null);
+const copyFields = ref<{
+    name: boolean;
+    description: boolean;
+    duration_minutes: boolean;
+    starting_price_cents: boolean;
+}>({
+    name: false,
+    description: false,
+    duration_minutes: false,
+    starting_price_cents: false,
+});
+const copyForm = useForm({ fields: [] as string[] });
+
+function openCopyDialog(item: SiteService) {
+    copyDialogItem.value = item;
+    copyFields.value = {
+        name: false,
+        description: false,
+        duration_minutes: false,
+        starting_price_cents: false,
+    };
+}
+
+function hasAnyCopyFieldSelected() {
+    return Object.values(copyFields.value).some(Boolean);
+}
+
+function submitCopy() {
+    if (!copyDialogItem.value) {
+        return;
+    }
+
+    const fields = Object.entries(copyFields.value)
+        .filter(([, checked]) => checked)
+        .map(([field]) => field);
+
+    if (fields.length === 0) {
+        return;
+    }
+
+    copyForm.fields = fields;
+    copyForm.post(copyPublicData(copyDialogItem.value.id).url, {
+        preserveScroll: true,
+        onSuccess: () => (copyDialogItem.value = null),
+    });
+}
 </script>
 
 <template>
@@ -197,54 +280,133 @@ function confirmDelete() {
 
         <div v-else class="grid gap-3">
             <Card v-for="(item, index) in services" :key="item.id">
-                <CardContent
-                    class="flex items-center justify-between gap-4 py-4"
-                >
-                    <div class="flex items-center gap-3">
-                        <img
-                            v-if="item.image_url"
-                            :src="item.image_url"
-                            :alt="item.name"
-                            class="size-12 rounded-md border object-cover"
-                        />
-                        <div>
-                            <p class="font-medium">{{ item.name }}</p>
-                            <p
-                                v-if="item.short_description"
-                                class="text-sm text-muted-foreground"
-                            >
-                                {{ item.short_description }}
-                            </p>
-                            <div class="mt-1 flex flex-wrap gap-1">
-                                <Badge
-                                    :variant="
-                                        item.is_active ? 'default' : 'secondary'
-                                    "
+                <CardContent class="flex flex-col gap-4 py-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <img
+                                v-if="item.image_url"
+                                :src="item.image_url"
+                                :alt="item.name"
+                                class="size-12 rounded-md border object-cover"
+                            />
+                            <div>
+                                <p class="font-medium">{{ item.name }}</p>
+                                <p
+                                    v-if="item.short_description"
+                                    class="text-sm text-muted-foreground"
                                 >
-                                    {{ item.is_active ? 'Ativo' : 'Inativo' }}
-                                </Badge>
-                                <Badge
-                                    v-if="item.is_featured"
-                                    variant="secondary"
-                                >
-                                    Destaque
-                                </Badge>
+                                    {{ item.short_description }}
+                                </p>
+                                <div class="mt-1 flex flex-wrap gap-1">
+                                    <Badge
+                                        :variant="
+                                            item.is_active
+                                                ? 'default'
+                                                : 'secondary'
+                                        "
+                                    >
+                                        {{
+                                            item.is_active ? 'Ativo' : 'Inativo'
+                                        }}
+                                    </Badge>
+                                    <Badge
+                                        v-if="item.is_featured"
+                                        variant="secondary"
+                                    >
+                                        Destaque
+                                    </Badge>
+                                </div>
                             </div>
                         </div>
+
+                        <SiteCollectionRowActions
+                            :label="item.name"
+                            :is-active="item.is_active"
+                            :can-move-up="index > 0"
+                            :can-move-down="index < services.length - 1"
+                            :disabled="processingId === item.id"
+                            @edit="openEditSheet(item)"
+                            @toggle-active="toggleActive(item)"
+                            @move-up="moveUp(index)"
+                            @move-down="moveDown(index)"
+                            @delete="itemPendingDeletion = item"
+                        />
                     </div>
 
-                    <SiteCollectionRowActions
-                        :label="item.name"
-                        :is-active="item.is_active"
-                        :can-move-up="index > 0"
-                        :can-move-down="index < services.length - 1"
-                        :disabled="processingId === item.id"
-                        @edit="openEditSheet(item)"
-                        @toggle-active="toggleActive(item)"
-                        @move-up="moveUp(index)"
-                        @move-down="moveDown(index)"
-                        @delete="itemPendingDeletion = item"
-                    />
+                    <div class="rounded-md border bg-muted/30 p-3 text-sm">
+                        <p class="mb-2 text-xs text-muted-foreground">
+                            O conteúdo público acima continua sendo gerenciado
+                            de forma independente do cadastro operacional.
+                        </p>
+
+                        <template v-if="item.linked_service">
+                            <div
+                                class="flex flex-wrap items-center justify-between gap-2"
+                            >
+                                <span>
+                                    Vinculado a
+                                    <strong>{{
+                                        item.linked_service.name
+                                    }}</strong>
+                                </span>
+                                <div class="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        :disabled="linkingId === item.id"
+                                        @click="openCopyDialog(item)"
+                                    >
+                                        Copiar dados públicos
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        :disabled="linkingId === item.id"
+                                        @click="unlink(item)"
+                                    >
+                                        Desvincular
+                                    </Button>
+                                </div>
+                            </div>
+                            <p
+                                v-if="!item.linked_service.is_operational"
+                                class="mt-2 text-amber-600 dark:text-amber-500"
+                            >
+                                Este serviço está inativo e não será exibido
+                                publicamente.
+                            </p>
+                        </template>
+
+                        <div v-else class="flex flex-wrap items-center gap-2">
+                            <select
+                                v-model="linkSelection[item.id]"
+                                :aria-label="`Vincular ${item.name} a um serviço operacional`"
+                                class="h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                            >
+                                <option value="">
+                                    Selecionar serviço operacional…
+                                </option>
+                                <option
+                                    v-for="option in operationalServices ?? []"
+                                    :key="option.id"
+                                    :value="option.id"
+                                >
+                                    {{ option.name }}
+                                </option>
+                            </select>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                :disabled="
+                                    !linkSelection[item.id] ||
+                                    linkingId === item.id
+                                "
+                                @click="submitLink(item)"
+                            >
+                                Vincular
+                            </Button>
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
         </div>
@@ -379,6 +541,67 @@ function confirmDelete() {
                     <Button variant="destructive" @click="confirmDelete"
                         >Excluir</Button
                     >
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog
+            :open="copyDialogItem !== null"
+            @update:open="(open) => !open && (copyDialogItem = null)"
+        >
+            <DialogContent>
+                <DialogHeader class="space-y-3">
+                    <DialogTitle>Copiar dados públicos</DialogTitle>
+                    <DialogDescription>
+                        Selecione quais campos do cadastro operacional vinculado
+                        devem sobrescrever o conteúdo público atual de "{{
+                            copyDialogItem?.name
+                        }}". O preço só é copiado se você marcar a opção — nunca
+                        por padrão.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="flex flex-col gap-3">
+                    <label class="flex items-center gap-2 text-sm">
+                        <input v-model="copyFields.name" type="checkbox" />
+                        Nome
+                    </label>
+                    <label class="flex items-center gap-2 text-sm">
+                        <input
+                            v-model="copyFields.description"
+                            type="checkbox"
+                        />
+                        Descrição
+                    </label>
+                    <label class="flex items-center gap-2 text-sm">
+                        <input
+                            v-model="copyFields.duration_minutes"
+                            type="checkbox"
+                        />
+                        Duração
+                    </label>
+                    <label class="flex items-center gap-2 text-sm">
+                        <input
+                            v-model="copyFields.starting_price_cents"
+                            type="checkbox"
+                        />
+                        Preço público ("a partir de")
+                    </label>
+                </div>
+
+                <DialogFooter class="gap-2">
+                    <DialogClose as-child>
+                        <Button variant="secondary">Cancelar</Button>
+                    </DialogClose>
+                    <Button
+                        :disabled="
+                            copyForm.processing || !hasAnyCopyFieldSelected()
+                        "
+                        @click="submitCopy"
+                    >
+                        <Spinner v-if="copyForm.processing" />
+                        Copiar dados selecionados
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

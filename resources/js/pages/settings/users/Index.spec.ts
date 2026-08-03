@@ -1,16 +1,34 @@
 import { mount } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { reactive } from 'vue';
 import Index from './Index.vue';
 
-const { routerMock } = vi.hoisted(() => ({
-    routerMock: {
-        patch: vi.fn(),
-        put: vi.fn(),
-        post: vi.fn(),
-        delete: vi.fn(),
-    },
-}));
+const { routerMock, flashHandlers } = vi.hoisted(() => {
+    const flashHandlers: ((event: Event) => void)[] = [];
+
+    return {
+        flashHandlers,
+        routerMock: {
+            patch: vi.fn(),
+            put: vi.fn(),
+            post: vi.fn(),
+            delete: vi.fn(),
+            on: vi.fn((event: string, callback: (event: Event) => void) => {
+                if (event === 'flash') {
+                    flashHandlers.push(callback);
+                }
+
+                return () => {
+                    const index = flashHandlers.indexOf(callback);
+
+                    if (index !== -1) {
+                        flashHandlers.splice(index, 1);
+                    }
+                };
+            }),
+        },
+    };
+});
 
 vi.mock('@inertiajs/vue3', () => ({
     Head: { template: '<div />' },
@@ -24,6 +42,16 @@ vi.mock('@inertiajs/vue3', () => ({
             put: vi.fn(),
         }),
 }));
+
+vi.mock('vue-sonner', () => ({
+    toast: { success: vi.fn(), error: vi.fn() },
+}));
+
+function emitFlash(flash: Record<string, unknown>) {
+    for (const handler of flashHandlers) {
+        handler(new CustomEvent('flash', { detail: { flash } }));
+    }
+}
 
 function makeMembership(overrides: Record<string, unknown> = {}) {
     return {
@@ -73,6 +101,10 @@ function makeProps() {
 }
 
 describe('settings/users/Index', () => {
+    beforeEach(() => {
+        flashHandlers.length = 0;
+    });
+
     it('shows an empty state with a call to action when there are no users', () => {
         const wrapper = mount(Index, {
             props: { ...makeProps(), memberships: [] },
@@ -138,5 +170,74 @@ describe('settings/users/Index', () => {
 
         expect(wrapper.find('table').exists()).toBe(true);
         expect(wrapper.findAllComponents({ name: 'Card' }).length).toBeGreaterThan(0);
+    });
+
+    it('opens a dialog with the copyable invite link when the "inviteLink" flash arrives', async () => {
+        const wrapper = mount(Index, {
+            props: makeProps(),
+            attachTo: document.body,
+        });
+
+        emitFlash({
+            inviteLink: {
+                email: 'nova@example.test',
+                url: 'https://clinica.test/invitations/abc123',
+            },
+        });
+        await wrapper.vm.$nextTick();
+
+        const text = document.body.textContent ?? '';
+        expect(text).toContain('Convite criado');
+        expect(text).toContain('nova@example.test');
+
+        const linkInput = document.body.querySelector(
+            'input[readonly]',
+        ) as HTMLInputElement;
+        expect(linkInput.value).toBe('https://clinica.test/invitations/abc123');
+
+        wrapper.unmount();
+    });
+
+    it('does not show the invite link dialog before any "inviteLink" flash arrives', () => {
+        const wrapper = mount(Index, {
+            props: makeProps(),
+            attachTo: document.body,
+        });
+
+        expect(document.body.textContent ?? '').not.toContain(
+            'Convite criado',
+        );
+
+        wrapper.unmount();
+    });
+
+    it('copies the invite link to the clipboard and confirms with a toast', async () => {
+        const writeText = vi.fn().mockResolvedValue(undefined);
+        Object.assign(navigator, { clipboard: { writeText } });
+
+        const wrapper = mount(Index, {
+            props: makeProps(),
+            attachTo: document.body,
+        });
+        emitFlash({
+            inviteLink: {
+                email: 'nova@example.test',
+                url: 'https://clinica.test/invitations/abc123',
+            },
+        });
+        await wrapper.vm.$nextTick();
+
+        const copyButton = document.body.querySelector(
+            'button[aria-label="Copiar link do convite"]',
+        ) as HTMLButtonElement;
+        copyButton.click();
+        await wrapper.vm.$nextTick();
+        await wrapper.vm.$nextTick();
+
+        expect(writeText).toHaveBeenCalledWith(
+            'https://clinica.test/invitations/abc123',
+        );
+
+        wrapper.unmount();
     });
 });

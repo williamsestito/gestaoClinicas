@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
+import PhoneInput from '@/components/PhoneInput.vue';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { maskCpf, maskPhone } from '@/lib/masks';
+import { maskCpf } from '@/lib/masks';
 import { store, update } from '@/routes/settings/professionals';
 
 export type EligibleUser = { id: number; name: string; email: string };
@@ -20,6 +22,7 @@ export type EditableProfessional = {
     document: string | null;
     birth_date: string | null;
     bio: string | null;
+    is_public: boolean;
 };
 
 const props = withDefaults(
@@ -48,12 +51,9 @@ const form = useForm({
     document: '',
     birth_date: props.professional?.birth_date ?? '',
     bio: props.professional?.bio ?? '',
+    is_public: props.professional?.is_public ?? false,
     user_id: undefined as number | undefined,
 });
-
-function onPhoneInput(event: Event) {
-    form.phone = maskPhone((event.target as HTMLInputElement).value);
-}
 
 function onDocumentInput(event: Event) {
     form.document = maskCpf((event.target as HTMLInputElement).value);
@@ -120,11 +120,7 @@ function submit() {
 
             <div class="grid gap-2">
                 <Label for="professional-phone">Telefone (opcional)</Label>
-                <Input
-                    id="professional-phone"
-                    :model-value="form.phone"
-                    @input="onPhoneInput"
-                />
+                <PhoneInput id="professional-phone" v-model="form.phone" />
                 <InputError :message="form.errors.phone" />
             </div>
 
@@ -183,7 +179,24 @@ function submit() {
             <div class="grid gap-2 sm:col-span-2">
                 <Label for="professional-bio">Biografia (opcional)</Label>
                 <Textarea id="professional-bio" v-model="form.bio" rows="4" />
+                <p class="text-xs text-muted-foreground">
+                    Exibida publicamente somente se "Exibir no site" estiver
+                    marcado.
+                </p>
                 <InputError :message="form.errors.bio" />
+            </div>
+
+            <div v-if="mode === 'edit'" class="grid gap-2 sm:col-span-2">
+                <Label class="flex items-center gap-2 font-normal">
+                    <Checkbox v-model:model-value="form.is_public" />
+                    Exibir no site público
+                </Label>
+                <p class="text-xs text-muted-foreground">
+                    Quando marcado, o nome de exibição, a foto e a biografia
+                    podem aparecer na página pública da clínica. Nenhum dado
+                    sensível é exibido.
+                </p>
+                <InputError :message="form.errors.is_public" />
             </div>
         </div>
 

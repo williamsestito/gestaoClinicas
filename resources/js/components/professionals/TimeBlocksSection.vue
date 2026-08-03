@@ -177,7 +177,7 @@ function restore(row: TimeBlockRow) {
             <select
                 v-model="typeFilter"
                 aria-label="Filtrar bloqueios por tipo"
-                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Todos os tipos</option>
                 <option
@@ -192,7 +192,7 @@ function restore(row: TimeBlockRow) {
             <select
                 v-model="statusFilter"
                 aria-label="Filtrar bloqueios por status"
-                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Ativos e inativos</option>
                 <option value="active">Ativos</option>
@@ -224,11 +224,11 @@ function restore(row: TimeBlockRow) {
                 <div>
                     <p class="text-sm font-medium">
                         {{ TYPE_LABELS[row.type] ?? row.type }}
-                        <span class="text-muted-foreground ml-1 text-xs">
+                        <span class="ml-1 text-xs text-muted-foreground">
                             ({{ TEMPORAL_LABELS[row.temporal_status] }})</span
                         >
                     </p>
-                    <p class="text-muted-foreground text-xs">
+                    <p class="text-xs text-muted-foreground">
                         {{
                             row.scope === 'all_units'
                                 ? 'Todas as unidades'
@@ -237,12 +237,12 @@ function restore(row: TimeBlockRow) {
                         · {{ formatLocalRange(row) }}
                         <span v-if="row.is_all_day"> · Dia inteiro</span>
                     </p>
-                    <p v-if="row.reason" class="text-muted-foreground text-xs">
+                    <p v-if="row.reason" class="text-xs text-muted-foreground">
                         {{ row.reason }}
                     </p>
                     <p
                         v-if="row.internal_notes"
-                        class="text-muted-foreground text-xs italic"
+                        class="text-xs text-muted-foreground italic"
                     >
                         {{ row.internal_notes }}
                     </p>
