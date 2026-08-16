@@ -2,11 +2,18 @@
 
 namespace App\Providers;
 
+use App\Models\Appointment;
 use App\Models\AppointmentRequest;
 use App\Models\Invitation;
 use App\Models\LegalEntity;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\OrganizationModule;
+use App\Models\Patient;
+use App\Models\PatientEmergencyContact;
+use App\Models\PatientResponsible;
+use App\Models\PatientUser;
+use App\Models\PatientUserLink;
 use App\Models\Permission;
 use App\Models\Professional;
 use App\Models\ProfessionalRegistration;
@@ -109,6 +116,11 @@ class AppServiceProvider extends ServiceProvider
             'legal_entity' => LegalEntity::class,
             'unit' => Unit::class,
             'organization_membership' => OrganizationMembership::class,
+            'organization_module' => OrganizationModule::class,
+            'appointment' => Appointment::class,
+            'patient' => Patient::class,
+            'patient_responsible' => PatientResponsible::class,
+            'patient_emergency_contact' => PatientEmergencyContact::class,
             'unit_membership' => UnitMembership::class,
             'user' => User::class,
             'role' => Role::class,
@@ -135,6 +147,8 @@ class AppServiceProvider extends ServiceProvider
             'professional_service_unit' => ProfessionalServiceUnit::class,
             'professional_working_hour' => ProfessionalWorkingHour::class,
             'professional_time_block' => ProfessionalTimeBlock::class,
+            'patient_user' => PatientUser::class,
+            'patient_user_link' => PatientUserLink::class,
         ]);
     }
 

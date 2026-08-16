@@ -204,7 +204,10 @@ const hasFilteredResults = computed(() => filteredRoles.value.length > 0);
                                 {{ role.organization_memberships_count }}
                             </td>
                             <td class="px-4 py-3">
-                                <Badge v-if="role.is_system" variant="secondary">
+                                <Badge
+                                    v-if="role.is_system"
+                                    variant="secondary"
+                                >
                                     Sistema
                                 </Badge>
                                 <span v-else class="text-muted-foreground"
@@ -220,7 +223,9 @@ const hasFilteredResults = computed(() => filteredRoles.value.length > 0);
                                         @click="openEditSheet(role)"
                                     >
                                         <Pencil class="size-3.5" />
-                                        {{ isOwnerRole(role) ? 'Ver' : 'Editar' }}
+                                        {{
+                                            isOwnerRole(role) ? 'Ver' : 'Editar'
+                                        }}
                                     </Button>
                                     <Button
                                         size="sm"

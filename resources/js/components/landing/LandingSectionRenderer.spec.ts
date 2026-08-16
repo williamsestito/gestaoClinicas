@@ -159,7 +159,9 @@ describe('LandingSectionRenderer', () => {
 
     it('renders the partners component with the partners list', async () => {
         const wrapper = await mountRenderer('partners', {
-            partners: [{ id: 1, name: 'Convênio X', logo_url: null, url: null }],
+            partners: [
+                { id: 1, name: 'Convênio X', logo_url: null, url: null },
+            ],
         });
 
         expect(

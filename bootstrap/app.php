@@ -2,9 +2,12 @@
 
 use App\Http\Middleware\EnsureActiveOrganization;
 use App\Http\Middleware\EnsureActiveUnit;
+use App\Http\Middleware\EnsureAppointmentMembership;
 use App\Http\Middleware\EnsureLegalEntityMembership;
 use App\Http\Middleware\EnsureNoActiveOrganization;
 use App\Http\Middleware\EnsureOrganizationMembership;
+use App\Http\Middleware\EnsurePatientMembership;
+use App\Http\Middleware\EnsurePatientUserIsActive;
 use App\Http\Middleware\EnsureProfessionalMembership;
 use App\Http\Middleware\EnsureServiceMembership;
 use App\Http\Middleware\EnsureSpecialtyMembership;
@@ -15,6 +18,7 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ResolveOrganizationContext;
 use App\Http\Middleware\ResolveUnitContext;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\SharePatientPortalData;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -60,6 +64,16 @@ return Application::configure(basePath: dirname(__DIR__))
             SecurityHeaders::class,
         ]);
 
+        // Sem isto, o middleware "auth:patient" redirecionaria um visitante
+        // não autenticado para a tela de login de staff ("login") em vez da
+        // tela de login do portal — o redirect padrão do Laravel não é
+        // guard-aware.
+        $middleware->redirectGuestsTo(
+            fn (Request $request) => $request->is('portal*')
+                ? route('patient-portal.login')
+                : route('login'),
+        );
+
         $middleware->alias([
             'tenant.organization' => ResolveOrganizationContext::class,
             'tenant.unit' => ResolveUnitContext::class,
@@ -71,7 +85,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.legal-entity-membership' => EnsureLegalEntityMembership::class,
             'tenant.specialty-membership' => EnsureSpecialtyMembership::class,
             'tenant.service-membership' => EnsureServiceMembership::class,
+            'tenant.patient-membership' => EnsurePatientMembership::class,
+            'tenant.appointment-membership' => EnsureAppointmentMembership::class,
             'tenant.professional-membership' => EnsureProfessionalMembership::class,
+            'patient.active' => EnsurePatientUserIsActive::class,
+            'patient.share-portal-data' => SharePatientPortalData::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

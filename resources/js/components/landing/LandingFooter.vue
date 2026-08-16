@@ -2,7 +2,11 @@
 import { computed } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import { LANDING_NAV_LABELS } from '@/lib/landing-nav';
-import type { LandingSectionType, PublicContact, PublicSiteContent } from '@/types/site';
+import type {
+    LandingSectionType,
+    PublicContact,
+    PublicSiteContent,
+} from '@/types/site';
 
 const props = defineProps<{
     site: PublicSiteContent;
@@ -12,7 +16,10 @@ const props = defineProps<{
 
 const navLinks = computed(() =>
     (props.activeTypes ?? [])
-        .filter((type): type is keyof typeof LANDING_NAV_LABELS => type in LANDING_NAV_LABELS)
+        .filter(
+            (type): type is keyof typeof LANDING_NAV_LABELS =>
+                type in LANDING_NAV_LABELS,
+        )
         .map((type) => ({ type, label: LANDING_NAV_LABELS[type]! })),
 );
 

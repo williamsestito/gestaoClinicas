@@ -36,10 +36,14 @@ describe('LandingGallerySection', () => {
     });
 
     it('shows a "Ver todas" link only when there are more images than the preview limit', () => {
-        const few = mount(LandingGallerySection, { props: { items: makeItems(5) } });
+        const few = mount(LandingGallerySection, {
+            props: { items: makeItems(5) },
+        });
         expect(few.text()).not.toContain('Ver todas');
 
-        const many = mount(LandingGallerySection, { props: { items: makeItems(20) } });
+        const many = mount(LandingGallerySection, {
+            props: { items: makeItems(20) },
+        });
         expect(many.text()).toContain('Ver todas');
     });
 

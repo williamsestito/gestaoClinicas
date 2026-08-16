@@ -19,7 +19,7 @@ class OrganizationContextController extends Controller
 {
     public function edit(): Response
     {
-        $user = Auth::user();
+        $user = Auth::guard('web')->user();
 
         // Superadmin enxerga todas as organizações ativas (acesso global);
         // os demais usuários só veem as organizações onde têm vínculo.
@@ -42,7 +42,7 @@ class OrganizationContextController extends Controller
     {
         $organization = Organization::query()->findOrFail((string) $request->validated('organization_id'));
 
-        $action->handle($request, $request->user(), $organization);
+        $action->handle($request, $request->user('web'), $organization);
 
         return to_route('dashboard');
     }

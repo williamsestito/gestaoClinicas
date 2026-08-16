@@ -26,7 +26,9 @@ describe('ThemeSwitcher', () => {
         const wrapper = mountThemeSwitcher();
 
         expect(
-            wrapper.find('button[aria-label="Mudar para tema escuro"]').exists(),
+            wrapper
+                .find('button[aria-label="Mudar para tema escuro"]')
+                .exists(),
         ).toBe(true);
     });
 

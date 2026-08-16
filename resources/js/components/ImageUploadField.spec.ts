@@ -50,9 +50,7 @@ describe('ImageUploadField', () => {
         await wrapper.find('input[type="file"]').trigger('change');
 
         expect(URL.createObjectURL).toHaveBeenCalledWith(file);
-        expect(wrapper.find('img').attributes('src')).toBe(
-            'blob:preview-url',
-        );
+        expect(wrapper.find('img').attributes('src')).toBe('blob:preview-url');
         expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([file]);
     });
 
@@ -74,9 +72,7 @@ describe('ImageUploadField', () => {
         });
         await wrapper.find('input[type="file"]').trigger('change');
 
-        expect(wrapper.find('img').attributes('src')).toBe(
-            'blob:preview-url',
-        );
+        expect(wrapper.find('img').attributes('src')).toBe('blob:preview-url');
 
         await wrapper
             .findAll('button')

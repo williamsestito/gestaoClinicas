@@ -200,7 +200,9 @@ function confirmDelete() {
                         <p class="truncate text-sm font-medium">
                             {{ item.name }}
                         </p>
-                        <Badge :variant="item.is_active ? 'default' : 'secondary'">
+                        <Badge
+                            :variant="item.is_active ? 'default' : 'secondary'"
+                        >
                             {{ item.is_active ? 'Ativo' : 'Inativo' }}
                         </Badge>
                     </div>

@@ -31,7 +31,9 @@ describe('LandingServicesSection', () => {
 
     it('does not show category filters when no service has a category', () => {
         const wrapper = mount(LandingServicesSection, {
-            props: { services: [makeService({ id: 1 }), makeService({ id: 2 })] },
+            props: {
+                services: [makeService({ id: 1 }), makeService({ id: 2 })],
+            },
         });
 
         expect(wrapper.find('[role="tablist"]').exists()).toBe(false);
@@ -49,15 +51,27 @@ describe('LandingServicesSection', () => {
         });
 
         const tabs = wrapper.findAll('[role="tab"]');
-        expect(tabs.map((t) => t.text())).toEqual(['Todos', 'Estética', 'Odontologia']);
+        expect(tabs.map((t) => t.text())).toEqual([
+            'Todos',
+            'Estética',
+            'Odontologia',
+        ]);
     });
 
     it('filters services when a category tab is clicked', async () => {
         const wrapper = mount(LandingServicesSection, {
             props: {
                 services: [
-                    makeService({ id: 1, name: 'Limpeza de pele', category: 'Estética' }),
-                    makeService({ id: 2, name: 'Canal', category: 'Odontologia' }),
+                    makeService({
+                        id: 1,
+                        name: 'Limpeza de pele',
+                        category: 'Estética',
+                    }),
+                    makeService({
+                        id: 2,
+                        name: 'Canal',
+                        category: 'Odontologia',
+                    }),
                 ],
             },
         });

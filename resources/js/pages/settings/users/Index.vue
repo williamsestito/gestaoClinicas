@@ -172,8 +172,7 @@ let stopFlashListener: (() => void) | undefined;
 onMounted(() => {
     stopFlashListener = router.on('flash', (event) => {
         const flash = (event as CustomEvent).detail?.flash as
-            | { inviteLink?: { email: string; url: string } }
-            | undefined;
+            { inviteLink?: { email: string; url: string } } | undefined;
 
         if (flash?.inviteLink) {
             inviteLink.value = flash.inviteLink;
@@ -367,7 +366,9 @@ function resendInvitation(invitation: Invitation) {
                             <th class="px-4 py-2 font-medium">E-mail</th>
                             <th class="px-4 py-2 font-medium">Telefone</th>
                             <th class="px-4 py-2 font-medium">Papel</th>
-                            <th class="px-4 py-2 font-medium">Unidade principal</th>
+                            <th class="px-4 py-2 font-medium">
+                                Unidade principal
+                            </th>
                             <th class="px-4 py-2 font-medium">Status</th>
                             <th class="px-4 py-2 font-medium">Último acesso</th>
                             <th class="px-4 py-2 font-medium">
@@ -424,7 +425,10 @@ function resendInvitation(invitation: Invitation) {
                                 </Badge>
                             </td>
                             <td class="px-4 py-3 text-muted-foreground">
-                                {{ membership.user.last_login_at ?? 'nunca acessou' }}
+                                {{
+                                    membership.user.last_login_at ??
+                                    'nunca acessou'
+                                }}
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <UserRowActions

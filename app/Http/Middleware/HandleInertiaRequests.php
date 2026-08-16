@@ -41,9 +41,9 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user('web'),
             ],
-            'tenant' => fn () => app(TenantContextPresenter::class)->toArray($request->user()),
+            'tenant' => fn () => app(TenantContextPresenter::class)->toArray($request->user('web')),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             // Favicon do site institucional — usado por app.blade.php para
             // renderizar as tags <link rel="icon"> reais em TODA página

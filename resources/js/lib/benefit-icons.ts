@@ -33,13 +33,21 @@ export type BenefitIconOption = {
  * entre "o que pode ser escolhido" e "o que sabe ser exibido".
  */
 export const BENEFIT_ICONS: BenefitIconOption[] = [
-    { key: 'heart-handshake', label: 'Cuidado / acolhimento', icon: HeartHandshake },
+    {
+        key: 'heart-handshake',
+        label: 'Cuidado / acolhimento',
+        icon: HeartHandshake,
+    },
     { key: 'heart', label: 'Saúde / bem-estar', icon: Heart },
     { key: 'heart-pulse', label: 'Vitalidade', icon: Heart },
     { key: 'shield-check', label: 'Segurança verificada', icon: ShieldCheck },
     { key: 'shield', label: 'Segurança', icon: Shield },
     { key: 'sparkles', label: 'Qualidade / destaque', icon: Sparkles },
-    { key: 'graduation-cap', label: 'Qualificação profissional', icon: GraduationCap },
+    {
+        key: 'graduation-cap',
+        label: 'Qualificação profissional',
+        icon: GraduationCap,
+    },
     { key: 'stethoscope', label: 'Atendimento clínico', icon: Stethoscope },
     { key: 'clock', label: 'Agilidade / horário', icon: Clock },
     { key: 'users', label: 'Equipe / pessoas', icon: Users },

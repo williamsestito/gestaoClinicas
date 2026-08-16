@@ -38,7 +38,9 @@ describe('LandingWhatsappButton', () => {
 
         const link = wrapper.find('a');
         expect(link.exists()).toBe(true);
-        expect(link.attributes('href')).toContain('https://wa.me/5511999998888');
+        expect(link.attributes('href')).toContain(
+            'https://wa.me/5511999998888',
+        );
         expect(link.attributes('href')).toContain('text=');
         expect(link.attributes('aria-label')).toBe('Falar no WhatsApp');
     });

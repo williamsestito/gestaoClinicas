@@ -25,7 +25,7 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
-        $user = $request->user();
+        $user = $request->user('web');
 
         return Inertia::render('settings/Profile', [
             'mustVerifyEmail' => $user instanceof MustVerifyEmail,
@@ -55,13 +55,13 @@ class ProfileController extends Controller
     {
         // O CPF já chega normalizado (dígitos apenas) — ver
         // ProfileUpdateRequest::prepareForValidation().
-        $request->user()->fill($request->validated());
+        $request->user('web')->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($request->user('web')->isDirty('email')) {
+            $request->user('web')->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $request->user('web')->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);
 
@@ -76,7 +76,7 @@ class ProfileController extends Controller
      */
     public function updatePhoto(UpdateProfilePhotoRequest $request): RedirectResponse
     {
-        $user = $request->user();
+        $user = $request->user('web');
         $replacer = new SafeFileReplacer;
         $replacer->stage($user, 'photo_path', $request->file('photo'), 'profile-photos');
 
@@ -97,7 +97,7 @@ class ProfileController extends Controller
 
     public function destroyPhoto(Request $request): RedirectResponse
     {
-        $user = $request->user();
+        $user = $request->user('web');
 
         if ($user->photo_path && Storage::disk('public')->exists($user->photo_path)) {
             Storage::disk('public')->delete($user->photo_path);
@@ -116,7 +116,7 @@ class ProfileController extends Controller
      */
     public function destroy(ProfileDeleteRequest $request, RequestAccountClosureAction $action): RedirectResponse
     {
-        $user = $request->user();
+        $user = $request->user('web');
 
         $action->handle($user);
 

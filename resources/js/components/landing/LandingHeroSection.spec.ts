@@ -8,7 +8,9 @@ vi.mock('@inertiajs/vue3', () => ({
     usePage: () => ({ props: { auth: { user: null } } }),
 }));
 
-function makeSite(overrides: Partial<PublicSiteContent> = {}): PublicSiteContent {
+function makeSite(
+    overrides: Partial<PublicSiteContent> = {},
+): PublicSiteContent {
     return {
         title: 'Clínica Essenza',
         description: 'Cuidado que você merece.',
@@ -35,7 +37,9 @@ function makeSite(overrides: Partial<PublicSiteContent> = {}): PublicSiteContent
 
 describe('LandingHeroSection', () => {
     it('renders no image container when no banner was uploaded', () => {
-        const wrapper = mount(LandingHeroSection, { props: { site: makeSite() } });
+        const wrapper = mount(LandingHeroSection, {
+            props: { site: makeSite() },
+        });
 
         expect(wrapper.find('img').exists()).toBe(false);
     });
@@ -69,11 +73,15 @@ describe('LandingHeroSection', () => {
 
     it('falls back to the desktop banner on mobile when no dedicated mobile banner was uploaded', () => {
         const wrapper = mount(LandingHeroSection, {
-            props: { site: makeSite({ hero_image_url: '/storage/hero-desktop.jpg' }) },
+            props: {
+                site: makeSite({ hero_image_url: '/storage/hero-desktop.jpg' }),
+            },
         });
 
         expect(wrapper.find('source').exists()).toBe(false);
-        expect(wrapper.find('img').attributes('src')).toBe('/storage/hero-desktop.jpg');
+        expect(wrapper.find('img').attributes('src')).toBe(
+            '/storage/hero-desktop.jpg',
+        );
     });
 
     it('shows the eyebrow badge when the site has a schema type label', () => {
@@ -97,10 +105,30 @@ describe('LandingHeroSection', () => {
             props: {
                 site: makeSite(),
                 benefits: [
-                    { id: 1, icon: null, title: 'Atendimento humanizado', description: null },
-                    { id: 2, icon: null, title: 'Agenda online', description: null },
-                    { id: 3, icon: null, title: 'Equipe integrada', description: null },
-                    { id: 4, icon: null, title: 'Não deveria aparecer', description: null },
+                    {
+                        id: 1,
+                        icon: null,
+                        title: 'Atendimento humanizado',
+                        description: null,
+                    },
+                    {
+                        id: 2,
+                        icon: null,
+                        title: 'Agenda online',
+                        description: null,
+                    },
+                    {
+                        id: 3,
+                        icon: null,
+                        title: 'Equipe integrada',
+                        description: null,
+                    },
+                    {
+                        id: 4,
+                        icon: null,
+                        title: 'Não deveria aparecer',
+                        description: null,
+                    },
                 ],
             },
         });

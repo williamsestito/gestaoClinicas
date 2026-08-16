@@ -43,7 +43,11 @@ function mountIndex(
 ) {
     return mount(Index, {
         props: {
-            requests: { data: requestsData, links: [], total: requestsData.length },
+            requests: {
+                data: requestsData,
+                links: [],
+                total: requestsData.length,
+            },
             filters: {},
         },
     });
@@ -90,10 +94,9 @@ describe('settings/site/appointment-requests/Index', () => {
     it('sends a status update via router.patch', async () => {
         const wrapper = mountIndex();
 
-        await wrapper.findComponent({ name: 'SelectRoot' }).vm.$emit(
-            'update:modelValue',
-            'contacted',
-        );
+        await wrapper
+            .findComponent({ name: 'SelectRoot' })
+            .vm.$emit('update:modelValue', 'contacted');
 
         expect(routerMock.patch).toHaveBeenCalledWith(
             expect.stringContaining('/status'),

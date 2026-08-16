@@ -116,10 +116,10 @@ const orderedActiveSections = computed(() =>
                     props.contact !== null &&
                     Boolean(
                         props.contact.phone ||
-                            props.contact.email ||
-                            props.contact.address ||
-                            props.contact.opening_hours.length > 0 ||
-                            props.contact.map_url,
+                        props.contact.email ||
+                        props.contact.address ||
+                        props.contact.opening_hours.length > 0 ||
+                        props.contact.map_url,
                     )
                 );
             default:

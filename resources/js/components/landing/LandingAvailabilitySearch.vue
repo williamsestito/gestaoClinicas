@@ -418,8 +418,8 @@ function chooseTimeForScheduling(slot: {
                     v-if="times.length > 0"
                     class="text-xs text-muted-foreground"
                 >
-                    Escolha um horário para preencher automaticamente seus
-                    dados de contato abaixo. Nada é reservado agora — o
+                    Escolha um horário para preencher automaticamente seus dados
+                    de contato abaixo. Nada é reservado agora — o
                     pré-agendamento só é enviado quando você confirmar no
                     formulário.
                 </p>

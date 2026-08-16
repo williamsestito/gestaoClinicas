@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ModuleKey;
 use App\Enums\OrganizationStatus;
 use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -103,5 +104,47 @@ class Organization extends Model
     public function professionals(): HasMany
     {
         return $this->hasMany(Professional::class);
+    }
+
+    /** @return HasMany<Patient, $this> */
+    public function patients(): HasMany
+    {
+        return $this->hasMany(Patient::class);
+    }
+
+    /** @return HasMany<Appointment, $this> */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+    /** @return HasMany<PatientUser, $this> */
+    public function patientUsers(): HasMany
+    {
+        return $this->hasMany(PatientUser::class);
+    }
+
+    /** @return HasMany<OrganizationModule, $this> */
+    public function modules(): HasMany
+    {
+        return $this->hasMany(OrganizationModule::class);
+    }
+
+    /**
+     * `Core` está sempre habilitado e não tem linha correspondente em
+     * `organization_modules` — os demais módulos são habilitados/
+     * desabilitados explicitamente pelo proprietário (ver
+     * docs/roadmap.md, Etapa 1).
+     */
+    public function hasModule(ModuleKey $key): bool
+    {
+        if ($key->isCore()) {
+            return true;
+        }
+
+        return $this->modules()
+            ->where('module_key', $key)
+            ->where('is_enabled', true)
+            ->exists();
     }
 }

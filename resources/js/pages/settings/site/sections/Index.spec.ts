@@ -57,12 +57,8 @@ describe('settings/site/sections/Index', () => {
     it('disables moving the first section up and the last section down', () => {
         const wrapper = mount(Index, { props: { sections: makeSections() } });
 
-        const upButtons = wrapper.findAll(
-            'button[aria-label*="para cima"]',
-        );
-        const downButtons = wrapper.findAll(
-            'button[aria-label*="para baixo"]',
-        );
+        const upButtons = wrapper.findAll('button[aria-label*="para cima"]');
+        const downButtons = wrapper.findAll('button[aria-label*="para baixo"]');
 
         expect(upButtons[0]?.attributes('disabled')).toBeDefined();
         expect(downButtons.at(-1)?.attributes('disabled')).toBeDefined();

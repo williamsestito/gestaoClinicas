@@ -58,27 +58,37 @@ describe('IconPicker', () => {
         await wrapper.vm.$nextTick();
 
         expect(document.body.textContent).toContain('Segurança verificada');
-        expect(document.body.textContent).not.toContain('Cuidado / acolhimento');
+        expect(document.body.textContent).not.toContain(
+            'Cuidado / acolhimento',
+        );
 
         wrapper.unmount();
     });
 
     it('selects an icon by clicking it and emits the update, without requiring the user to type a technical name', async () => {
         const wrapper = mount(IconPicker, {
-            props: { modelValue: null, 'onUpdate:modelValue': (v: string | null) => wrapper.setProps({ modelValue: v }) },
+            props: {
+                modelValue: null,
+                'onUpdate:modelValue': (v: string | null) =>
+                    wrapper.setProps({ modelValue: v }),
+            },
             attachTo: document.body,
         });
 
         await wrapper.find('button').trigger('click');
         await wrapper.vm.$nextTick();
 
-        const target = Array.from(document.body.querySelectorAll('button')).find(
-            (button) => button.textContent?.includes('Segurança verificada'),
+        const target = Array.from(
+            document.body.querySelectorAll('button'),
+        ).find((button) =>
+            button.textContent?.includes('Segurança verificada'),
         );
         target?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         await wrapper.vm.$nextTick();
 
-        expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['shield-check']);
+        expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
+            'shield-check',
+        ]);
 
         wrapper.unmount();
     });

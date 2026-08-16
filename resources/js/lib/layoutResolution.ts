@@ -30,8 +30,27 @@ export const PLAIN_APP_SETTINGS_PAGES = [
     'settings/services/',
 ];
 
+/**
+ * Páginas de convidado do portal do paciente (login/cadastro/senha) usam o
+ * mesmo layout "auth" de staff (AuthSimpleLayout) — visual neutro o
+ * bastante para ambos. As demais páginas de "patient-portal/" (autenticadas
+ * pelo guard "patient") usam um layout próprio, sem sidebar/tenant switcher.
+ */
+export const PATIENT_PORTAL_GUEST_PAGES = [
+    'patient-portal/Login',
+    'patient-portal/Register',
+    'patient-portal/ForgotPassword',
+    'patient-portal/ResetPassword',
+];
+
 export type LayoutKind =
-    'none' | 'auth' | 'clinic-site' | 'clinic' | 'account' | 'app';
+    | 'none'
+    | 'auth'
+    | 'clinic-site'
+    | 'clinic'
+    | 'account'
+    | 'app'
+    | 'patient-portal';
 
 /**
  * Decide qual grupo de layout uma página Inertia deve usar, a partir do
@@ -47,6 +66,14 @@ export function resolveLayoutKind(name: string): LayoutKind {
 
     if (name.startsWith('auth/')) {
         return 'auth';
+    }
+
+    if (PATIENT_PORTAL_GUEST_PAGES.some((page) => name === page)) {
+        return 'auth';
+    }
+
+    if (name.startsWith('patient-portal/')) {
+        return 'patient-portal';
     }
 
     // Sub-área "Site da clínica" tem navegação própria (seções, benefícios,

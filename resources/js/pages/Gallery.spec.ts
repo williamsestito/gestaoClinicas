@@ -37,12 +37,18 @@ describe('Gallery', () => {
             props: { siteTitle: 'Clínica Essenza', logoUrl: null, items: null },
         });
 
-        expect(wrapper.text()).toContain('Nenhuma imagem publicada no momento.');
+        expect(wrapper.text()).toContain(
+            'Nenhuma imagem publicada no momento.',
+        );
     });
 
     it('renders every item with its caption', () => {
         const wrapper = mount(Gallery, {
-            props: { siteTitle: 'Clínica Essenza', logoUrl: null, items: makeItems(4) },
+            props: {
+                siteTitle: 'Clínica Essenza',
+                logoUrl: null,
+                items: makeItems(4),
+            },
         });
 
         expect(wrapper.findAll('img[loading="lazy"]')).toHaveLength(4);
@@ -52,7 +58,11 @@ describe('Gallery', () => {
 
     it('has a link back to the home page', () => {
         const wrapper = mount(Gallery, {
-            props: { siteTitle: 'Clínica Essenza', logoUrl: null, items: makeItems(4) },
+            props: {
+                siteTitle: 'Clínica Essenza',
+                logoUrl: null,
+                items: makeItems(4),
+            },
         });
 
         expect(wrapper.text()).toContain('Voltar para o início');
@@ -60,30 +70,48 @@ describe('Gallery', () => {
 
     it('shows pagination controls when there is more than one page', () => {
         const wrapper = mount(Gallery, {
-            props: { siteTitle: 'Clínica Essenza', logoUrl: null, items: makeItems(30) },
+            props: {
+                siteTitle: 'Clínica Essenza',
+                logoUrl: null,
+                items: makeItems(30),
+            },
         });
 
-        expect(wrapper.find('nav[aria-label="Paginação da galeria"]').exists()).toBe(true);
+        expect(
+            wrapper.find('nav[aria-label="Paginação da galeria"]').exists(),
+        ).toBe(true);
     });
 
     it('does not show pagination controls for a single page', () => {
         const wrapper = mount(Gallery, {
-            props: { siteTitle: 'Clínica Essenza', logoUrl: null, items: makeItems(4) },
+            props: {
+                siteTitle: 'Clínica Essenza',
+                logoUrl: null,
+                items: makeItems(4),
+            },
         });
 
-        expect(wrapper.find('nav[aria-label="Paginação da galeria"]').exists()).toBe(false);
+        expect(
+            wrapper.find('nav[aria-label="Paginação da galeria"]').exists(),
+        ).toBe(false);
     });
 
     it('opens the enlarged image lightbox when a thumbnail is clicked', async () => {
         const wrapper = mount(Gallery, {
-            props: { siteTitle: 'Clínica Essenza', logoUrl: null, items: makeItems(4) },
+            props: {
+                siteTitle: 'Clínica Essenza',
+                logoUrl: null,
+                items: makeItems(4),
+            },
             attachTo: document.body,
         });
 
         await wrapper.findAll('button')[1]!.trigger('click');
         await wrapper.vm.$nextTick();
 
-        expect(document.body.querySelector('img[class*="max-h"]')).not.toBeNull();
+        expect(
+            document.body.querySelector('img[class*="max-h"]'),
+        ).not.toBeNull();
 
         wrapper.unmount();
     });

@@ -34,7 +34,9 @@ vi.mock('@inertiajs/vue3', () => ({
             errors: {},
             processing: false,
             isDirty: false,
-            transform: (callback: (data: Record<string, unknown>) => unknown) => ({
+            transform: (
+                callback: (data: Record<string, unknown>) => unknown,
+            ) => ({
                 patch: vi.fn(),
                 post: vi.fn(),
                 data: callback(initial),
@@ -96,7 +98,10 @@ describe('settings/Profile', () => {
         const wrapper = mount(Profile, {
             props: {
                 ...makeProps(),
-                profile: { ...makeProps().profile, photo_url: 'https://example.test/photo.jpg' },
+                profile: {
+                    ...makeProps().profile,
+                    photo_url: 'https://example.test/photo.jpg',
+                },
             },
         });
 

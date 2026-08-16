@@ -1,7 +1,10 @@
 import {
+    Blocks,
     Briefcase,
     Building2,
+    CalendarCheck,
     CalendarClock,
+    Contact,
     FileText,
     Globe,
     History,
@@ -14,10 +17,13 @@ import {
     Users,
 } from '@lucide/vue';
 import { dashboard } from '@/routes';
+import { index as indexAppointments } from '@/routes/settings/appointments';
 import { index as indexAudit } from '@/routes/settings/audit';
 import { index as indexLegalEntities } from '@/routes/settings/legal-entities';
+import { edit as editModules } from '@/routes/settings/modules';
 import { availability as myAvailability } from '@/routes/settings/my-schedule';
 import { edit as editOrganization } from '@/routes/settings/organization';
+import { index as indexPatients } from '@/routes/settings/patients';
 import { index as indexProfessionals } from '@/routes/settings/professionals';
 import { index as indexRoles } from '@/routes/settings/roles';
 import { edit as editSeo } from '@/routes/settings/seo';
@@ -70,6 +76,12 @@ export function buildNavGroups(permissions: string[]): NavGroup[] {
                     icon: FileText,
                     permission: 'legal-entities.view',
                 },
+                {
+                    title: 'Módulos',
+                    href: editModules(),
+                    icon: Blocks,
+                    permission: 'modules.view',
+                },
             ],
         },
         {
@@ -80,6 +92,28 @@ export function buildNavGroups(permissions: string[]): NavGroup[] {
                     href: myAvailability(),
                     icon: CalendarClock,
                     permission: 'professional-availability.view-own',
+                },
+            ],
+        },
+        {
+            title: 'Pacientes',
+            items: [
+                {
+                    title: 'Pacientes',
+                    href: indexPatients(),
+                    icon: Contact,
+                    permission: 'patients.view',
+                },
+            ],
+        },
+        {
+            title: 'Agenda',
+            items: [
+                {
+                    title: 'Agenda',
+                    href: indexAppointments(),
+                    icon: CalendarCheck,
+                    permission: 'appointments.view',
                 },
             ],
         },

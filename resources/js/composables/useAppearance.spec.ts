@@ -55,9 +55,7 @@ describe('initializeTheme', () => {
     it('defaults to light when there is no saved preference, regardless of the OS theme', () => {
         initializeTheme();
 
-        expect(document.documentElement.classList.contains('dark')).toBe(
-            false,
-        );
+        expect(document.documentElement.classList.contains('dark')).toBe(false);
     });
 
     it('applies a previously saved dark preference', () => {
@@ -65,9 +63,7 @@ describe('initializeTheme', () => {
 
         initializeTheme();
 
-        expect(document.documentElement.classList.contains('dark')).toBe(
-            true,
-        );
+        expect(document.documentElement.classList.contains('dark')).toBe(true);
     });
 
     it('applies a previously saved light preference', () => {
@@ -75,9 +71,7 @@ describe('initializeTheme', () => {
 
         initializeTheme();
 
-        expect(document.documentElement.classList.contains('dark')).toBe(
-            false,
-        );
+        expect(document.documentElement.classList.contains('dark')).toBe(false);
     });
 
     it('ignores an invalid stored value and falls back to light', () => {
@@ -85,9 +79,7 @@ describe('initializeTheme', () => {
 
         initializeTheme();
 
-        expect(document.documentElement.classList.contains('dark')).toBe(
-            false,
-        );
+        expect(document.documentElement.classList.contains('dark')).toBe(false);
     });
 
     it('only reacts to an OS theme change when the stored preference is "system"', () => {
@@ -96,15 +88,11 @@ describe('initializeTheme', () => {
         initializeTheme();
 
         media.triggerChange();
-        expect(document.documentElement.classList.contains('dark')).toBe(
-            false,
-        );
+        expect(document.documentElement.classList.contains('dark')).toBe(false);
 
         localStorage.setItem('appearance', 'system');
         media.triggerChange();
-        expect(document.documentElement.classList.contains('dark')).toBe(
-            false,
-        );
+        expect(document.documentElement.classList.contains('dark')).toBe(false);
     });
 });
 
@@ -149,9 +137,7 @@ describe('useAppearance', () => {
 
         updateAppearance('dark');
 
-        expect(document.documentElement.classList.contains('dark')).toBe(
-            true,
-        );
+        expect(document.documentElement.classList.contains('dark')).toBe(true);
         expect(localStorage.getItem('appearance')).toBe('dark');
         expect(document.cookie).toContain('appearance=dark');
     });
@@ -162,9 +148,7 @@ describe('useAppearance', () => {
         updateAppearance('dark');
         updateAppearance('light');
 
-        expect(document.documentElement.classList.contains('dark')).toBe(
-            false,
-        );
+        expect(document.documentElement.classList.contains('dark')).toBe(false);
         expect(localStorage.getItem('appearance')).toBe('light');
         expect(document.cookie).toContain('appearance=light');
     });

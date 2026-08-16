@@ -15,7 +15,9 @@ function makeBenefit(overrides: Partial<PublicBenefit> = {}): PublicBenefit {
 
 describe('LandingBenefitsSection', () => {
     it('does not render the section when there are no benefits', () => {
-        const wrapper = mount(LandingBenefitsSection, { props: { benefits: [] } });
+        const wrapper = mount(LandingBenefitsSection, {
+            props: { benefits: [] },
+        });
 
         expect(wrapper.find('section').exists()).toBe(false);
     });
@@ -45,7 +47,10 @@ describe('LandingBenefitsSection', () => {
         const wrapper = mount(LandingBenefitsSection, {
             props: {
                 benefits: [
-                    makeBenefit({ title: 'Equipe especializada', description: 'Profissionais qualificados.' }),
+                    makeBenefit({
+                        title: 'Equipe especializada',
+                        description: 'Profissionais qualificados.',
+                    }),
                 ],
             },
         });

@@ -31,7 +31,7 @@ class OnboardingController extends Controller
     {
         $data = OnboardOrganizationData::fromArray($request->validated());
 
-        $action->handle($request->user(), $data, $request);
+        $action->handle($request->user('web'), $data, $request);
 
         return to_route('dashboard');
     }

@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import type { PublicSiteContent } from '@/types/site';
 import LandingFooter from './LandingFooter.vue';
 
-function makeSite(overrides: Partial<PublicSiteContent> = {}): PublicSiteContent {
+function makeSite(
+    overrides: Partial<PublicSiteContent> = {},
+): PublicSiteContent {
     return {
         title: 'Clínica Essenza',
         description: 'Cuidado que você merece.',
@@ -48,7 +50,9 @@ describe('LandingFooter', () => {
             props: { site: makeSite(), contact: null, activeTypes: [] },
         });
 
-        expect(wrapper.find('nav[aria-label="Navegação do rodapé"]').exists()).toBe(false);
+        expect(
+            wrapper.find('nav[aria-label="Navegação do rodapé"]').exists(),
+        ).toBe(false);
     });
 
     it('shows the contact column only when contact data exists', () => {

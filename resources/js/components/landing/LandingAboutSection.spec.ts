@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import type { PublicSiteContent } from '@/types/site';
 import LandingAboutSection from './LandingAboutSection.vue';
 
-function makeSite(overrides: Partial<PublicSiteContent> = {}): PublicSiteContent {
+function makeSite(
+    overrides: Partial<PublicSiteContent> = {},
+): PublicSiteContent {
     return {
         title: 'Clínica Essenza',
         description: null,
@@ -39,7 +41,11 @@ describe('LandingAboutSection', () => {
 
     it('renders the about text once configured', () => {
         const wrapper = mount(LandingAboutSection, {
-            props: { site: makeSite({ about_text: 'Nossa história começou em 2010.' }) },
+            props: {
+                site: makeSite({
+                    about_text: 'Nossa história começou em 2010.',
+                }),
+            },
         });
 
         expect(wrapper.text()).toContain('Nossa história começou em 2010.');
@@ -50,10 +56,30 @@ describe('LandingAboutSection', () => {
             props: {
                 site: makeSite({ about_text: 'Texto sobre a clínica.' }),
                 benefits: [
-                    { id: 1, icon: null, title: 'Atendimento humanizado', description: null },
-                    { id: 2, icon: null, title: 'Agenda online', description: null },
-                    { id: 3, icon: null, title: 'Equipe integrada', description: null },
-                    { id: 4, icon: null, title: 'Não deveria aparecer', description: null },
+                    {
+                        id: 1,
+                        icon: null,
+                        title: 'Atendimento humanizado',
+                        description: null,
+                    },
+                    {
+                        id: 2,
+                        icon: null,
+                        title: 'Agenda online',
+                        description: null,
+                    },
+                    {
+                        id: 3,
+                        icon: null,
+                        title: 'Equipe integrada',
+                        description: null,
+                    },
+                    {
+                        id: 4,
+                        icon: null,
+                        title: 'Não deveria aparecer',
+                        description: null,
+                    },
                 ],
             },
         });

@@ -10,7 +10,11 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { BENEFIT_ICONS, benefitIconFor, benefitIconLabel } from '@/lib/benefit-icons';
+import {
+    BENEFIT_ICONS,
+    benefitIconFor,
+    benefitIconLabel,
+} from '@/lib/benefit-icons';
 
 const model = defineModel<string | null>({ default: null });
 
@@ -54,8 +58,8 @@ function select(key: string) {
             <DialogHeader>
                 <DialogTitle>Escolher ícone</DialogTitle>
                 <DialogDescription>
-                    Selecione o ícone exibido junto a este benefício na
-                    página pública.
+                    Selecione o ícone exibido junto a este benefício na página
+                    pública.
                 </DialogDescription>
             </DialogHeader>
 

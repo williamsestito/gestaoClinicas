@@ -55,7 +55,11 @@ function submit() {
         <form class="grid max-w-xl gap-6" @submit.prevent="submit">
             <div class="grid gap-2">
                 <Label for="org-name">Nome</Label>
-                <Input id="org-name" v-model="form.name" :disabled="!canUpdate" />
+                <Input
+                    id="org-name"
+                    v-model="form.name"
+                    :disabled="!canUpdate"
+                />
                 <InputError :message="form.errors.name" />
             </div>
 

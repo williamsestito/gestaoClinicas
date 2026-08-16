@@ -159,60 +159,63 @@ describe.each([
         dialogTitle: 'Remover favicon?',
         endpoint: '/settings/site/favicon',
     },
-])('settings/site/Index — $asset', ({ urlKey, label, dialogTitle, endpoint }) => {
-    it(`does not show a "${label}" action when there is none yet`, () => {
-        const wrapper = mount(Index, {
-            props: { site: baseSite(), contact: null },
+])(
+    'settings/site/Index — $asset',
+    ({ urlKey, label, dialogTitle, endpoint }) => {
+        it(`does not show a "${label}" action when there is none yet`, () => {
+            const wrapper = mount(Index, {
+                props: { site: baseSite(), contact: null },
+            });
+
+            expect(wrapper.text()).not.toContain(label);
         });
 
-        expect(wrapper.text()).not.toContain(label);
-    });
-
-    it(`shows the "${label}" action when one exists`, () => {
-        const wrapper = mount(Index, {
-            props: {
-                site: {
-                    ...baseSite(),
-                    [urlKey]: 'https://example.test/storage/asset.png',
+        it(`shows the "${label}" action when one exists`, () => {
+            const wrapper = mount(Index, {
+                props: {
+                    site: {
+                        ...baseSite(),
+                        [urlKey]: 'https://example.test/storage/asset.png',
+                    },
+                    contact: null,
                 },
-                contact: null,
-            },
+            });
+
+            expect(wrapper.text()).toContain(label);
         });
 
-        expect(wrapper.text()).toContain(label);
-    });
-
-    it('asks for confirmation and deletes it via the matching DELETE endpoint', async () => {
-        const wrapper = mount(Index, {
-            props: {
-                site: {
-                    ...baseSite(),
-                    [urlKey]: 'https://example.test/storage/asset.png',
+        it('asks for confirmation and deletes it via the matching DELETE endpoint', async () => {
+            const wrapper = mount(Index, {
+                props: {
+                    site: {
+                        ...baseSite(),
+                        [urlKey]: 'https://example.test/storage/asset.png',
+                    },
+                    contact: null,
                 },
-                contact: null,
-            },
-            attachTo: document.body,
+                attachTo: document.body,
+            });
+
+            await wrapper
+                .findAll('button')
+                .find((button) => button.text() === label)
+                ?.trigger('click');
+            await wrapper.vm.$nextTick();
+
+            expect(document.body.textContent ?? '').toContain(dialogTitle);
+
+            const confirmButton = Array.from(
+                document.body.querySelectorAll('button'),
+            ).find((button) => button.textContent?.trim() === 'Remover');
+            confirmButton?.dispatchEvent(new Event('click'));
+            await wrapper.vm.$nextTick();
+
+            expect(routerMock.delete).toHaveBeenCalledWith(
+                endpoint,
+                expect.objectContaining({ preserveScroll: true }),
+            );
+
+            wrapper.unmount();
         });
-
-        await wrapper
-            .findAll('button')
-            .find((button) => button.text() === label)
-            ?.trigger('click');
-        await wrapper.vm.$nextTick();
-
-        expect(document.body.textContent ?? '').toContain(dialogTitle);
-
-        const confirmButton = Array.from(
-            document.body.querySelectorAll('button'),
-        ).find((button) => button.textContent?.trim() === 'Remover');
-        confirmButton?.dispatchEvent(new Event('click'));
-        await wrapper.vm.$nextTick();
-
-        expect(routerMock.delete).toHaveBeenCalledWith(
-            endpoint,
-            expect.objectContaining({ preserveScroll: true }),
-        );
-
-        wrapper.unmount();
-    });
-});
+    },
+);

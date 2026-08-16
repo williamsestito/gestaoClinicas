@@ -32,7 +32,9 @@ function makeRole(overrides: Record<string, unknown> = {}) {
         slug: 'administrador-clinica',
         description: 'Gerencia a operação da clínica.',
         is_system: true,
-        permissions: Array.from({ length: 38 }, (_, i) => ({ key: `perm-${i}` })),
+        permissions: Array.from({ length: 38 }, (_, i) => ({
+            key: `perm-${i}`,
+        })),
         organization_memberships_count: 3,
         ...overrides,
     };
@@ -101,6 +103,8 @@ describe('settings/roles/Index', () => {
         const wrapper = mount(Index, { props: makeProps() });
 
         expect(wrapper.find('table').exists()).toBe(true);
-        expect(wrapper.findAllComponents({ name: 'Card' }).length).toBeGreaterThan(0);
+        expect(
+            wrapper.findAllComponents({ name: 'Card' }).length,
+        ).toBeGreaterThan(0);
     });
 });

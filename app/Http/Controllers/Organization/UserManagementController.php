@@ -71,7 +71,7 @@ class UserManagementController extends Controller
 
         $result = $action->handle(
             organization: $organization,
-            invitedBy: $request->user(),
+            invitedBy: $request->user('web'),
             email: $data['email'],
             role: $role,
             units: $units,
@@ -99,7 +99,7 @@ class UserManagementController extends Controller
         AssignUserUnitsAction $assignUnits,
     ): RedirectResponse {
         $data = $request->validated();
-        $user = $request->user();
+        $user = $request->user('web');
 
         if ((array_key_exists('role_id', $data) || array_key_exists('admin_note', $data)) && $user?->can('assignRoles', $membership)) {
             $role = ($data['role_id'] ?? null) ? Role::query()->where('id', $data['role_id'])->first() : null;

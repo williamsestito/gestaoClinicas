@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Organization\AppointmentController;
 use App\Http\Controllers\Organization\AppointmentRequestController;
 use App\Http\Controllers\Organization\AuditLogController;
 use App\Http\Controllers\Organization\DashboardController;
@@ -8,7 +9,11 @@ use App\Http\Controllers\Organization\LegalEntityController;
 use App\Http\Controllers\Organization\MyScheduleController;
 use App\Http\Controllers\Organization\OnboardingController;
 use App\Http\Controllers\Organization\OrganizationContextController;
+use App\Http\Controllers\Organization\OrganizationModuleController;
 use App\Http\Controllers\Organization\OrganizationSettingsController;
+use App\Http\Controllers\Organization\PatientController;
+use App\Http\Controllers\Organization\PatientEmergencyContactController;
+use App\Http\Controllers\Organization\PatientResponsibleController;
 use App\Http\Controllers\Organization\ProfessionalController;
 use App\Http\Controllers\Organization\ProfessionalRegistrationController;
 use App\Http\Controllers\Organization\ProfessionalServiceController;
@@ -83,6 +88,14 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
             ->name('settings.organization.edit');
         Route::put('settings/organization', [OrganizationSettingsController::class, 'update'])
             ->name('settings.organization.update');
+
+        // Etapa 1 do roadmap (docs/roadmap.md) — módulos por especialidade.
+        // Tela de configuração única, sem {module} na URL, mesmo padrão de
+        // settings/organization e settings/seo.
+        Route::get('settings/modules', [OrganizationModuleController::class, 'edit'])
+            ->name('settings.modules.edit');
+        Route::put('settings/modules', [OrganizationModuleController::class, 'update'])
+            ->name('settings.modules.update');
 
         Route::get('settings/units', [UnitController::class, 'index'])
             ->name('settings.units.index');
@@ -181,6 +194,85 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
                 ->name('settings.services.deactivate');
             Route::delete('settings/services/{service}', [ServiceController::class, 'destroy'])
                 ->name('settings.services.destroy');
+        });
+
+        // Etapa 2.1 do roadmap (docs/roadmap.md) — cadastro administrativo de
+        // pacientes. "duplicates" não tem {patient} na URL (busca org-wide),
+        // por isso fica fora do grupo tenant.patient-membership.
+        Route::get('settings/patients', [PatientController::class, 'index'])
+            ->name('settings.patients.index');
+        Route::get('settings/patients/create', [PatientController::class, 'create'])
+            ->name('settings.patients.create');
+        Route::post('settings/patients', [PatientController::class, 'store'])
+            ->name('settings.patients.store');
+        Route::get('settings/patients/duplicates', [PatientController::class, 'duplicates'])
+            ->name('settings.patients.duplicates');
+        Route::get('settings/patients/search', [PatientController::class, 'search'])
+            ->name('settings.patients.search');
+        Route::post('settings/patients/{patient}/restore', [PatientController::class, 'restore'])
+            ->name('settings.patients.restore');
+
+        Route::middleware('tenant.patient-membership')->group(function () {
+            Route::get('settings/patients/{patient}/edit', [PatientController::class, 'edit'])
+                ->name('settings.patients.edit');
+            Route::put('settings/patients/{patient}', [PatientController::class, 'update'])
+                ->name('settings.patients.update');
+            Route::patch('settings/patients/{patient}/activate', [PatientController::class, 'activate'])
+                ->name('settings.patients.activate');
+            Route::patch('settings/patients/{patient}/deactivate', [PatientController::class, 'deactivate'])
+                ->name('settings.patients.deactivate');
+            Route::delete('settings/patients/{patient}', [PatientController::class, 'destroy'])
+                ->name('settings.patients.destroy');
+            Route::post('settings/patients/{patient}/photo', [PatientController::class, 'updatePhoto'])
+                ->name('settings.patients.photo.update');
+            Route::delete('settings/patients/{patient}/photo', [PatientController::class, 'destroyPhoto'])
+                ->name('settings.patients.photo.destroy');
+            // Disco privado (`local`) — nunca um link público direto, ver
+            // PatientController::showPhoto().
+            Route::get('settings/patients/{patient}/photo', [PatientController::class, 'showPhoto'])
+                ->name('settings.patients.photo.show');
+
+            Route::post('settings/patients/{patient}/responsibles', [PatientResponsibleController::class, 'store'])
+                ->name('settings.patients.responsibles.store');
+            Route::put('settings/patients/{patient}/responsibles/{responsible}', [PatientResponsibleController::class, 'update'])
+                ->name('settings.patients.responsibles.update');
+            Route::delete('settings/patients/{patient}/responsibles/{responsible}', [PatientResponsibleController::class, 'destroy'])
+                ->name('settings.patients.responsibles.destroy');
+
+            Route::post('settings/patients/{patient}/emergency-contacts', [PatientEmergencyContactController::class, 'store'])
+                ->name('settings.patients.emergency-contacts.store');
+            Route::put('settings/patients/{patient}/emergency-contacts/{emergencyContact}', [PatientEmergencyContactController::class, 'update'])
+                ->name('settings.patients.emergency-contacts.update');
+            Route::delete('settings/patients/{patient}/emergency-contacts/{emergencyContact}', [PatientEmergencyContactController::class, 'destroy'])
+                ->name('settings.patients.emergency-contacts.destroy');
+        });
+
+        // Etapa 3.1 do roadmap (docs/roadmap.md) — agenda real. "available-slots"
+        // não tem {appointment} na URL (sugestão de horário livre, não
+        // autoritativa — ver App\Services\Availability\StaffAppointmentSlotFinder),
+        // por isso fica fora do grupo tenant.appointment-membership.
+        Route::get('settings/appointments', [AppointmentController::class, 'index'])
+            ->name('settings.appointments.index');
+        Route::get('settings/appointments/create', [AppointmentController::class, 'create'])
+            ->name('settings.appointments.create');
+        Route::post('settings/appointments', [AppointmentController::class, 'store'])
+            ->name('settings.appointments.store');
+        Route::get('settings/appointments/available-slots', [AppointmentController::class, 'availableSlots'])
+            ->name('settings.appointments.available-slots');
+
+        Route::middleware('tenant.appointment-membership')->group(function () {
+            Route::put('settings/appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule'])
+                ->name('settings.appointments.reschedule');
+            Route::patch('settings/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])
+                ->name('settings.appointments.cancel');
+            Route::patch('settings/appointments/{appointment}/check-in', [AppointmentController::class, 'checkIn'])
+                ->name('settings.appointments.check-in');
+            Route::patch('settings/appointments/{appointment}/start', [AppointmentController::class, 'start'])
+                ->name('settings.appointments.start');
+            Route::patch('settings/appointments/{appointment}/complete', [AppointmentController::class, 'complete'])
+                ->name('settings.appointments.complete');
+            Route::patch('settings/appointments/{appointment}/no-show', [AppointmentController::class, 'noShow'])
+                ->name('settings.appointments.no-show');
         });
 
         // "Minha agenda" — nunca aceita {professional} na URL: o profissional

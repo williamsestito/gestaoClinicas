@@ -15,8 +15,18 @@ describe('LandingPartnersSection', () => {
         const wrapper = mount(LandingPartnersSection, {
             props: {
                 partners: [
-                    { id: 1, name: 'Convênio A', logo_url: '/storage/a.png', url: null },
-                    { id: 2, name: 'Convênio B', logo_url: '/storage/b.png', url: 'https://b.example' },
+                    {
+                        id: 1,
+                        name: 'Convênio A',
+                        logo_url: '/storage/a.png',
+                        url: null,
+                    },
+                    {
+                        id: 2,
+                        name: 'Convênio B',
+                        logo_url: '/storage/b.png',
+                        url: 'https://b.example',
+                    },
                 ],
             },
         });
@@ -29,7 +39,12 @@ describe('LandingPartnersSection', () => {
             props: {
                 partners: [
                     { id: 1, name: 'Convênio A', logo_url: null, url: null },
-                    { id: 2, name: 'Convênio B', logo_url: null, url: 'https://b.example' },
+                    {
+                        id: 2,
+                        name: 'Convênio B',
+                        logo_url: null,
+                        url: 'https://b.example',
+                    },
                 ],
             },
         });
@@ -43,7 +58,12 @@ describe('LandingPartnersSection', () => {
         const wrapper = mount(LandingPartnersSection, {
             props: {
                 partners: [
-                    { id: 1, name: 'Convênio Sem Logo', logo_url: null, url: null },
+                    {
+                        id: 1,
+                        name: 'Convênio Sem Logo',
+                        logo_url: null,
+                        url: null,
+                    },
                 ],
             },
         });

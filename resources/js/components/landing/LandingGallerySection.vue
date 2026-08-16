@@ -32,7 +32,10 @@ function scrollByAmount(direction: 1 | -1) {
         return;
     }
 
-    track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: 'smooth' });
+    track.scrollBy({
+        left: direction * track.clientWidth * 0.8,
+        behavior: 'smooth',
+    });
 }
 
 const openIndex = ref<number | null>(null);
@@ -63,7 +66,8 @@ function previous() {
     }
 
     openIndex.value =
-        (openIndex.value - 1 + previewItems.value.length) % previewItems.value.length;
+        (openIndex.value - 1 + previewItems.value.length) %
+        previewItems.value.length;
 }
 </script>
 
@@ -78,15 +82,13 @@ function previous() {
                 class="mb-10 flex flex-col items-center justify-between gap-4 sm:flex-row"
             >
                 <div class="mx-auto max-w-2xl text-center sm:mx-0 sm:text-left">
-                    <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
+                    <h2
+                        class="text-2xl font-semibold tracking-tight sm:text-3xl"
+                    >
                         Galeria
                     </h2>
                 </div>
-                <Link
-                    v-if="hasMore"
-                    href="/galeria"
-                    class="shrink-0"
-                >
+                <Link v-if="hasMore" href="/galeria" class="shrink-0">
                     <Button variant="outline">Ver todas</Button>
                 </Link>
             </div>
@@ -94,7 +96,7 @@ function previous() {
             <div class="relative">
                 <div
                     ref="trackRef"
-                    class="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    class="flex snap-x snap-mandatory [scrollbar-width:none] gap-3 overflow-x-auto scroll-smooth pb-2 [&::-webkit-scrollbar]:hidden"
                     role="region"
                     aria-label="Carrossel de imagens da galeria"
                     tabindex="0"

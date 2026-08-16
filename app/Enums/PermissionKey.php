@@ -62,11 +62,23 @@ enum PermissionKey: string
     case SettingsView = 'settings.view';
     case SettingsUpdate = 'settings.update';
 
+    case ModulesView = 'modules.view';
+    case ModulesManage = 'modules.manage';
+
     case SpecialtiesView = 'specialties.view';
     case SpecialtiesManage = 'specialties.manage';
 
     case ServicesView = 'services.view';
     case ServicesManage = 'services.manage';
+
+    case PatientsView = 'patients.view';
+    case PatientsManage = 'patients.manage';
+    case PatientsViewOwn = 'patients.view-own';
+
+    case AppointmentsView = 'appointments.view';
+    case AppointmentsManage = 'appointments.manage';
+    case AppointmentsViewOwn = 'appointments.view-own';
+    case AppointmentsManageOwn = 'appointments.manage-own';
 
     case ProfessionalsView = 'professionals.view';
     case ProfessionalsManage = 'professionals.manage';
@@ -141,11 +153,23 @@ enum PermissionKey: string
             self::SettingsView => 'Visualizar configurações',
             self::SettingsUpdate => 'Editar configurações',
 
+            self::ModulesView => 'Visualizar módulos de especialidade',
+            self::ModulesManage => 'Habilitar ou desabilitar módulos de especialidade',
+
             self::SpecialtiesView => 'Visualizar especialidades',
             self::SpecialtiesManage => 'Gerenciar especialidades',
 
             self::ServicesView => 'Visualizar serviços',
             self::ServicesManage => 'Gerenciar serviços',
+
+            self::PatientsView => 'Visualizar pacientes',
+            self::PatientsManage => 'Gerenciar pacientes',
+            self::PatientsViewOwn => 'Visualizar os próprios pacientes vinculados',
+
+            self::AppointmentsView => 'Visualizar agendamentos',
+            self::AppointmentsManage => 'Gerenciar agendamentos',
+            self::AppointmentsViewOwn => 'Visualizar os próprios atendimentos',
+            self::AppointmentsManageOwn => 'Gerenciar os próprios atendimentos (check-in, início, conclusão)',
 
             self::ProfessionalsView => 'Visualizar profissionais',
             self::ProfessionalsManage => 'Gerenciar profissionais',
@@ -182,8 +206,11 @@ enum PermissionKey: string
             str_starts_with($this->value, 'seo.') => 'SEO e marketing',
             $this === self::AuditView => 'Auditoria',
             str_starts_with($this->value, 'settings.') => 'Configurações',
+            str_starts_with($this->value, 'modules.') => 'Módulos de especialidade',
             str_starts_with($this->value, 'specialties.') => 'Especialidades',
             str_starts_with($this->value, 'services.') => 'Serviços',
+            str_starts_with($this->value, 'patients.') => 'Pacientes',
+            str_starts_with($this->value, 'appointments.') => 'Agendamentos',
             str_starts_with($this->value, 'professional-registrations.') => 'Registros profissionais',
             str_starts_with($this->value, 'professional-availability.') => 'Jornada e disponibilidade',
             str_starts_with($this->value, 'professional-time-blocks.') => 'Ausências e bloqueios',

@@ -4,7 +4,9 @@
  * máscara). Evita duplicar o código do país "55" quando o número já foi
  * digitado com ele.
  */
-export function buildWhatsAppUrl(rawPhone: string | null | undefined): string | null {
+export function buildWhatsAppUrl(
+    rawPhone: string | null | undefined,
+): string | null {
     if (!rawPhone) {
         return null;
     }

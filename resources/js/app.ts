@@ -2,6 +2,7 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import PatientPortalLayout from '@/layouts/patient-portal/PatientPortalLayout.vue';
 import ClinicSettingsLayout from '@/layouts/settings/ClinicLayout.vue';
 import AccountSettingsLayout from '@/layouts/settings/Layout.vue';
 import SiteSettingsLayout from '@/layouts/settings/SiteLayout.vue';
@@ -24,6 +25,8 @@ createInertiaApp({
                 return [AppLayout, ClinicSettingsLayout];
             case 'account':
                 return [AppLayout, AccountSettingsLayout];
+            case 'patient-portal':
+                return PatientPortalLayout;
             default:
                 return AppLayout;
         }

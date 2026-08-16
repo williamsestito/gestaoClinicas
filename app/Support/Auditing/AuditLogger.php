@@ -44,7 +44,11 @@ class AuditLogger
         ?Unit $unit = null,
     ): AuditLog {
         return AuditLog::query()->create([
-            'actor_user_id' => Auth::id(),
+            // Guard explícito: "actor" é sempre um App\Models\User (staff) —
+            // nunca um App\Models\PatientUser (guard "patient"). Bare
+            // Auth::id() resolveria o guard "default" do AuthManager, que
+            // testes podem trocar via actingAs($patientUser, 'patient').
+            'actor_user_id' => Auth::guard('web')->id(),
             'organization_id' => $organization?->id,
             'unit_id' => $unit?->id,
             'action' => $action,

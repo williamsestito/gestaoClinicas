@@ -5,8 +5,18 @@ import LandingFaqSection from './LandingFaqSection.vue';
 
 function makeFaqs(): PublicFaq[] {
     return [
-        { id: 1, question: 'Como agendar?', answer: 'Pelo formulário.', category: null },
-        { id: 2, question: 'Quais os horários?', answer: 'Seg a sex, 8h-18h.', category: null },
+        {
+            id: 1,
+            question: 'Como agendar?',
+            answer: 'Pelo formulário.',
+            category: null,
+        },
+        {
+            id: 2,
+            question: 'Quais os horários?',
+            answer: 'Seg a sex, 8h-18h.',
+            category: null,
+        },
     ];
 }
 
@@ -18,7 +28,9 @@ describe('LandingFaqSection', () => {
     });
 
     it('renders every question as a real button, initially collapsed', () => {
-        const wrapper = mount(LandingFaqSection, { props: { faqs: makeFaqs() } });
+        const wrapper = mount(LandingFaqSection, {
+            props: { faqs: makeFaqs() },
+        });
 
         const buttons = wrapper.findAll('button');
         expect(buttons).toHaveLength(2);
@@ -27,7 +39,9 @@ describe('LandingFaqSection', () => {
     });
 
     it('links each trigger to its panel via aria-controls/id, and expands on click', async () => {
-        const wrapper = mount(LandingFaqSection, { props: { faqs: makeFaqs() } });
+        const wrapper = mount(LandingFaqSection, {
+            props: { faqs: makeFaqs() },
+        });
 
         const trigger = wrapper.findAll('button')[0];
         await trigger.trigger('click');
@@ -45,7 +59,9 @@ describe('LandingFaqSection', () => {
     });
 
     it('collapses again on a second click', async () => {
-        const wrapper = mount(LandingFaqSection, { props: { faqs: makeFaqs() } });
+        const wrapper = mount(LandingFaqSection, {
+            props: { faqs: makeFaqs() },
+        });
         const trigger = wrapper.findAll('button')[0];
 
         await trigger.trigger('click');
@@ -56,7 +72,9 @@ describe('LandingFaqSection', () => {
     });
 
     it('keeps each question independently expandable', async () => {
-        const wrapper = mount(LandingFaqSection, { props: { faqs: makeFaqs() } });
+        const wrapper = mount(LandingFaqSection, {
+            props: { faqs: makeFaqs() },
+        });
         const [first, second] = wrapper.findAll('button');
 
         await first.trigger('click');
@@ -92,7 +110,14 @@ describe('LandingFaqSection', () => {
 
         const wrapper = mount(LandingFaqSection, {
             props: {
-                faqs: [{ id: 1, question: scriptPayload, answer: imgPayload, category: null }],
+                faqs: [
+                    {
+                        id: 1,
+                        question: scriptPayload,
+                        answer: imgPayload,
+                        category: null,
+                    },
+                ],
             },
         });
 

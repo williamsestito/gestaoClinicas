@@ -12,7 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { maskCpf } from '@/lib/masks';
 import { edit as editProfile, update as updateProfile } from '@/routes/profile';
-import { destroy as destroyPhoto, update as updatePhoto } from '@/routes/profile/photo';
+import {
+    destroy as destroyPhoto,
+    update as updatePhoto,
+} from '@/routes/profile/photo';
 import { edit as editSecurity } from '@/routes/security';
 import { send } from '@/routes/verification';
 import type { AddressForm } from '@/types/organization';
@@ -191,9 +194,7 @@ function removePhoto() {
                     </p>
                 </div>
 
-                <div
-                    v-if="mustVerifyEmail && !user.email_verified_at"
-                >
+                <div v-if="mustVerifyEmail && !user.email_verified_at">
                     <p class="text-sm text-muted-foreground">
                         Seu endereço de e-mail não foi verificado.
                         <Link

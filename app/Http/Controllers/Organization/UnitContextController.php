@@ -21,7 +21,7 @@ class UnitContextController extends Controller
     {
         // Superadmin enxerga todas as unidades ativas da organização ativa
         // (acesso global), mesmo sem vínculo de unidade ainda.
-        if (Auth::user()?->is_platform_admin && $tenant->organization()) {
+        if (Auth::guard('web')->user()?->is_platform_admin && $tenant->organization()) {
             $units = Unit::query()
                 ->where('organization_id', $tenant->organization()->id)
                 ->where('status', RecordStatus::Active)

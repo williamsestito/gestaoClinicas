@@ -62,4 +62,27 @@ describe('resolveLayoutKind', () => {
         expect(resolveLayoutKind('Dashboard')).toBe('app');
         expect(resolveLayoutKind('Gallery')).toBe('app');
     });
+
+    it('uses the auth layout for patient-portal guest pages (login/register/password)', () => {
+        expect(resolveLayoutKind('patient-portal/Login')).toBe('auth');
+        expect(resolveLayoutKind('patient-portal/Register')).toBe('auth');
+        expect(resolveLayoutKind('patient-portal/ForgotPassword')).toBe(
+            'auth',
+        );
+        expect(resolveLayoutKind('patient-portal/ResetPassword')).toBe(
+            'auth',
+        );
+    });
+
+    it('uses the patient-portal layout for authenticated portal pages', () => {
+        expect(resolveLayoutKind('patient-portal/Dashboard')).toBe(
+            'patient-portal',
+        );
+        expect(resolveLayoutKind('patient-portal/patients/Edit')).toBe(
+            'patient-portal',
+        );
+        expect(resolveLayoutKind('patient-portal/dependents/Create')).toBe(
+            'patient-portal',
+        );
+    });
 });

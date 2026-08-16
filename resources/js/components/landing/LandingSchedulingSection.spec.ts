@@ -245,7 +245,8 @@ describe('LandingSchedulingSection', () => {
     it('never validates or submits just from choosing a service, professional or time slot — only the submit button does', async () => {
         const scheduling = useLandingScheduling();
         scheduling.selectedServiceId.value = 7;
-        scheduling.selectedProfessionalName.value = 'Dra. Ana Souza — Consulta, 09:00';
+        scheduling.selectedProfessionalName.value =
+            'Dra. Ana Souza — Consulta, 09:00';
         scheduling.preferredDate.value = '2026-08-10';
         scheduling.preferredPeriod.value = 'Manhã';
 

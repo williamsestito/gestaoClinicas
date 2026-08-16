@@ -59,7 +59,8 @@ function previous() {
         return;
     }
 
-    openIndex.value = (openIndex.value - 1 + items.value.length) % items.value.length;
+    openIndex.value =
+        (openIndex.value - 1 + items.value.length) % items.value.length;
 }
 
 function goToPage(url: string | null) {
@@ -72,7 +73,9 @@ function goToPage(url: string | null) {
 <template>
     <Head :title="`Galeria — ${siteTitle}`" />
 
-    <div class="landing-theme flex min-h-screen flex-col bg-background text-foreground">
+    <div
+        class="landing-theme flex min-h-screen flex-col bg-background text-foreground"
+    >
         <header class="border-b">
             <div
                 class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6"
@@ -98,14 +101,13 @@ function goToPage(url: string | null) {
 
         <main class="flex-1 py-12">
             <div class="mx-auto max-w-6xl px-4 sm:px-6">
-                <h1 class="mb-8 text-2xl font-semibold tracking-tight sm:text-3xl">
+                <h1
+                    class="mb-8 text-2xl font-semibold tracking-tight sm:text-3xl"
+                >
                     Galeria
                 </h1>
 
-                <p
-                    v-if="items.length === 0"
-                    class="text-muted-foreground"
-                >
+                <p v-if="items.length === 0" class="text-muted-foreground">
                     Nenhuma imagem publicada no momento.
                 </p>
 
@@ -171,7 +173,9 @@ function goToPage(url: string | null) {
             class="max-w-3xl gap-0 border-0 bg-transparent p-0 shadow-none"
         >
             <DialogTitle class="sr-only">
-                {{ current?.caption || current?.alt_text || 'Imagem da galeria' }}
+                {{
+                    current?.caption || current?.alt_text || 'Imagem da galeria'
+                }}
             </DialogTitle>
             <div class="relative">
                 <img

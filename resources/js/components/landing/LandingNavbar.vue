@@ -23,7 +23,10 @@ const props = defineProps<{
 
 const navLinks = computed(() =>
     props.activeTypes
-        .filter((type): type is keyof typeof LANDING_NAV_LABELS => type in LANDING_NAV_LABELS)
+        .filter(
+            (type): type is keyof typeof LANDING_NAV_LABELS =>
+                type in LANDING_NAV_LABELS,
+        )
         .map((type) => ({ type, label: LANDING_NAV_LABELS[type]! })),
 );
 

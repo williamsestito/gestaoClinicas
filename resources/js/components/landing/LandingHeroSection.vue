@@ -79,14 +79,16 @@ const heroBackgroundVars = computed(() => {
             class="relative py-16 sm:py-24"
             :class="
                 hasHeroImage &&
-                'md:flex md:min-h-[520px] md:items-center md:bg-cover md:bg-center md:py-0 md:[background-image:var(--hero-bg-image)] lg:min-h-[620px]'
+                'md:flex md:min-h-[520px] md:items-center md:[background-image:var(--hero-bg-image)] md:bg-cover md:bg-center md:py-0 lg:min-h-[620px]'
             "
             :style="heroBackgroundVars"
         >
             <div class="mx-auto max-w-6xl px-4 sm:px-6">
                 <div
                     class="space-y-6 text-center"
-                    :class="hasHeroImage && 'md:max-w-xl md:text-left md:text-white'"
+                    :class="
+                        hasHeroImage && 'md:max-w-xl md:text-left md:text-white'
+                    "
                 >
                     <span
                         v-if="site.schema_type_label"
@@ -136,7 +138,10 @@ const heroBackgroundVars = computed(() => {
                                 size="lg"
                                 variant="outline"
                                 class="rounded-full"
-                                :class="hasHeroImage && secondaryButtonOverImageClass"
+                                :class="
+                                    hasHeroImage &&
+                                    secondaryButtonOverImageClass
+                                "
                             >
                                 {{ site.cta_secondary_text }}
                             </Button>
@@ -164,7 +169,10 @@ const heroBackgroundVars = computed(() => {
                                     size="lg"
                                     variant="outline"
                                     class="rounded-full"
-                                    :class="hasHeroImage && secondaryButtonOverImageClass"
+                                    :class="
+                                        hasHeroImage &&
+                                        secondaryButtonOverImageClass
+                                    "
                                     >Criar conta</Button
                                 >
                             </Link>
@@ -200,7 +208,10 @@ const heroBackgroundVars = computed(() => {
                 </div>
             </div>
 
-            <picture v-if="hasHeroImage" class="mt-12 block w-full px-4 sm:px-6 md:hidden">
+            <picture
+                v-if="hasHeroImage"
+                class="mt-12 block w-full px-4 sm:px-6 md:hidden"
+            >
                 <source
                     v-if="site.hero_image_mobile_url"
                     media="(max-width: 767px)"

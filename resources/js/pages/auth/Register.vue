@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
+import patientPortal from '@/routes/patient-portal';
 import { store } from '@/routes/register';
 
 defineProps<{
@@ -45,17 +45,17 @@ const accountType = ref<'clinic' | 'patient' | null>(null);
             </CardContent>
         </Card>
 
-        <Card class="opacity-60" data-test="account-type-patient">
-            <CardContent class="py-4">
-                <div class="flex items-center gap-2">
+        <Link :href="patientPortal.register()" data-test="account-type-patient">
+            <Card class="cursor-pointer transition-colors hover:border-primary">
+                <CardContent class="py-4">
                     <p class="font-medium">Acessar como paciente</p>
-                    <Badge variant="secondary">Em breve</Badge>
-                </div>
-                <p class="text-sm text-muted-foreground">
-                    O acesso para pacientes ainda não está disponível.
-                </p>
-            </CardContent>
-        </Card>
+                    <p class="text-sm text-muted-foreground">
+                        Cadastre-se para acompanhar seus dados e os de seus
+                        dependentes.
+                    </p>
+                </CardContent>
+            </Card>
+        </Link>
 
         <div class="text-center text-sm text-muted-foreground">
             Já tem uma conta?

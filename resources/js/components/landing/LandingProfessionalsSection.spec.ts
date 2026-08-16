@@ -4,7 +4,9 @@ import { useLandingScheduling } from '@/composables/useLandingScheduling';
 import type { PublicProfessional } from '@/types/site';
 import LandingProfessionalsSection from './LandingProfessionalsSection.vue';
 
-function makeProfessional(overrides: Partial<PublicProfessional> = {}): PublicProfessional {
+function makeProfessional(
+    overrides: Partial<PublicProfessional> = {},
+): PublicProfessional {
     return {
         id: 'site-1',
         professional_id: null,
@@ -52,7 +54,9 @@ describe('LandingProfessionalsSection', () => {
 
         await wrapper.find('a[href="#scheduling"]').trigger('click');
 
-        expect(useLandingScheduling().selectedProfessionalName.value).toBe('Dr. João');
+        expect(useLandingScheduling().selectedProfessionalName.value).toBe(
+            'Dr. João',
+        );
     });
 
     it('shows a placeholder icon when there is no photo', () => {

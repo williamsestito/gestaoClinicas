@@ -22,7 +22,7 @@ class EnsureNoActiveOrganization
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $hasActiveMembership = $request->user()
+        $hasActiveMembership = $request->user('web')
             ?->organizationMemberships()
             ->where('status', OrganizationMembershipStatus::Active)
             ->exists() ?? false;

@@ -21,8 +21,12 @@ import { useLandingScheduling } from '@/composables/useLandingScheduling';
 import { store } from '@/routes/appointment-requests';
 import LandingAvailabilitySearch from './LandingAvailabilitySearch.vue';
 
-const { selectedServiceId, selectedProfessionalName, preferredDate, preferredPeriod } =
-    useLandingScheduling();
+const {
+    selectedServiceId,
+    selectedProfessionalName,
+    preferredDate,
+    preferredPeriod,
+} = useLandingScheduling();
 
 const STEPS = [
     {
@@ -231,8 +235,8 @@ function submit() {
             <p class="font-medium">Pré-agendamento enviado!</p>
             <p class="text-sm text-muted-foreground">
                 Sua solicitação foi encaminhada à clínica. Você receberá a
-                confirmação do procedimento em breve, pelo telefone ou
-                WhatsApp informado.
+                confirmação do procedimento em breve, pelo telefone ou WhatsApp
+                informado.
             </p>
         </div>
 

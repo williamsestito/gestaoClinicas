@@ -67,7 +67,11 @@ function makeMembership(overrides: Record<string, unknown> = {}) {
         },
         role: { id: 'role-admin', name: 'Administrador da clínica' },
         unit_memberships: [
-            { unit_id: 'unit-1', is_primary: true, unit: { id: 'unit-1', name: 'Matriz' } },
+            {
+                unit_id: 'unit-1',
+                is_primary: true,
+                unit: { id: 'unit-1', name: 'Matriz' },
+            },
         ],
         ...overrides,
     };
@@ -93,7 +97,11 @@ function makeProps() {
         ],
         invitations: [],
         roles: [
-            { id: 'role-admin', name: 'Administrador da clínica', is_system: true },
+            {
+                id: 'role-admin',
+                name: 'Administrador da clínica',
+                is_system: true,
+            },
             { id: 'role-reception', name: 'Recepção', is_system: true },
         ],
         units: [{ id: 'unit-1', name: 'Matriz' }],
@@ -134,7 +142,9 @@ describe('settings/users/Index', () => {
     it('filters by search term matching name or email', async () => {
         const wrapper = mount(Index, { props: makeProps() });
 
-        await wrapper.find('input[aria-label="Buscar usuários por nome ou e-mail"]').setValue('bruno');
+        await wrapper
+            .find('input[aria-label="Buscar usuários por nome ou e-mail"]')
+            .setValue('bruno');
 
         const table = wrapper.find('table');
         expect(table.text()).toContain('Bruno Lima');
@@ -169,7 +179,9 @@ describe('settings/users/Index', () => {
         const wrapper = mount(Index, { props: makeProps() });
 
         expect(wrapper.find('table').exists()).toBe(true);
-        expect(wrapper.findAllComponents({ name: 'Card' }).length).toBeGreaterThan(0);
+        expect(
+            wrapper.findAllComponents({ name: 'Card' }).length,
+        ).toBeGreaterThan(0);
     });
 
     it('opens a dialog with the copyable invite link when the "inviteLink" flash arrives', async () => {
@@ -204,9 +216,7 @@ describe('settings/users/Index', () => {
             attachTo: document.body,
         });
 
-        expect(document.body.textContent ?? '').not.toContain(
-            'Convite criado',
-        );
+        expect(document.body.textContent ?? '').not.toContain('Convite criado');
 
         wrapper.unmount();
     });
