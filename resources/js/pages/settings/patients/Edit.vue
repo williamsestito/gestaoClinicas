@@ -23,6 +23,10 @@ import {
     store as storeResponsible,
     destroy as destroyResponsible,
 } from '@/routes/settings/patients/responsibles';
+import {
+    store as storeSessionPackage,
+    close as closeSessionPackage,
+} from '@/routes/settings/patients/session-packages';
 import type { AddressForm } from '@/types/organization';
 
 type ResponsibleRow = {
@@ -43,12 +47,24 @@ type EmergencyContactRow = {
     phone_secondary: string | null;
 };
 
+type SessionPackageRow = {
+    id: string;
+    service_name: string | null;
+    total_sessions: number;
+    remaining_sessions: number;
+    expires_at: string | null;
+    status: 'active' | 'inactive';
+    is_expired: boolean;
+};
+
 const props = defineProps<{
     patient: EditablePatient & { photo_url: string | null };
     address: AddressForm | null;
     states: string[];
     responsibles: ResponsibleRow[];
     emergencyContacts: EmergencyContactRow[];
+    sessionPackages: SessionPackageRow[];
+    services: { id: string; name: string }[];
 }>();
 
 defineOptions({
@@ -120,12 +136,33 @@ function removeEmergencyContact(contactId: string) {
         preserveScroll: true,
     });
 }
+
+const sessionPackageForm = useForm({
+    service_id: '',
+    total_sessions: 10,
+    expires_at: '',
+});
+
+function submitSessionPackage() {
+    sessionPackageForm.post(storeSessionPackage(props.patient.id).url, {
+        preserveScroll: true,
+        onSuccess: () => sessionPackageForm.reset(),
+    });
+}
+
+function closePackage(packageId: string) {
+    router.patch(
+        closeSessionPackage([props.patient.id, packageId]).url,
+        {},
+        { preserveScroll: true },
+    );
+}
 </script>
 
 <template>
     <Head title="Editar paciente" />
 
-    <div class="flex flex-col space-y-8">
+    <div class="flex flex-col space-y-8 p-4">
         <PageHeader title="Editar paciente" :description="patient.name">
             <template #actions>
                 <Badge v-if="patient.has_portal_account" variant="secondary">
@@ -362,6 +399,116 @@ function removeEmergencyContact(contactId: string) {
                     :disabled="emergencyContactForm.processing"
                 >
                     Adicionar contato
+                </Button>
+            </form>
+        </section>
+
+        <Separator />
+
+        <section class="grid gap-4">
+            <div>
+                <h3 class="text-sm font-medium">Pacotes de sessões</h3>
+                <p class="text-sm text-muted-foreground">
+                    Sem cobrança/pagamento vinculado nesta etapa — apenas
+                    contagem de sessões.
+                </p>
+            </div>
+
+            <div
+                v-for="pkg in sessionPackages"
+                :key="pkg.id"
+                class="flex items-center justify-between rounded-lg border p-4"
+            >
+                <div>
+                    <p class="font-medium">
+                        {{ pkg.remaining_sessions }} de {{ pkg.total_sessions }}
+                        sessão(ões) restantes
+                        <span v-if="pkg.service_name">
+                            — {{ pkg.service_name }}</span
+                        >
+                    </p>
+                    <p class="text-sm text-muted-foreground">
+                        <span v-if="pkg.expires_at">
+                            Expira em {{ pkg.expires_at }}
+                        </span>
+                        <span v-if="pkg.is_expired" class="text-destructive">
+                            (expirado)</span
+                        >
+                        <span v-if="pkg.status === 'inactive'">
+                            — Encerrado</span
+                        >
+                    </p>
+                </div>
+                <Button
+                    v-if="pkg.status === 'active'"
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    @click="closePackage(pkg.id)"
+                >
+                    Encerrar
+                </Button>
+            </div>
+
+            <form
+                class="grid gap-3 rounded-lg border p-4"
+                @submit.prevent="submitSessionPackage"
+            >
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <div class="grid gap-2">
+                        <Label for="new-package-service">
+                            Serviço (opcional)
+                        </Label>
+                        <select
+                            id="new-package-service"
+                            v-model="sessionPackageForm.service_id"
+                            class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        >
+                            <option value="">Qualquer serviço</option>
+                            <option
+                                v-for="service in services"
+                                :key="service.id"
+                                :value="service.id"
+                            >
+                                {{ service.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="grid gap-2">
+                        <Label for="new-package-total">
+                            Total de sessões
+                        </Label>
+                        <Input
+                            id="new-package-total"
+                            v-model.number="sessionPackageForm.total_sessions"
+                            type="number"
+                            min="1"
+                            max="999"
+                        />
+                        <InputError
+                            :message="sessionPackageForm.errors.total_sessions"
+                        />
+                    </div>
+                    <div class="grid gap-2">
+                        <Label for="new-package-expires">
+                            Expira em (opcional)
+                        </Label>
+                        <Input
+                            id="new-package-expires"
+                            v-model="sessionPackageForm.expires_at"
+                            type="date"
+                        />
+                        <InputError
+                            :message="sessionPackageForm.errors.expires_at"
+                        />
+                    </div>
+                </div>
+                <Button
+                    type="submit"
+                    class="w-fit"
+                    :disabled="sessionPackageForm.processing"
+                >
+                    Criar pacote
                 </Button>
             </form>
         </section>

@@ -103,6 +103,18 @@ class Patient extends Model
         return $this->hasMany(PatientEmergencyContact::class);
     }
 
+    /** @return HasMany<Appointment, $this> */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+    /** @return HasMany<SessionPackage, $this> */
+    public function sessionPackages(): HasMany
+    {
+        return $this->hasMany(SessionPackage::class);
+    }
+
     /**
      * Vínculo com uma conta do portal do paciente (App\Models\PatientUser),
      * se este paciente tiver sido autocadastrado ou tiver sido depois

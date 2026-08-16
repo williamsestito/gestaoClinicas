@@ -14,20 +14,25 @@ export const CLINIC_SETTINGS_PAGES = [
     'settings/site/',
     'settings/seo/',
     'settings/audit/',
+    'settings/modules/',
 ];
 
 /**
- * Páginas de "Equipe e serviços" (profissionais, especialidades, serviços)
- * vivem sob o prefixo `settings/` por convenção de rotas, mas não são nem
- * "Configurações da clínica" (não aparecem no menu de identidade da
- * clínica) nem pessoais ("Minha conta") — usam o layout padrão, sem
- * sub-menu, para não ficarem presas ao teto estreito (`max-w-2xl`) do
- * layout pessoal nem exibirem um sub-menu de clínica que não as contém.
+ * Páginas de dado operacional da clínica (profissionais, especialidades,
+ * serviços, recursos, pacientes, agenda) vivem sob o prefixo `settings/`
+ * por convenção de rotas, mas não são nem "Configurações da clínica" (não
+ * aparecem no menu de identidade da clínica) nem pessoais ("Minha conta")
+ * — usam o layout padrão, sem sub-menu, para não ficarem presas ao teto
+ * estreito (`max-w-2xl`) do layout pessoal nem exibirem um sub-menu de
+ * clínica que não as contém.
  */
 export const PLAIN_APP_SETTINGS_PAGES = [
     'settings/professionals/',
     'settings/specialties/',
     'settings/services/',
+    'settings/resources/',
+    'settings/patients/',
+    'settings/appointments/',
 ];
 
 /**

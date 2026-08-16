@@ -238,7 +238,7 @@ function formatDuration(minutes: number): string {
 <template>
     <Head title="Serviços e procedimentos" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Serviços e procedimentos"
             description="Cadastro operacional dos serviços oferecidos pela clínica — usado pela agenda e pelo financeiro nas próximas etapas. O conteúdo público do site continua sendo gerenciado em 'Site da clínica'."

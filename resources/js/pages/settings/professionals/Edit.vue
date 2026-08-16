@@ -44,7 +44,7 @@ function cancel() {
 <template>
     <Head title="Editar profissional" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Editar profissional"
             :description="`Atualize os dados de ${props.professional.display_name}`"

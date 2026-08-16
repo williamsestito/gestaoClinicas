@@ -10,6 +10,7 @@ use App\Actions\Organization\DeactivateProfessionalAction;
 use App\Actions\Organization\DeleteProfessionalAction;
 use App\Actions\Organization\DestroyProfessionalPhotoAction;
 use App\Actions\Organization\LinkProfessionalUserAction;
+use App\Actions\Organization\ResetProfessionalUserPasswordAction;
 use App\Actions\Organization\RestoreProfessionalAction;
 use App\Actions\Organization\UnlinkProfessionalUserAction;
 use App\Actions\Organization\UpdateProfessionalAction;
@@ -20,6 +21,7 @@ use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Organization\CreateProfessionalRequest;
 use App\Http\Requests\Organization\LinkProfessionalUserRequest;
+use App\Http\Requests\Organization\ResetProfessionalUserPasswordRequest;
 use App\Http\Requests\Organization\UpdateProfessionalPhotoRequest;
 use App\Http\Requests\Organization\UpdateProfessionalRequest;
 use App\Models\OrganizationMembership;
@@ -87,14 +89,12 @@ class ProfessionalController extends Controller
     {
         $this->authorize('create', [Professional::class, $tenant->organization()]);
 
-        return Inertia::render('settings/professionals/Create', [
-            'eligibleUsers' => $this->eligibleUsers($tenant),
-        ]);
+        return Inertia::render('settings/professionals/Create');
     }
 
     public function store(CreateProfessionalRequest $request, CreateProfessionalAction $action, TenantContext $tenant): RedirectResponse
     {
-        $action->handle($tenant->organization(), $request->attributesForAction());
+        $action->handle($tenant->organization(), $request->attributesForAction(), $request->user('web'));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Profissional cadastrado com sucesso.']);
 
@@ -208,6 +208,15 @@ class ProfessionalController extends Controller
         $action->handle($professional);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Vínculo com o usuário removido com sucesso.']);
+
+        return back();
+    }
+
+    public function resetUserPassword(ResetProfessionalUserPasswordRequest $request, Professional $professional, ResetProfessionalUserPasswordAction $action): RedirectResponse
+    {
+        $action->handle($professional, (string) $request->validated('password'));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Senha redefinida com sucesso.']);
 
         return back();
     }

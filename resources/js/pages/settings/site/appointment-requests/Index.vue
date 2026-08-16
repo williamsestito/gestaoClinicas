@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatDateBr, formatDateTimeBr } from '@/lib/masks';
 import { buildWhatsAppUrl } from '@/lib/whatsapp';
 import { dashboard } from '@/routes';
+import { create as createAppointment } from '@/routes/settings/appointments';
 import {
     index,
     notes,
@@ -44,7 +45,24 @@ const props = defineProps<{
         from?: string;
         to?: string;
     };
+    can_create_appointments: boolean;
 }>();
+
+function canConvert(request: AppointmentRequestSummary): boolean {
+    return (
+        props.can_create_appointments &&
+        (request.status === 'pending' || request.status === 'contacted')
+    );
+}
+
+function convertUrl(request: AppointmentRequestSummary): string {
+    // O controller resolve nome/telefone/observações a partir do próprio
+    // AppointmentRequest no servidor — só o id precisa ir na query string
+    // (evita vazar dado do lead em logs de acesso).
+    const params = new URLSearchParams({ appointment_request_id: request.id });
+
+    return `${createAppointment().url}?${params.toString()}`;
+}
 
 defineOptions({
     layout: {
@@ -328,6 +346,15 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                                     WhatsApp
                                 </Button>
                             </a>
+
+                            <Link
+                                v-if="canConvert(request)"
+                                :href="convertUrl(request)"
+                            >
+                                <Button size="sm" class="w-full sm:w-48">
+                                    Converter em agendamento
+                                </Button>
+                            </Link>
                         </div>
                     </div>
 

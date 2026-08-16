@@ -14,7 +14,10 @@ use Illuminate\Validation\ValidationException;
 
 class AssignProfessionalToUnitAction
 {
-    public function __construct(private readonly AuditLogger $auditLogger) {}
+    public function __construct(
+        private readonly AuditLogger $auditLogger,
+        private readonly SyncProfessionalLinkedUserUnitsAction $syncProfessionalLinkedUserUnitsAction,
+    ) {}
 
     /** @param array<string, mixed> $attributes */
     public function handle(Professional $professional, array $attributes): ProfessionalUnit
@@ -42,6 +45,8 @@ class AssignProfessionalToUnitAction
             after: ['professional_id' => $professional->id, 'unit_id' => $unitId, 'status' => $link->status->value],
             organization: $professional->organization,
         );
+
+        $this->syncProfessionalLinkedUserUnitsAction->handle($professional);
 
         return $link;
     }

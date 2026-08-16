@@ -41,11 +41,13 @@ describe('ProfessionalForm', () => {
         );
     });
 
-    it('only shows the user selection field in create mode', () => {
+    it('only shows the password fields in create mode', () => {
         const createWrapper = mount(ProfessionalForm, {
-            props: { mode: 'create', eligibleUsers: [] },
+            props: { mode: 'create' },
         });
-        expect(createWrapper.find('#professional-user').exists()).toBe(true);
+        expect(createWrapper.find('#professional-password').exists()).toBe(
+            true,
+        );
 
         const editWrapper = mount(ProfessionalForm, {
             props: {
@@ -64,7 +66,9 @@ describe('ProfessionalForm', () => {
                 },
             },
         });
-        expect(editWrapper.find('#professional-user').exists()).toBe(false);
+        expect(editWrapper.find('#professional-password').exists()).toBe(
+            false,
+        );
     });
 
     it('never pre-fills the document field with the masked value received from the backend', () => {

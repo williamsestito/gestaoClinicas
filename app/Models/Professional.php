@@ -20,9 +20,13 @@ use Illuminate\Support\Collection;
 /**
  * Cadastro operacional de um profissional da clínica. Entidade própria —
  * NÃO é uma especialização de App\Models\User nem de
- * App\Models\SiteProfessional (vitrine pública). O vínculo com `User` é
- * opcional e nunca concede acesso ao sistema por si só: acesso continua
- * dependendo exclusivamente de OrganizationMembership/Role/PermissionChecker.
+ * App\Models\SiteProfessional (vitrine pública). O vínculo com `User` em si
+ * nunca concede acesso ao sistema por si só: acesso continua dependendo
+ * exclusivamente de OrganizationMembership/Role/PermissionChecker — mas
+ * desde a criação, App\Actions\Organization\CreateProfessionalAction sempre
+ * provisiona esse User (papel "Profissional") junto com o profissional; o
+ * vínculo só fica de fato opcional para registros existentes que possam ter
+ * o usuário desvinculado depois (ver UnlinkProfessionalUserAction).
  *
  * @property string $id
  * @property string $organization_id

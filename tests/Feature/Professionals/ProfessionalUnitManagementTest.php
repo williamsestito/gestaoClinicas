@@ -63,6 +63,46 @@ it('never creates or alters a UnitMembership when linking a professional to a un
     expect(UnitMembership::query()->count())->toBe($before);
 });
 
+it('grants the professional own linked user access to a unit once assigned to it', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+    $professionalUser = User::factory()->create();
+    $professionalMembership = OrganizationMembership::factory()->for($organization)->for($professionalUser)->create(['status' => OrganizationMembershipStatus::Active]);
+    $professional = Professional::factory()->for($organization)->create(['user_id' => $professionalUser->id]);
+    $unit = unitFor($organization);
+
+    $this->actingAs($user)->post("/settings/professionals/{$professional->id}/units", [
+        'unit_id' => $unit->id,
+    ])->assertRedirect();
+
+    $unitMembership = UnitMembership::query()
+        ->where('organization_membership_id', $professionalMembership->id)
+        ->where('unit_id', $unit->id)
+        ->firstOrFail();
+
+    expect($unitMembership->status)->toBe(RecordStatus::Active);
+});
+
+it('revokes the linked user unit access once the professional is removed from that unit', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+    $professionalUser = User::factory()->create();
+    $professionalMembership = OrganizationMembership::factory()->for($organization)->for($professionalUser)->create(['status' => OrganizationMembershipStatus::Active]);
+    $professional = Professional::factory()->for($organization)->create(['user_id' => $professionalUser->id]);
+    $unit = unitFor($organization);
+    $link = ProfessionalUnit::factory()->for($professional)->create(['organization_id' => $organization->id, 'unit_id' => $unit->id, 'status' => RecordStatus::Active]);
+    UnitMembership::factory()->for($professionalMembership, 'organizationMembership')->for($unit, 'unit')->create(['status' => RecordStatus::Active]);
+
+    $this->actingAs($user)->delete("/settings/professionals/{$professional->id}/units/{$link->id}")->assertRedirect();
+
+    $unitMembership = UnitMembership::query()
+        ->where('organization_membership_id', $professionalMembership->id)
+        ->where('unit_id', $unit->id)
+        ->firstOrFail();
+
+    expect($unitMembership->status)->toBe(RecordStatus::Inactive);
+});
+
 it('allows several units for the same professional', function () {
     [$user, $organization, $professional] = professionalWithUnitOwnedByOwner();
     $units = [unitFor($organization), unitFor($organization), unitFor($organization)];

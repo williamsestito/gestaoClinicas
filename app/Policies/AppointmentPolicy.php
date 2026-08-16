@@ -54,6 +54,16 @@ class AppointmentPolicy
         return $this->hasBroadAccess($user, $appointment->organization_id);
     }
 
+    public function confirm(User $user, Appointment $appointment): bool
+    {
+        return $this->hasBroadAccess($user, $appointment->organization_id);
+    }
+
+    public function proposeAlternateTime(User $user, Appointment $appointment): bool
+    {
+        return $this->hasBroadAccess($user, $appointment->organization_id);
+    }
+
     public function manageStatus(User $user, Appointment $appointment): bool
     {
         return $this->hasBroadAccess($user, $appointment->organization_id)

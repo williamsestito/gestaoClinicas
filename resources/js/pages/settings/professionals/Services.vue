@@ -37,7 +37,7 @@ defineOptions({
 <template>
     <Head title="Serviços executados pelo profissional" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Serviços executados"
             description="Gerencie os serviços que este profissional executa, com valores e unidades compatíveis."

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -27,6 +28,8 @@ use Illuminate\Support\Carbon;
  * @property string $professional_id
  * @property string $patient_id
  * @property string $service_id
+ * @property string|null $session_package_id
+ * @property string|null $recurrence_group_id
  * @property Carbon $starts_at
  * @property Carbon $ends_at
  * @property AppointmentStatus $status
@@ -48,6 +51,8 @@ class Appointment extends Model
         'professional_id',
         'patient_id',
         'service_id',
+        'session_package_id',
+        'recurrence_group_id',
         'starts_at',
         'ends_at',
         'status',
@@ -98,5 +103,21 @@ class Appointment extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    /** @return BelongsTo<SessionPackage, $this> */
+    public function sessionPackage(): BelongsTo
+    {
+        return $this->belongsTo(SessionPackage::class);
+    }
+
+    /** @return BelongsToMany<SharedResource, $this> */
+    public function resources(): BelongsToMany
+    {
+        // Chaves de pivô explícitas: o padrão do Eloquent as inferiria a
+        // partir do nome da classe (`shared_resource_id`), mas a coluna
+        // real da migration é `resource_id` (o model se chama SharedResource
+        // só para evitar colisão com o pseudo-tipo `resource` do PHPDoc).
+        return $this->belongsToMany(SharedResource::class, 'appointment_resource', 'appointment_id', 'resource_id')->withTimestamps();
     }
 }

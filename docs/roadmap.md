@@ -36,17 +36,21 @@ desenvolvimento da etapa; rodar a suíte completa relevante só ao fechar.
 Implementado: fundação técnica, multiempresa (Organization/LegalEntity/Unit +
 `TenantContext`), RBAC completo, Especialidades, Serviços, Profissionais
 (cadastro, jornada, ausências, vínculos), site público + SEO, leads de
-pré-agendamento (`AppointmentRequest`, sem reserva real), módulos
-habilitáveis por especialidade (`ModuleKey`/`OrganizationModule`), cadastro
-administrativo de pacientes (`Patient`/`PatientResponsible`/
-`PatientEmergencyContact`), agenda real com conflito de verdade
-(`Appointment`, núcleo — sem recursos/salas ainda), autocadastro/login/
-portal do paciente (`PatientUser`/`PatientUserLink`, guard próprio,
-dependentes, sem booking ainda).
+pré-agendamento (`AppointmentRequest`), módulos habilitáveis por
+especialidade (`ModuleKey`/`OrganizationModule`), cadastro administrativo de
+pacientes (`Patient`/`PatientResponsible`/`PatientEmergencyContact`), agenda
+real com conflito de verdade (`Appointment`), autocadastro/login/portal do
+paciente (`PatientUser`/`PatientUserLink`, guard próprio, dependentes),
+booking real pelo portal (com cancelar/reagendar), conversão assistida de
+lead e de lista de espera em agendamento real, recursos compartilhados
+(salas/equipamentos, com conflito próprio), "encaixe" configurável por
+organização, pacotes de sessões, recorrência semanal e
+`AwaitingConfirmation` (staff propõe horário, paciente aceita/recusa).
 
-Não existe: Recursos compartilhados (salas/equipamentos), Prontuário,
-Produto/Venda/Financeiro/Estoque, booking público de verdade, mesclagem de
-pacientes, assinatura/billing.
+Não existe: Prontuário, Produto/Venda/Financeiro/Estoque, mesclagem de
+pacientes, assinatura/billing, recursos vinculados por serviço, RRULE
+genérico de recorrência, notificação automática de vaga na lista de
+espera.
 
 ---
 
@@ -162,6 +166,105 @@ booking público (depende da Etapa 2.2, login do paciente), conversão de
 `AppointmentRequest` em `Appointment` com um clique, pacotes de sessões,
 recorrência, lista de espera, "encaixe" configurável (sobreposição é
 sempre bloqueada nesta etapa).
+
+## Etapa 3.2 — Booking público pelo portal + conversão de lead ✅ concluída em 2026-08-16
+
+Recorte deliberado do bloco original da Etapa 3.2 (ver acima) — só os dois
+itens já desbloqueados pelas etapas anteriores; o restante vira Etapa 3.3
+(logo abaixo). Entregue:
+
+- **Booking público real**: o paciente/dependente logado no portal
+  (`App\Http\Controllers\PatientPortal\PatientAppointmentController`) cria
+  um `Appointment` de verdade — reaproveita sem alteração
+  `App\Support\Availability\AppointmentOverlapGuard` (staff) e
+  `App\Services\Availability\StaffAppointmentSlotFinder`. Entra em
+  `AppointmentStatus::Requested` (primeiro consumidor desse status, já
+  reservado desde a Etapa 3.1); a recepção confirma manualmente via novo
+  `App\Actions\Organization\ConfirmAppointmentAction`
+  (`appointments.manage`, mesma policy de criar/reagendar/cancelar) ou
+  recusa reaproveitando `CancelAppointmentAction` sem alteração.
+- **Conversão de lead**: botão "Converter em agendamento" em
+  `settings/site/appointment-requests/Index.vue` pré-preenche o formulário
+  de criação de agendamento do staff a partir de um `AppointmentRequest`
+  (fluxo assistido, não automático — o lead não tem os dados operacionais
+  necessários para mapeamento 1:1). `CreateAppointmentAction` ganhou
+  parâmetro opcional para marcar o lead como `Scheduled` e vinculá-lo
+  (`appointment_id`, nova coluna) na mesma transação — idempotente, nunca
+  converte o mesmo lead duas vezes.
+
+Ver [docs/modules/appointments.md](modules/appointments.md) e
+[docs/modules/patient-portal.md](modules/patient-portal.md) para o
+detalhamento técnico completo. Testes:
+`tests/Feature/PatientPortal/PatientAppointmentBookingTest.php`,
+`tests/Feature/Appointments/AppointmentConfirmationTest.php`,
+`tests/Feature/Appointments/ConvertAppointmentRequestTest.php` (14 casos no
+total). Security-review do diff: sem achados de alta confiança — atenção
+dada a IDOR (paciente só agenda para paciente vinculado à própria conta),
+conflito de horário (guard reaproveitado sem alteração) e isolamento
+multiempresa na conversão de lead.
+
+**Fora desta etapa (decisão registrada, vira Etapa 3.3 ou pós-MVP)**:
+recursos compartilhados (salas/equipamentos), pacotes de sessões,
+recorrência, lista de espera, "encaixe" configurável, uso de
+`AwaitingConfirmation` (segundo estado intermediário — só `Requested` é
+usado), paciente cancelar/reagendar pelo portal, notificação automática ao
+paciente quando confirmado/recusado, criação automática de `Patient` a
+partir dos dados do lead.
+
+## Etapa 3.3 — Recursos compartilhados e agenda avançada ✅ concluída em 2026-08-16
+
+Escopo completo (o usuário optou por manter tudo junto, em vez do recorte
+oferecido). Quatro dos seis itens (pacotes, recorrência, lista de espera,
+encaixe) não tinham **nenhuma** regra escrita em `docs/` nem no PDF de
+visão presente no repo — só uma linha neste roadmap. Regras MVP foram
+inventadas e documentadas explicitamente (mesmo padrão "decisão
+registrada" já usado em toda etapa anterior), para revisão futura se
+divergirem do que o PDF de visão realmente pede:
+
+- **Recursos compartilhados**: `App\Models\SharedResource` (não
+  `Resource` — colide com o pseudo-tipo `resource` do PHPDoc, corrompendo
+  generics via Pint), CRUD completo (template de `Specialty`), pertence a
+  exatamente uma unidade (FK direta, não enum de escopo). Vínculo
+  many-to-many direto com `Appointment` (pivô `appointment_resource`, sem
+  passar por `Service`). Conflito próprio
+  (`App\Support\Availability\ResourceOverlapGuard`) nunca dispensado pelo
+  encaixe abaixo.
+- **"Encaixe" configurável**: toggle `Organization.allow_appointment_overlap`,
+  tudo-ou-nada por organização — relaxa só conflito de profissional,
+  audita `AuditAction::ConflictDetected` quando usado. Decisão MVP:
+  granularidade por serviço/profissional fica para depois.
+- **Pacotes de sessões**: `App\Models\SessionPackage`, só contagem (sem
+  preço/pagamento — Comercial/Financeiro não existem ainda), "restantes"
+  sempre calculado a partir de agendamentos `Completed`, nunca persistido.
+- **Recorrência**: só semanal, sem RRULE genérico — N `Appointment`
+  independentes criados de uma vez (`recurrence_group_id` só agrupa
+  visualmente), limite de 52, ocorrência conflitante é pulada sem abortar
+  a série.
+- **Lista de espera**: `App\Models\WaitlistEntry`, conversão manual (mesmo
+  padrão de conversão assistida da 3.2 para lead), sem notificação
+  automática.
+- **Portal**: paciente cancela/reagenda o próprio agendamento (sem prazo
+  mínimo de antecedência — decisão MVP); `AwaitingConfirmation` ganha seu
+  primeiro uso real (staff propõe outro horário, paciente aceita/recusa).
+
+Ver [docs/modules/resources.md](modules/resources.md) (novo),
+[docs/modules/appointments.md](modules/appointments.md) e
+[docs/modules/patient-portal.md](modules/patient-portal.md) para o
+detalhamento técnico completo de cada decisão. Testes: 7 arquivos novos
+(`ResourceManagementTest` — inclui o caso de conflito de recurso —,
+`AppointmentOverlapConfigurationTest`, `SessionPackageManagementTest`,
+`RecurringAppointmentSeriesTest`, `WaitlistConversionTest`,
+`PatientAppointmentCancelRescheduleTest`, `AwaitingConfirmationFlowTest`),
+mais de 60 casos no total. `vendor/bin/pint`/`composer analyse` limpos;
+suíte completa (913 casos, excluídas as 2 falhas pré-existentes e não
+relacionadas de `PublicAvailabilityEndpointsTest`) verde.
+
+**Fora desta etapa (decisão registrada, pós-MVP ou etapa futura)**:
+contra-proposta do paciente ao horário proposto, notificação automática de
+vaga na lista de espera, granularidade de encaixe por serviço/profissional,
+RRULE genérico de recorrência, prazo mínimo de antecedência para
+cancelar/reagendar pelo portal, vínculo de recurso por serviço (em vez de
+só por agendamento).
 
 ## Etapa 4 — Prontuário e documentos
 

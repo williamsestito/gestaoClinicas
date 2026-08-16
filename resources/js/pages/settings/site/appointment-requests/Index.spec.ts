@@ -12,7 +12,7 @@ const { routerMock } = vi.hoisted(() => ({
 
 vi.mock('@inertiajs/vue3', () => ({
     Head: { template: '<div />' },
-    Link: { template: '<a><slot /></a>', props: ['href'] },
+    Link: { template: '<a :href="href"><slot /></a>', props: ['href'] },
     router: routerMock,
 }));
 
@@ -40,6 +40,7 @@ function makeRequest(
 
 function mountIndex(
     requestsData: AppointmentRequestSummary[] = [makeRequest()],
+    canCreateAppointments = true,
 ) {
     return mount(Index, {
         props: {
@@ -49,6 +50,7 @@ function mountIndex(
                 total: requestsData.length,
             },
             filters: {},
+            can_create_appointments: canCreateAppointments,
         },
     });
 }
@@ -142,5 +144,25 @@ describe('settings/site/appointment-requests/Index', () => {
         ]);
 
         expect(wrapper.text()).toContain('utm_source=google');
+    });
+
+    it('shows the convert-to-appointment link for a pending lead when the user can create appointments', () => {
+        const wrapper = mountIndex([makeRequest({ status: 'pending' })], true);
+
+        const link = wrapper.find('a[href*="appointment_request_id"]');
+        expect(link.exists()).toBe(true);
+        expect(link.attributes('href')).toContain('01ABC');
+    });
+
+    it('hides the convert-to-appointment link when the lead is already scheduled', () => {
+        const wrapper = mountIndex([makeRequest({ status: 'scheduled' })], true);
+
+        expect(wrapper.find('a[href*="appointment_request_id"]').exists()).toBe(false);
+    });
+
+    it('hides the convert-to-appointment link when the user lacks permission', () => {
+        const wrapper = mountIndex([makeRequest({ status: 'pending' })], false);
+
+        expect(wrapper.find('a[href*="appointment_request_id"]').exists()).toBe(false);
     });
 });

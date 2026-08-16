@@ -22,6 +22,11 @@ use Illuminate\Support\Str;
  * administrador — ver regra de segurança do Bloco 3) e envia por e-mail.
  * O token é gerado aleatoriamente e só o hash é persistido; o valor bruto
  * só existe em memória durante esta chamada (e no e-mail enviado).
+ *
+ * Única exceção deliberada a esta regra: App\Actions\Organization\
+ * CreateProfessionalAction, a pedido explícito do proprietário do produto,
+ * ciente do trade-off — nenhum outro ponto de criação de usuário deve
+ * replicar essa exceção sem a mesma decisão explícita.
  */
 class InviteUserAction
 {

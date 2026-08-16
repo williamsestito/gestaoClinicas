@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Actions\Organization\SeedSystemRolesAction;
 use App\Enums\AuditAction;
 use App\Enums\OrganizationMembershipStatus;
 use App\Enums\PermissionKey;
 use App\Enums\RecordStatus;
+use App\Enums\SystemRole;
 use App\Enums\Weekday;
 use App\Models\AuditLog;
 use App\Models\LegalEntity;
@@ -21,69 +23,64 @@ use App\Models\Unit;
 use App\Models\User;
 use Database\Factories\LegalEntityFactory;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
-it('creates a professional without a linked user', function () {
+it('creates a professional and provisions a new access user with the Professional role', function () {
     $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+    app(SeedSystemRolesAction::class)->handle($organization);
+    $cpf = LegalEntityFactory::validCpf();
 
     $this->actingAs($user)->post('/settings/professionals', [
         'name' => 'Dra. Ana Souza',
+        'email' => 'ana.souza@example.com',
+        'document' => $cpf,
+        'password' => 'password',
+        'password_confirmation' => 'password',
     ])->assertRedirect('/settings/professionals');
 
     $professional = Professional::query()->where('name', 'Dra. Ana Souza')->firstOrFail();
+    $linkedUser = User::query()->find($professional->user_id);
+
     expect($professional->display_name)->toBe('Dra. Ana Souza')
-        ->and($professional->user_id)->toBeNull()
+        ->and($professional->user_id)->not->toBeNull()
         ->and($professional->status)->toBe(RecordStatus::Active)
         ->and(AuditLog::query()->where('auditable_id', $professional->id)->where('action', AuditAction::Created)->exists())->toBeTrue();
+
+    expect($linkedUser)->not->toBeNull()
+        ->and($linkedUser->email)->toBe('ana.souza@example.com')
+        ->and($linkedUser->is_active)->toBeTrue()
+        ->and($linkedUser->email_verified_at)->not->toBeNull();
+
+    $membership = OrganizationMembership::query()
+        ->where('organization_id', $organization->id)
+        ->where('user_id', $linkedUser->id)
+        ->firstOrFail();
+
+    expect($membership->status)->toBe(OrganizationMembershipStatus::Active)
+        ->and($membership->role?->slug)->toBe(SystemRole::Professional->value);
 });
 
-it('creates a professional linked to an eligible user', function () {
+it('rejects creating a professional without a CPF, email or password', function () {
     $user = actingOwnerWithActiveContext();
-    $organization = $user->organizationMemberships()->first()->organization;
-    $eligibleUser = User::factory()->create();
-    OrganizationMembership::factory()->for($organization)->for($eligibleUser)->create(['status' => OrganizationMembershipStatus::Active]);
 
     $this->actingAs($user)->post('/settings/professionals', [
-        'name' => 'Dr. João Lima',
-        'user_id' => $eligibleUser->id,
-    ])->assertRedirect('/settings/professionals');
-
-    $professional = Professional::query()->where('name', 'Dr. João Lima')->firstOrFail();
-    expect($professional->user_id)->toBe($eligibleUser->id);
+        'name' => 'Profissional Incompleto',
+    ])->assertSessionHasErrors(['document', 'email', 'password']);
 });
 
-it('rejects a user from another organization', function () {
+it('rejects a professional email already used by an existing user', function () {
     $user = actingOwnerWithActiveContext();
-    $otherOrganization = Organization::factory()->create();
-    $foreignUser = User::factory()->create();
-    OrganizationMembership::factory()->for($otherOrganization)->for($foreignUser)->create(['status' => OrganizationMembershipStatus::Active]);
+    $existingUser = User::factory()->create(['email' => 'ja-existe@example.com']);
 
     $this->actingAs($user)->post('/settings/professionals', [
-        'name' => 'Profissional', 'user_id' => $foreignUser->id,
-    ])->assertSessionHasErrors('user_id');
-});
-
-it('rejects a user without an active membership in the clinic', function () {
-    $user = actingOwnerWithActiveContext();
-    $organization = $user->organizationMemberships()->first()->organization;
-    $inactiveUser = User::factory()->create();
-    OrganizationMembership::factory()->for($organization)->for($inactiveUser)->create(['status' => OrganizationMembershipStatus::Inactive]);
-
-    $this->actingAs($user)->post('/settings/professionals', [
-        'name' => 'Profissional', 'user_id' => $inactiveUser->id,
-    ])->assertSessionHasErrors('user_id');
-});
-
-it('rejects a user already linked to another professional in the same clinic', function () {
-    $user = actingOwnerWithActiveContext();
-    $organization = $user->organizationMemberships()->first()->organization;
-    $eligibleUser = User::factory()->create();
-    OrganizationMembership::factory()->for($organization)->for($eligibleUser)->create(['status' => OrganizationMembershipStatus::Active]);
-    Professional::factory()->for($organization)->linkedToUser()->create(['user_id' => $eligibleUser->id]);
-
-    $this->actingAs($user)->post('/settings/professionals', [
-        'name' => 'Outro Profissional', 'user_id' => $eligibleUser->id,
-    ])->assertSessionHasErrors('user_id');
+        'name' => 'Profissional',
+        'email' => $existingUser->email,
+        'document' => LegalEntityFactory::validCpf(),
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ])->assertSessionHasErrors('email');
 });
 
 it('linking a professional to a user never grants membership or role', function () {
@@ -124,7 +121,11 @@ it('normalizes a masked CPF before validating and storing it', function () {
     $masked = substr($cpf, 0, 3).'.'.substr($cpf, 3, 3).'.'.substr($cpf, 6, 3).'-'.substr($cpf, 9, 2);
 
     $this->actingAs($user)->post('/settings/professionals', [
-        'name' => 'Profissional Documentado', 'document' => $masked,
+        'name' => 'Profissional Documentado',
+        'document' => $masked,
+        'email' => 'documentado@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
     ])->assertRedirect('/settings/professionals');
 
     $professional = Professional::query()->where('name', 'Profissional Documentado')->firstOrFail();
@@ -187,7 +188,11 @@ it('never stores the full document in the audit log', function () {
     $document = LegalEntityFactory::validCpf();
 
     $this->actingAs($user)->post('/settings/professionals', [
-        'name' => 'Profissional Auditado', 'document' => $document,
+        'name' => 'Profissional Auditado',
+        'document' => $document,
+        'email' => 'auditado@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
     ])->assertRedirect();
 
     $professional = Professional::query()->where('name', 'Profissional Auditado')->firstOrFail();
@@ -300,8 +305,13 @@ it('allows a member with the professionals.manage permission to create a profess
     ]);
     session(['active_organization_id' => $organization->id]);
 
-    $this->actingAs($user)->post('/settings/professionals', ['name' => 'Novo Profissional'])
-        ->assertRedirect('/settings/professionals');
+    $this->actingAs($user)->post('/settings/professionals', [
+        'name' => 'Novo Profissional',
+        'email' => 'novo.profissional@example.com',
+        'document' => LegalEntityFactory::validCpf(),
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ])->assertRedirect('/settings/professionals');
 });
 
 it('blocks access to a professional belonging to another organization even with a valid id', function () {
@@ -310,4 +320,46 @@ it('blocks access to a professional belonging to another organization even with 
 
     $this->actingAs($user)->get("/settings/professionals/{$foreignProfessional->id}/edit")->assertNotFound();
     $this->actingAs($user)->put("/settings/professionals/{$foreignProfessional->id}", ['name' => 'Hackeado', 'display_name' => 'Hackeado'])->assertNotFound();
+});
+
+it('resets the password of the linked user', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+    $linkedUser = User::factory()->create();
+    OrganizationMembership::factory()->for($organization)->for($linkedUser)->create(['status' => OrganizationMembershipStatus::Active]);
+    $professional = Professional::factory()->for($organization)->create(['user_id' => $linkedUser->id]);
+
+    $this->actingAs($user)->put("/settings/professionals/{$professional->id}/user/password", [
+        'password' => 'nova-senha-123',
+        'password_confirmation' => 'nova-senha-123',
+    ])->assertRedirect();
+
+    expect(Hash::check('nova-senha-123', $linkedUser->fresh()->password))->toBeTrue();
+});
+
+it('rejects resetting the password when no user is linked', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+    $professional = Professional::factory()->for($organization)->create();
+
+    $this->actingAs($user)->put("/settings/professionals/{$professional->id}/user/password", [
+        'password' => 'nova-senha-123',
+        'password_confirmation' => 'nova-senha-123',
+    ])->assertSessionHasErrors('password');
+});
+
+it('never logs the new password in the audit trail when resetting it', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+    $linkedUser = User::factory()->create();
+    OrganizationMembership::factory()->for($organization)->for($linkedUser)->create(['status' => OrganizationMembershipStatus::Active]);
+    $professional = Professional::factory()->for($organization)->create(['user_id' => $linkedUser->id]);
+
+    $this->actingAs($user)->put("/settings/professionals/{$professional->id}/user/password", [
+        'password' => 'nova-senha-123',
+        'password_confirmation' => 'nova-senha-123',
+    ])->assertRedirect();
+
+    $log = AuditLog::query()->where('auditable_id', $professional->id)->latest('created_at')->firstOrFail();
+    expect(json_encode($log->after_data))->not->toContain('nova-senha-123');
 });

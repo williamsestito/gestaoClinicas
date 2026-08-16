@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
+import { Repeat } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
@@ -11,11 +12,14 @@ import {
     cancel,
     checkIn,
     complete,
+    confirm,
     create,
     index,
     noShow,
     start,
 } from '@/routes/settings/appointments';
+import { edit as editPropose } from '@/routes/settings/appointments/propose';
+import { index as waitlistIndex } from '@/routes/settings/appointments/waitlist';
 
 type AppointmentRow = {
     id: string;
@@ -28,6 +32,7 @@ type AppointmentRow = {
     service_name: string;
     unit_name: string;
     cancellation_reason: string | null;
+    is_recurring: boolean;
 };
 
 const props = defineProps<{
@@ -64,6 +69,10 @@ function formatTime(iso: string): string {
         hour: '2-digit',
         minute: '2-digit',
     });
+}
+
+function doConfirm(appointment: AppointmentRow) {
+    router.patch(confirm(appointment.id).url, {}, { preserveScroll: true });
 }
 
 function doCheckIn(appointment: AppointmentRow) {
@@ -114,12 +123,15 @@ function statusVariant(
 <template>
     <Head title="Agenda" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Agenda"
             description="Agendamentos reais da clínica, por dia."
         >
             <template #actions>
+                <Button as-child variant="outline">
+                    <Link :href="waitlistIndex().url">Lista de espera</Link>
+                </Button>
                 <Button as-child>
                     <Link :href="create().url">Novo agendamento</Link>
                 </Button>
@@ -198,6 +210,11 @@ function statusVariant(
                         </td>
                         <td class="px-4 py-3">
                             {{ appointment.patient_name }}
+                            <Repeat
+                                v-if="appointment.is_recurring"
+                                class="inline size-3.5 text-muted-foreground"
+                                aria-label="Agendamento recorrente"
+                            />
                         </td>
                         <td class="px-4 py-3 text-muted-foreground">
                             {{ appointment.professional_name }}
@@ -218,6 +235,24 @@ function statusVariant(
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex flex-wrap justify-end gap-2">
+                                <Button
+                                    v-if="appointment.status === 'requested'"
+                                    variant="outline"
+                                    size="sm"
+                                    @click="doConfirm(appointment)"
+                                >
+                                    Confirmar
+                                </Button>
+                                <Button
+                                    v-if="appointment.status === 'requested'"
+                                    as-child
+                                    variant="outline"
+                                    size="sm"
+                                >
+                                    <Link :href="editPropose(appointment.id).url">
+                                        Propor outro horário
+                                    </Link>
+                                </Button>
                                 <Button
                                     v-if="appointment.status === 'confirmed'"
                                     variant="outline"
@@ -264,7 +299,11 @@ function statusVariant(
                                     size="sm"
                                     @click="doCancel(appointment)"
                                 >
-                                    Cancelar
+                                    {{
+                                        appointment.status === 'requested'
+                                            ? 'Recusar solicitação'
+                                            : 'Cancelar'
+                                    }}
                                 </Button>
                             </div>
                         </td>

@@ -36,27 +36,37 @@ defineOptions({
         </div>
 
         <div class="grid gap-4">
-            <Link
-                v-for="patient in patients"
-                :key="patient.id"
-                :href="patientPortal.patients.edit(patient.id)"
-            >
-                <Card class="transition-colors hover:border-primary">
-                    <CardContent
-                        class="flex items-center justify-between py-4"
+            <Card v-for="patient in patients" :key="patient.id">
+                <CardContent
+                    class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                    <Link
+                        :href="patientPortal.patients.edit(patient.id)"
+                        class="flex-1"
                     >
-                        <div>
-                            <p class="font-medium">{{ patient.name }}</p>
-                            <p class="text-sm text-muted-foreground">
-                                Nascimento: {{ patient.birth_date }}
-                            </p>
-                        </div>
+                        <p class="font-medium">{{ patient.name }}</p>
+                        <p class="text-sm text-muted-foreground">
+                            Nascimento: {{ patient.birth_date }}
+                        </p>
+                    </Link>
+                    <div class="flex items-center gap-2">
                         <Badge variant="secondary">
                             {{ patient.role_label }}
                         </Badge>
-                    </CardContent>
-                </Card>
-            </Link>
+                        <Button as-child variant="outline" size="sm">
+                            <Link
+                                :href="
+                                    patientPortal.appointments.index(
+                                        patient.id,
+                                    )
+                                "
+                            >
+                                Agendamentos
+                            </Link>
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     </div>
 </template>

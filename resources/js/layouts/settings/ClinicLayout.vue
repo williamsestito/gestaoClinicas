@@ -7,6 +7,7 @@ import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { toUrl } from '@/lib/utils';
 import { index as indexAudit } from '@/routes/settings/audit';
 import { index as indexLegalEntities } from '@/routes/settings/legal-entities';
+import { edit as editModules } from '@/routes/settings/modules';
 import { edit as editOrganization } from '@/routes/settings/organization';
 import { index as indexRoles } from '@/routes/settings/roles';
 import { edit as editSeo } from '@/routes/settings/seo';
@@ -27,6 +28,10 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Unidades',
         href: indexUnits(),
+    },
+    {
+        title: 'Módulos',
+        href: editModules(),
     },
     {
         title: 'Usuários',

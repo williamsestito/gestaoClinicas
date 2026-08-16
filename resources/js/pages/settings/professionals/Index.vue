@@ -259,7 +259,7 @@ function formatDate(value: string): string {
 <template>
     <Head title="Profissionais" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Profissionais"
             description="Cadastro operacional dos profissionais da clínica — independente do acesso ao sistema. A vitrine pública de profissionais continua sendo gerenciada em 'Site da clínica'."

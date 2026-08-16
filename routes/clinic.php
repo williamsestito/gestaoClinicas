@@ -21,9 +21,11 @@ use App\Http\Controllers\Organization\ProfessionalSpecialtyController;
 use App\Http\Controllers\Organization\ProfessionalTimeBlockController;
 use App\Http\Controllers\Organization\ProfessionalUnitController;
 use App\Http\Controllers\Organization\ProfessionalWorkingHourController;
+use App\Http\Controllers\Organization\ResourceController;
 use App\Http\Controllers\Organization\RoleController;
 use App\Http\Controllers\Organization\SeoMarketingController;
 use App\Http\Controllers\Organization\ServiceController;
+use App\Http\Controllers\Organization\SessionPackageController;
 use App\Http\Controllers\Organization\SiteBenefitController;
 use App\Http\Controllers\Organization\SiteContentController;
 use App\Http\Controllers\Organization\SiteFaqController;
@@ -37,6 +39,7 @@ use App\Http\Controllers\Organization\SpecialtyController;
 use App\Http\Controllers\Organization\UnitContextController;
 use App\Http\Controllers\Organization\UnitController;
 use App\Http\Controllers\Organization\UserManagementController;
+use App\Http\Controllers\Organization\WaitlistController;
 use App\Http\Controllers\PostalCodeLookupController;
 use Illuminate\Support\Facades\Route;
 
@@ -196,6 +199,31 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
                 ->name('settings.services.destroy');
         });
 
+        // Etapa 3.3 do roadmap (docs/roadmap.md) — recursos compartilhados
+        // (salas/equipamentos), mesmo padrão de create/store/restore fora do
+        // grupo de membership, edit/update/status/destroy dentro dele.
+        Route::get('settings/resources', [ResourceController::class, 'index'])
+            ->name('settings.resources.index');
+        Route::get('settings/resources/create', [ResourceController::class, 'create'])
+            ->name('settings.resources.create');
+        Route::post('settings/resources', [ResourceController::class, 'store'])
+            ->name('settings.resources.store');
+        Route::post('settings/resources/{resource}/restore', [ResourceController::class, 'restore'])
+            ->name('settings.resources.restore');
+
+        Route::middleware('tenant.resource-membership')->group(function () {
+            Route::get('settings/resources/{resource}/edit', [ResourceController::class, 'edit'])
+                ->name('settings.resources.edit');
+            Route::put('settings/resources/{resource}', [ResourceController::class, 'update'])
+                ->name('settings.resources.update');
+            Route::patch('settings/resources/{resource}/activate', [ResourceController::class, 'activate'])
+                ->name('settings.resources.activate');
+            Route::patch('settings/resources/{resource}/deactivate', [ResourceController::class, 'deactivate'])
+                ->name('settings.resources.deactivate');
+            Route::delete('settings/resources/{resource}', [ResourceController::class, 'destroy'])
+                ->name('settings.resources.destroy');
+        });
+
         // Etapa 2.1 do roadmap (docs/roadmap.md) — cadastro administrativo de
         // pacientes. "duplicates" não tem {patient} na URL (busca org-wide),
         // por isso fica fora do grupo tenant.patient-membership.
@@ -245,6 +273,12 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
                 ->name('settings.patients.emergency-contacts.update');
             Route::delete('settings/patients/{patient}/emergency-contacts/{emergencyContact}', [PatientEmergencyContactController::class, 'destroy'])
                 ->name('settings.patients.emergency-contacts.destroy');
+
+            // Etapa 3.3 do roadmap (docs/roadmap.md) — pacotes de sessões.
+            Route::post('settings/patients/{patient}/session-packages', [SessionPackageController::class, 'store'])
+                ->name('settings.patients.session-packages.store');
+            Route::patch('settings/patients/{patient}/session-packages/{sessionPackage}/close', [SessionPackageController::class, 'close'])
+                ->name('settings.patients.session-packages.close');
         });
 
         // Etapa 3.1 do roadmap (docs/roadmap.md) — agenda real. "available-slots"
@@ -259,12 +293,22 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
             ->name('settings.appointments.store');
         Route::get('settings/appointments/available-slots', [AppointmentController::class, 'availableSlots'])
             ->name('settings.appointments.available-slots');
+        // Etapa 3.3 — pacotes de sessões ativos e utilizáveis de um paciente,
+        // para o select "descontar de pacote" na criação de agendamento.
+        Route::get('settings/appointments/patients/{patient}/session-packages', [AppointmentController::class, 'patientSessionPackages'])
+            ->name('settings.appointments.patient-session-packages');
 
         Route::middleware('tenant.appointment-membership')->group(function () {
             Route::put('settings/appointments/{appointment}/reschedule', [AppointmentController::class, 'reschedule'])
                 ->name('settings.appointments.reschedule');
             Route::patch('settings/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])
                 ->name('settings.appointments.cancel');
+            Route::patch('settings/appointments/{appointment}/confirm', [AppointmentController::class, 'confirm'])
+                ->name('settings.appointments.confirm');
+            Route::get('settings/appointments/{appointment}/propose', [AppointmentController::class, 'editPropose'])
+                ->name('settings.appointments.propose.edit');
+            Route::put('settings/appointments/{appointment}/propose', [AppointmentController::class, 'propose'])
+                ->name('settings.appointments.propose.update');
             Route::patch('settings/appointments/{appointment}/check-in', [AppointmentController::class, 'checkIn'])
                 ->name('settings.appointments.check-in');
             Route::patch('settings/appointments/{appointment}/start', [AppointmentController::class, 'start'])
@@ -274,6 +318,15 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
             Route::patch('settings/appointments/{appointment}/no-show', [AppointmentController::class, 'noShow'])
                 ->name('settings.appointments.no-show');
         });
+
+        // Etapa 3.3 do roadmap — lista de espera. Reaproveita a permissão
+        // appointments.manage (via AppointmentPolicy::create()).
+        Route::get('settings/appointments/waitlist', [WaitlistController::class, 'index'])
+            ->name('settings.appointments.waitlist.index');
+        Route::post('settings/appointments/waitlist', [WaitlistController::class, 'store'])
+            ->name('settings.appointments.waitlist.store');
+        Route::patch('settings/appointments/waitlist/{waitlistEntry}/cancel', [WaitlistController::class, 'cancel'])
+            ->name('settings.appointments.waitlist.cancel');
 
         // "Minha agenda" — nunca aceita {professional} na URL: o profissional
         // é sempre resolvido a partir do usuário autenticado.
@@ -306,6 +359,8 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
                 ->name('settings.professionals.user.update');
             Route::delete('settings/professionals/{professional}/user', [ProfessionalController::class, 'unlinkUser'])
                 ->name('settings.professionals.user.destroy');
+            Route::put('settings/professionals/{professional}/user/password', [ProfessionalController::class, 'resetUserPassword'])
+                ->name('settings.professionals.user.password');
 
             // Etapa 2.5 — especialidades e registros profissionais.
             Route::get('settings/professionals/{professional}/specialties', [ProfessionalController::class, 'specialties'])

@@ -29,11 +29,9 @@ const props = withDefaults(
     defineProps<{
         mode: 'create' | 'edit';
         professional?: EditableProfessional;
-        eligibleUsers?: EligibleUser[];
     }>(),
     {
         professional: undefined,
-        eligibleUsers: () => [],
     },
 );
 
@@ -52,7 +50,8 @@ const form = useForm({
     birth_date: props.professional?.birth_date ?? '',
     bio: props.professional?.bio ?? '',
     is_public: props.professional?.is_public ?? false,
-    user_id: undefined as number | undefined,
+    password: '',
+    password_confirmation: '',
 });
 
 function onDocumentInput(event: Event) {
@@ -107,14 +106,24 @@ function submit() {
             </div>
 
             <div class="grid gap-2">
-                <Label for="professional-email"
-                    >E-mail profissional (opcional)</Label
-                >
+                <Label for="professional-email">
+                    {{
+                        mode === 'create'
+                            ? 'E-mail profissional'
+                            : 'E-mail profissional (opcional)'
+                    }}
+                </Label>
                 <Input
                     id="professional-email"
                     v-model="form.email"
                     type="email"
                 />
+                <p
+                    v-if="mode === 'create'"
+                    class="text-xs text-muted-foreground"
+                >
+                    Usado para o acesso do profissional ao sistema.
+                </p>
                 <InputError :message="form.errors.email" />
             </div>
 
@@ -125,14 +134,19 @@ function submit() {
             </div>
 
             <div class="grid gap-2">
-                <Label for="professional-document">CPF (opcional)</Label>
+                <Label for="professional-document">
+                    {{ mode === 'create' ? 'CPF' : 'CPF (opcional)' }}
+                </Label>
                 <Input
                     id="professional-document"
                     :model-value="form.document"
                     :placeholder="professional?.document ?? undefined"
                     @input="onDocumentInput"
                 />
-                <p class="text-xs text-muted-foreground">
+                <p
+                    v-if="mode === 'edit'"
+                    class="text-xs text-muted-foreground"
+                >
                     Deixe em branco para manter o documento atual.
                 </p>
                 <InputError :message="form.errors.document" />
@@ -150,31 +164,37 @@ function submit() {
                 <InputError :message="form.errors.birth_date" />
             </div>
 
-            <div v-if="mode === 'create'" class="grid gap-2 sm:col-span-2">
-                <Label for="professional-user"
-                    >Usuário vinculado (opcional)</Label
-                >
-                <select
-                    id="professional-user"
-                    v-model="form.user_id"
-                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                >
-                    <option :value="undefined">Nenhum</option>
-                    <option
-                        v-for="eligibleUser in eligibleUsers"
-                        :key="eligibleUser.id"
-                        :value="eligibleUser.id"
+            <template v-if="mode === 'create'">
+                <div class="grid gap-2">
+                    <Label for="professional-password">Senha de acesso</Label>
+                    <Input
+                        id="professional-password"
+                        v-model="form.password"
+                        type="password"
+                        autocomplete="new-password"
+                    />
+                    <InputError :message="form.errors.password" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="professional-password-confirmation"
+                        >Confirmar senha</Label
                     >
-                        {{ eligibleUser.name }} ({{ eligibleUser.email }})
-                    </option>
-                </select>
-                <p class="text-xs text-muted-foreground">
-                    Vincular um usuário não concede nenhum acesso ou permissão —
-                    isso continua dependendo do papel atribuído a ele na
-                    clínica.
+                    <Input
+                        id="professional-password-confirmation"
+                        v-model="form.password_confirmation"
+                        type="password"
+                        autocomplete="new-password"
+                    />
+                    <InputError :message="form.errors.password_confirmation" />
+                </div>
+
+                <p class="text-xs text-muted-foreground sm:col-span-2">
+                    O profissional já é criado com acesso ao sistema (papel
+                    "Profissional") usando o e-mail e a senha informados
+                    acima.
                 </p>
-                <InputError :message="form.errors.user_id" />
-            </div>
+            </template>
 
             <div class="grid gap-2 sm:col-span-2">
                 <Label for="professional-bio">Biografia (opcional)</Label>

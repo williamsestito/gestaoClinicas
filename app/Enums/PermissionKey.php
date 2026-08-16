@@ -71,6 +71,9 @@ enum PermissionKey: string
     case ServicesView = 'services.view';
     case ServicesManage = 'services.manage';
 
+    case ResourcesView = 'resources.view';
+    case ResourcesManage = 'resources.manage';
+
     case PatientsView = 'patients.view';
     case PatientsManage = 'patients.manage';
     case PatientsViewOwn = 'patients.view-own';
@@ -161,6 +164,8 @@ enum PermissionKey: string
 
             self::ServicesView => 'Visualizar serviços',
             self::ServicesManage => 'Gerenciar serviços',
+            self::ResourcesView => 'Visualizar recursos (salas/equipamentos)',
+            self::ResourcesManage => 'Gerenciar recursos (salas/equipamentos)',
 
             self::PatientsView => 'Visualizar pacientes',
             self::PatientsManage => 'Gerenciar pacientes',
@@ -209,6 +214,7 @@ enum PermissionKey: string
             str_starts_with($this->value, 'modules.') => 'Módulos de especialidade',
             str_starts_with($this->value, 'specialties.') => 'Especialidades',
             str_starts_with($this->value, 'services.') => 'Serviços',
+            str_starts_with($this->value, 'resources.') => 'Recursos',
             str_starts_with($this->value, 'patients.') => 'Pacientes',
             str_starts_with($this->value, 'appointments.') => 'Agendamentos',
             str_starts_with($this->value, 'professional-registrations.') => 'Registros profissionais',

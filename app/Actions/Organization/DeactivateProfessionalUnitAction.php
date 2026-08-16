@@ -12,7 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 class DeactivateProfessionalUnitAction
 {
-    public function __construct(private readonly AuditLogger $auditLogger) {}
+    public function __construct(
+        private readonly AuditLogger $auditLogger,
+        private readonly SyncProfessionalLinkedUserUnitsAction $syncProfessionalLinkedUserUnitsAction,
+    ) {}
 
     public function handle(ProfessionalUnit $link): ProfessionalUnit
     {
@@ -33,6 +36,8 @@ class DeactivateProfessionalUnitAction
             after: ['status' => $link->status->value],
             organization: $link->organization,
         );
+
+        $this->syncProfessionalLinkedUserUnitsAction->handle($link->professional);
 
         return $link;
     }

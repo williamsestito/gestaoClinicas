@@ -32,7 +32,7 @@ defineOptions({
 <template>
     <Head title="Jornada e disponibilidade do profissional" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Jornada e disponibilidade"
             description="Configure os horários regulares deste profissional em cada unidade de atuação."

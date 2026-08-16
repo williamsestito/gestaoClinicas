@@ -33,7 +33,7 @@ function cancel() {
 <template>
     <Head title="Novo serviço" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Novo serviço"
             description="Cadastre um novo serviço ou procedimento da clínica"

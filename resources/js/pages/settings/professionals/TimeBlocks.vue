@@ -33,7 +33,7 @@ defineOptions({
 <template>
     <Head title="Ausências e bloqueios do profissional" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Ausências e bloqueios"
             description="Cadastre férias, folgas, ausências e bloqueios que reduzem a disponibilidade regular deste profissional."

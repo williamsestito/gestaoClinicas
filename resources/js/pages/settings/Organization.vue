@@ -3,6 +3,7 @@ import { Head, useForm } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { dashboard } from '@/routes';
@@ -31,6 +32,7 @@ const form = useForm({
     locale: props.organization.locale,
     primary_color: props.organization.primary_color ?? '',
     secondary_color: props.organization.secondary_color ?? '',
+    allow_appointment_overlap: props.organization.allow_appointment_overlap,
 });
 
 function submit() {
@@ -92,6 +94,25 @@ function submit() {
                     :disabled="!canUpdate"
                 />
                 <InputError :message="form.errors.locale" />
+            </div>
+
+            <div class="flex items-start gap-2">
+                <Checkbox
+                    id="org-allow-overlap"
+                    v-model:model-value="form.allow_appointment_overlap"
+                    :disabled="!canUpdate"
+                />
+                <div class="grid gap-1">
+                    <Label for="org-allow-overlap">Permitir encaixe na agenda</Label>
+                    <p class="text-sm text-muted-foreground">
+                        Quando ativado, a agenda deixa de bloquear
+                        sobreposição de horário do mesmo profissional (ex.:
+                        encaixe de urgência). Recursos (salas/equipamentos)
+                        continuam sempre bloqueando sobreposição, mesmo com
+                        esta opção ativada.
+                    </p>
+                </div>
+                <InputError :message="form.errors.allow_appointment_overlap" />
             </div>
 
             <Button

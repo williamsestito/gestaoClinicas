@@ -8,11 +8,13 @@ use App\Enums\AuditAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Organization\UpdateAppointmentRequestNotesRequest;
 use App\Http\Requests\Organization\UpdateAppointmentRequestStatusRequest;
+use App\Models\Appointment;
 use App\Models\AppointmentRequest;
 use App\Support\Auditing\AuditLogger;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -64,6 +66,7 @@ class AppointmentRequestController extends Controller
         return Inertia::render('settings/site/appointment-requests/Index', [
             'requests' => $requests,
             'filters' => $request->only(['status', 'search', 'from', 'to']),
+            'can_create_appointments' => $organization !== null && Gate::allows('create', [Appointment::class, $organization]),
         ]);
     }
 

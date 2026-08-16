@@ -4,7 +4,9 @@ import {
     Building2,
     CalendarCheck,
     CalendarClock,
+    CalendarOff,
     Contact,
+    DoorOpen,
     FileText,
     Globe,
     History,
@@ -21,10 +23,14 @@ import { index as indexAppointments } from '@/routes/settings/appointments';
 import { index as indexAudit } from '@/routes/settings/audit';
 import { index as indexLegalEntities } from '@/routes/settings/legal-entities';
 import { edit as editModules } from '@/routes/settings/modules';
-import { availability as myAvailability } from '@/routes/settings/my-schedule';
+import {
+    availability as myAvailability,
+    timeBlocks as myTimeBlocks,
+} from '@/routes/settings/my-schedule';
 import { edit as editOrganization } from '@/routes/settings/organization';
 import { index as indexPatients } from '@/routes/settings/patients';
 import { index as indexProfessionals } from '@/routes/settings/professionals';
+import { index as indexResources } from '@/routes/settings/resources';
 import { index as indexRoles } from '@/routes/settings/roles';
 import { edit as editSeo } from '@/routes/settings/seo';
 import { index as indexServices } from '@/routes/settings/services';
@@ -93,6 +99,12 @@ export function buildNavGroups(permissions: string[]): NavGroup[] {
                     icon: CalendarClock,
                     permission: 'professional-availability.view-own',
                 },
+                {
+                    title: 'Minhas ausências',
+                    href: myTimeBlocks(),
+                    icon: CalendarOff,
+                    permission: 'professional-time-blocks.view-own',
+                },
             ],
         },
         {
@@ -137,6 +149,12 @@ export function buildNavGroups(permissions: string[]): NavGroup[] {
                     href: indexServices(),
                     icon: Briefcase,
                     permission: 'services.view',
+                },
+                {
+                    title: 'Recursos',
+                    href: indexResources(),
+                    icon: DoorOpen,
+                    permission: 'resources.view',
                 },
             ],
         },

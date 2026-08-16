@@ -27,6 +27,8 @@ use App\Models\Role;
 use App\Models\Service;
 use App\Models\ServiceSpecialty;
 use App\Models\ServiceUnit;
+use App\Models\SessionPackage;
+use App\Models\SharedResource;
 use App\Models\SiteBenefit;
 use App\Models\SiteFaq;
 use App\Models\SiteGalleryItem;
@@ -39,6 +41,7 @@ use App\Models\Specialty;
 use App\Models\Unit;
 use App\Models\UnitMembership;
 use App\Models\User;
+use App\Models\WaitlistEntry;
 use App\Services\ApiCepPostalCodeLookup;
 use App\Services\AwesomeApiPostalCodeLookup;
 use App\Services\PostalCodeLookup;
@@ -149,6 +152,9 @@ class AppServiceProvider extends ServiceProvider
             'professional_time_block' => ProfessionalTimeBlock::class,
             'patient_user' => PatientUser::class,
             'patient_user_link' => PatientUserLink::class,
+            'resource' => SharedResource::class,
+            'session_package' => SessionPackage::class,
+            'waitlist_entry' => WaitlistEntry::class,
         ]);
     }
 

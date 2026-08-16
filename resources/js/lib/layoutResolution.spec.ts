@@ -26,6 +26,7 @@ describe('resolveLayoutKind', () => {
         'settings/users/Index',
         'settings/seo/Index',
         'settings/audit/Index',
+        'settings/modules/Index',
     ])(
         'uses the clinic layout for %s (already covered before this fix)',
         (name) => {
@@ -33,11 +34,12 @@ describe('resolveLayoutKind', () => {
         },
     );
 
-    // Regressão: profissionais, especialidades e serviços caíam
-    // silenciosamente no layout pessoal "Minha conta" (sidebar errada,
-    // conteúdo limitado a max-w-2xl, exigindo scroll horizontal em
-    // tabelas) — não são "Configurações da clínica" (não têm item no
-    // sub-menu de identidade da clínica), então usam o layout padrão.
+    // Regressão: profissionais, especialidades, serviços, recursos,
+    // pacientes e agenda caíam silenciosamente no layout pessoal "Minha
+    // conta" (sidebar errada, conteúdo limitado a max-w-2xl, exigindo
+    // scroll horizontal em tabelas) — não são "Configurações da clínica"
+    // (não têm item no sub-menu de identidade da clínica), então usam o
+    // layout padrão.
     it.each([
         'settings/professionals/Index',
         'settings/professionals/Agendas',
@@ -45,6 +47,9 @@ describe('resolveLayoutKind', () => {
         'settings/professionals/TimeBlocks',
         'settings/specialties/Index',
         'settings/services/Index',
+        'settings/resources/Index',
+        'settings/patients/Index',
+        'settings/appointments/Index',
     ])(
         'uses the plain app layout for %s — neither the clinic-identity nor the personal account layout',
         (name) => {

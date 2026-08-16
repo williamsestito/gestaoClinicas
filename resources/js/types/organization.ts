@@ -24,6 +24,7 @@ export interface Organization {
     locale: string;
     primary_color: string | null;
     secondary_color: string | null;
+    allow_appointment_overlap: boolean;
 }
 
 export interface Unit {

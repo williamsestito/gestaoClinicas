@@ -27,7 +27,7 @@ function cancel() {
 <template>
     <Head title="Novo paciente" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Novo paciente"
             description="Cadastre um novo paciente da clínica."

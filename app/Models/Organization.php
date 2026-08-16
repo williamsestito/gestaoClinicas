@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $default_timezone
  * @property string $default_currency
  * @property string $locale
+ * @property bool $allow_appointment_overlap
  */
 class Organization extends Model
 {
@@ -37,12 +38,14 @@ class Organization extends Model
         'primary_color',
         'secondary_color',
         'logo_path',
+        'allow_appointment_overlap',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => OrganizationStatus::class,
+            'allow_appointment_overlap' => 'boolean',
         ];
     }
 
@@ -98,6 +101,12 @@ class Organization extends Model
     public function services(): HasMany
     {
         return $this->hasMany(Service::class);
+    }
+
+    /** @return HasMany<SharedResource, $this> */
+    public function resources(): HasMany
+    {
+        return $this->hasMany(SharedResource::class);
     }
 
     /** @return HasMany<Professional, $this> */

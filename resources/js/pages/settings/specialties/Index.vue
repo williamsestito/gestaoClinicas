@@ -190,7 +190,7 @@ function formatDate(value: string): string {
 <template>
     <Head title="Especialidades" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Especialidades"
             description="Cadastro operacional das especialidades atendidas pela clínica — usado para organizar profissionais e serviços."

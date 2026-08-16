@@ -9,6 +9,7 @@ use App\Http\Middleware\EnsureOrganizationMembership;
 use App\Http\Middleware\EnsurePatientMembership;
 use App\Http\Middleware\EnsurePatientUserIsActive;
 use App\Http\Middleware\EnsureProfessionalMembership;
+use App\Http\Middleware\EnsureResourceMembership;
 use App\Http\Middleware\EnsureServiceMembership;
 use App\Http\Middleware\EnsureSpecialtyMembership;
 use App\Http\Middleware\EnsureUnitMembership;
@@ -85,6 +86,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.legal-entity-membership' => EnsureLegalEntityMembership::class,
             'tenant.specialty-membership' => EnsureSpecialtyMembership::class,
             'tenant.service-membership' => EnsureServiceMembership::class,
+            'tenant.resource-membership' => EnsureResourceMembership::class,
             'tenant.patient-membership' => EnsurePatientMembership::class,
             'tenant.appointment-membership' => EnsureAppointmentMembership::class,
             'tenant.professional-membership' => EnsureProfessionalMembership::class,

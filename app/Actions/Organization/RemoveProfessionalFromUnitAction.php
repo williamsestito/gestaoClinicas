@@ -15,7 +15,10 @@ use Illuminate\Validation\ValidationException;
  */
 class RemoveProfessionalFromUnitAction
 {
-    public function __construct(private readonly AuditLogger $auditLogger) {}
+    public function __construct(
+        private readonly AuditLogger $auditLogger,
+        private readonly SyncProfessionalLinkedUserUnitsAction $syncProfessionalLinkedUserUnitsAction,
+    ) {}
 
     public function handle(ProfessionalUnit $link): void
     {
@@ -25,6 +28,8 @@ class RemoveProfessionalFromUnitAction
             ]);
         }
 
+        $professional = $link->professional;
+
         $link->delete();
 
         $this->auditLogger->log(
@@ -33,6 +38,8 @@ class RemoveProfessionalFromUnitAction
             before: ['status' => $link->status->value, 'is_primary' => $link->is_primary],
             organization: $link->organization,
         );
+
+        $this->syncProfessionalLinkedUserUnitsAction->handle($professional);
     }
 
     private function hasOtherActiveLinks(ProfessionalUnit $link): bool

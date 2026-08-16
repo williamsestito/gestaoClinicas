@@ -35,7 +35,7 @@ defineOptions({
 <template>
     <Head title="Unidades de atuação do profissional" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Unidades de atuação"
             description="Gerencie as unidades em que este profissional atua e sua vigência."

@@ -19,6 +19,7 @@ use App\Http\Requests\Organization\CreatePatientRequest;
 use App\Http\Requests\Organization\UpdatePatientPhotoRequest;
 use App\Http\Requests\Organization\UpdatePatientRequest;
 use App\Models\Patient;
+use App\Models\SessionPackage;
 use App\Queries\PatientDuplicateQuery;
 use App\Queries\PatientListQuery;
 use App\Support\Documents\BrazilianState;
@@ -91,10 +92,11 @@ class PatientController extends Controller
     {
         $this->authorize('view', $patient);
 
-        $patient->loadMissing(['address', 'responsibles', 'emergencyContacts', 'portalLink']);
+        $patient->loadMissing(['address', 'responsibles', 'emergencyContacts', 'portalLink', 'sessionPackages' => fn ($query) => $query->with('service:id,name')->latest()]);
 
         return Inertia::render('settings/patients/Edit', [
             'states' => BrazilianState::codes(),
+            'services' => $patient->organization->services()->where('status', RecordStatus::Active)->orderBy('name')->get(['id', 'name']),
             'patient' => [
                 'id' => $patient->id,
                 'name' => $patient->name,
@@ -136,6 +138,15 @@ class PatientController extends Controller
                 'relationship' => $contact->relationship,
                 'phone_primary' => $contact->phone_primary,
                 'phone_secondary' => $contact->phone_secondary,
+            ]),
+            'sessionPackages' => $patient->sessionPackages->map(fn (SessionPackage $package) => [
+                'id' => $package->id,
+                'service_name' => $package->service?->name,
+                'total_sessions' => $package->total_sessions,
+                'remaining_sessions' => $package->remainingSessions(),
+                'expires_at' => $package->expires_at?->toDateString(),
+                'status' => $package->status->value,
+                'is_expired' => $package->isExpired(),
             ]),
         ]);
     }

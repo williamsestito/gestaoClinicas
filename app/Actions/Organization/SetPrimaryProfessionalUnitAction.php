@@ -19,7 +19,10 @@ use Illuminate\Validation\ValidationException;
  */
 class SetPrimaryProfessionalUnitAction
 {
-    public function __construct(private readonly AuditLogger $auditLogger) {}
+    public function __construct(
+        private readonly AuditLogger $auditLogger,
+        private readonly SyncProfessionalLinkedUserUnitsAction $syncProfessionalLinkedUserUnitsAction,
+    ) {}
 
     public function handle(ProfessionalUnit $link): ProfessionalUnit
     {
@@ -44,6 +47,8 @@ class SetPrimaryProfessionalUnitAction
             after: ['unit_id' => $link->unit_id],
             organization: $link->organization,
         );
+
+        $this->syncProfessionalLinkedUserUnitsAction->handle($link->professional);
 
         return $link->fresh();
     }

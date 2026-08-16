@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $organization_id
  * @property string|null $unit_id
  * @property int|null $service_id
+ * @property string|null $appointment_id
  * @property string $name
  * @property string $phone
  * @property string|null $email
@@ -42,6 +43,7 @@ class AppointmentRequest extends Model
         'organization_id',
         'unit_id',
         'service_id',
+        'appointment_id',
         'name',
         'phone',
         'email',
@@ -80,5 +82,11 @@ class AppointmentRequest extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(SiteService::class, 'service_id');
+    }
+
+    /** @return BelongsTo<Appointment, $this> */
+    public function appointment(): BelongsTo
+    {
+        return $this->belongsTo(Appointment::class);
     }
 }

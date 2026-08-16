@@ -84,7 +84,7 @@ function restorePatient(patient: PatientRow) {
 <template>
     <Head title="Pacientes" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Pacientes"
             description="Cadastro de pacientes da clínica."

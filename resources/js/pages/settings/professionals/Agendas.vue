@@ -179,7 +179,7 @@ function goToDetails(row: AgendaRow) {
 <template>
     <Head title="Agendas dos profissionais" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Agendas"
             description="Visão consolidada, somente leitura, da jornada e das ausências de cada profissional. Alterações continuam sendo feitas na ficha de cada profissional."

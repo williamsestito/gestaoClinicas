@@ -33,12 +33,20 @@ final class AppointmentOverlapGuard
         AppointmentStatus::InProgress,
     ];
 
+    /**
+     * @return bool `true` quando havia conflito real — só possível sem
+     *              lançar exceção quando `$allowOverlap` é `true` ("encaixe"
+     *              habilitado pela organização, Etapa 3.3). O chamador deve
+     *              auditar esse retorno (`AuditAction::ConflictDetected`) —
+     *              o guard em si nunca audita.
+     */
     public static function assertNoConflict(
         Professional $professional,
         CarbonInterface $startsAt,
         CarbonInterface $endsAt,
         ?string $excludingId = null,
-    ): void {
+        bool $allowOverlap = false,
+    ): bool {
         // Advisory lock (liberado automaticamente no fim da transação) em
         // vez de `lockForUpdate()` sobre as linhas existentes: um
         // `SELECT ... FOR UPDATE` não trava nada quando o profissional
@@ -58,11 +66,17 @@ final class AppointmentOverlapGuard
             $query->where('id', '!=', $excludingId);
         }
 
-        if ($query->exists()) {
+        if (! $query->exists()) {
+            return false;
+        }
+
+        if (! $allowOverlap) {
             throw ValidationException::withMessages([
                 'starts_at' => 'Este horário já está ocupado por outro agendamento deste profissional.',
             ]);
         }
+
+        return true;
     }
 
     public static function assertWithinAvailability(

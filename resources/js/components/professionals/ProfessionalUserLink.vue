@@ -12,8 +12,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     destroy as unlinkRoute,
+    password as passwordRoute,
     update as linkRoute,
 } from '@/routes/settings/professionals/user';
 import type { EligibleUser } from './ProfessionalForm.vue';
@@ -28,6 +31,8 @@ const form = useForm({ user_id: undefined as number | undefined });
 const unlinkDialogOpen = ref(false);
 const unlinking = ref(false);
 
+const passwordForm = useForm({ password: '', password_confirmation: '' });
+
 function link() {
     if (!form.user_id) {
         return;
@@ -35,6 +40,13 @@ function link() {
 
     form.put(linkRoute(props.professionalId).url, {
         preserveScroll: true,
+    });
+}
+
+function resetPassword() {
+    passwordForm.put(passwordRoute(props.professionalId).url, {
+        preserveScroll: true,
+        onSuccess: () => passwordForm.reset(),
     });
 }
 
@@ -72,6 +84,50 @@ function confirmUnlink() {
                 Remover vínculo
             </Button>
         </div>
+
+        <form
+            v-if="linkedUser"
+            class="grid gap-3 rounded-md border p-3"
+            @submit.prevent="resetPassword"
+        >
+            <p class="text-sm font-medium">Redefinir senha de acesso</p>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="grid gap-2">
+                    <Label for="reset-password">Nova senha</Label>
+                    <Input
+                        id="reset-password"
+                        v-model="passwordForm.password"
+                        type="password"
+                        autocomplete="new-password"
+                    />
+                    <InputError :message="passwordForm.errors.password" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="reset-password-confirmation"
+                        >Confirmar nova senha</Label
+                    >
+                    <Input
+                        id="reset-password-confirmation"
+                        v-model="passwordForm.password_confirmation"
+                        type="password"
+                        autocomplete="new-password"
+                    />
+                    <InputError
+                        :message="passwordForm.errors.password_confirmation"
+                    />
+                </div>
+            </div>
+            <div>
+                <Button
+                    type="submit"
+                    variant="outline"
+                    size="sm"
+                    :disabled="passwordForm.processing"
+                >
+                    Redefinir senha
+                </Button>
+            </div>
+        </form>
 
         <form v-else class="flex items-end gap-2" @submit.prevent="link">
             <div class="grid flex-1 gap-2">

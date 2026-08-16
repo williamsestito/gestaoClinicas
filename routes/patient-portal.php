@@ -13,6 +13,7 @@
 |
 */
 
+use App\Http\Controllers\PatientPortal\PatientAppointmentController;
 use App\Http\Controllers\PatientPortal\PatientAuthenticatedSessionController;
 use App\Http\Controllers\PatientPortal\PatientDependentController;
 use App\Http\Controllers\PatientPortal\PatientPasswordResetController;
@@ -58,5 +59,32 @@ Route::prefix('portal')->name('patient-portal.')->group(function () {
         Route::post('dependentes', [PatientDependentController::class, 'store'])
             ->middleware('throttle:patient-portal-write')
             ->name('dependents.store');
+
+        // Etapa 3.2 do roadmap — booking real pelo portal. "horarios" não
+        // recebe {patient} na URL: disponibilidade não é dado sensível de um
+        // paciente específico (mesmo racional de "available-slots" do staff,
+        // ver routes/clinic.php).
+        Route::get('agendamentos/horarios', [PatientAppointmentController::class, 'availableSlots'])
+            ->name('appointments.available-slots');
+        Route::get('pacientes/{patient}/agendamentos', [PatientAppointmentController::class, 'index'])
+            ->name('appointments.index');
+        Route::get('pacientes/{patient}/agendamentos/novo', [PatientAppointmentController::class, 'create'])
+            ->name('appointments.create');
+        Route::post('pacientes/{patient}/agendamentos', [PatientAppointmentController::class, 'store'])
+            ->middleware('throttle:patient-portal-write')
+            ->name('appointments.store');
+
+        // Etapa 3.3 do roadmap — cancelar/reagendar o próprio agendamento.
+        Route::patch('pacientes/{patient}/agendamentos/{appointment}/cancelar', [PatientAppointmentController::class, 'cancel'])
+            ->middleware('throttle:patient-portal-write')
+            ->name('appointments.cancel');
+        Route::get('pacientes/{patient}/agendamentos/{appointment}/reagendar', [PatientAppointmentController::class, 'editReschedule'])
+            ->name('appointments.reschedule.edit');
+        Route::put('pacientes/{patient}/agendamentos/{appointment}/reagendar', [PatientAppointmentController::class, 'reschedule'])
+            ->middleware('throttle:patient-portal-write')
+            ->name('appointments.reschedule.update');
+        Route::patch('pacientes/{patient}/agendamentos/{appointment}/aceitar', [PatientAppointmentController::class, 'acceptProposedTime'])
+            ->middleware('throttle:patient-portal-write')
+            ->name('appointments.accept-proposed-time');
     });
 });

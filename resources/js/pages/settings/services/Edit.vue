@@ -35,7 +35,7 @@ function cancel() {
 <template>
     <Head title="Editar serviço" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Editar serviço"
             :description="`Atualize os dados de ${props.service.name}`"

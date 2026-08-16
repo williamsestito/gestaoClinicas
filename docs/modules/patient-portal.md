@@ -189,3 +189,70 @@ paciente, converter `AppointmentRequest` em conta de portal (3.2), remover/
 desvincular dependente (só "adicionar" existe), segundo responsável com
 login próprio para o mesmo paciente (limitação de índice único aceita,
 ver acima).
+
+## Etapa 3.2 — Booking real pelo portal
+
+`App\Http\Controllers\PatientPortal\PatientAppointmentController` segue o
+mesmo padrão anti-IDOR do resto do portal: nunca usa route-model-binding
+direto de `Patient`, sempre resolve via
+`$patientUser->patients()->findOrFail($patient)`. `availableSlots()` é a
+única exceção que **não** recebe `{patient}` na URL — disponibilidade de
+horário não é dado sensível de um paciente específico, mesmo racional do
+endpoint equivalente do staff.
+
+`App\Http\Requests\PatientPortal\BookAppointmentRequest` segue o mesmo
+`authorize(): true` sem Policy do resto do portal — a autorização real é o
+middleware `auth:patient`/`patient.active` mais o escopo do `Patient` via
+relação. A escrita (`POST .../agendamentos`) usa o mesmo limiter
+`patient-portal-write` (20/min por conta) já registrado em
+`PatientPortalServiceProvider` para as demais rotas de escrita do portal —
+nenhum limiter novo foi necessário.
+
+`App\Actions\PatientPortal\BookAppointmentAction` cria o `Appointment`
+sempre em `AppointmentStatus::Requested` (nunca `Confirmed` — só a recepção
+confirma, ver `docs/modules/appointments.md`). Ver lá também o porquê de
+`patient_user_id` ir no `after` da auditoria em vez do schema
+(`actor_user_id` é FK só para `App\Models\User`, staff).
+
+Dashboard do portal (`patient-portal/Dashboard.vue`) ganhou um botão
+"Agendamentos" por paciente/dependente, linkando para
+`patient-portal/appointments/Index.vue` (lista, sem cancelar/reagendar
+nesta etapa) e de lá para `patient-portal/appointments/Create.vue`
+(seleção de unidade/serviço/profissional/data, busca de horários livres via
+`StaffAppointmentSlotFinder` reaproveitado sem alteração — o nome
+"Staff" no finder é só histórico da Etapa 3.1, o algoritmo não tem nada
+específico de staff).
+
+## Etapa 3.3 — Cancelar/reagendar pelo portal + aceitar horário proposto
+
+Paciente agora cancela (`App\Actions\PatientPortal\CancelPatientAppointmentAction`)
+ou reagenda (`ReschedulePatientAppointmentAction`) o próprio agendamento —
+mesmo formato das Actions equivalentes de staff, mas não as reaproveitando
+diretamente (não há coluna para autoria de `PatientUser` nelas); autoria
+vai no `after` do audit log (`cancelled_by`/`rescheduled_by:
+'patient_portal'`, `patient_user_id`), mesma convenção de
+`BookAppointmentAction`. **Decisão registrada**: sem prazo mínimo de
+antecedência — nenhuma regra escrita existia para isso; mais simples
+começar sem restrição e apertar depois se abuso for observado.
+
+`PatientAppointmentController::findOwnAppointment()` é a primeira vez que o
+portal escopa **dois** níveis: `$patientUser->patients()->findOrFail($patient)->appointments()->findOrFail($appointment)`
+— um agendamento de outra conta (mesmo com ID válido) dá 404, nunca
+confirma existência. As rotas de cancelar/reagendar/aceitar seguem o mesmo
+formato (nunca route-model-binding direto de `Appointment`).
+
+`AppointmentStatus::AwaitingConfirmation` (reservado desde a Etapa 3.1)
+ganha seu primeiro uso: quando a recepção propõe outro horário
+(`App\Actions\Organization\ProposeAlternateTimeAction`, ver
+`docs/modules/appointments.md`), o paciente vê um aviso no
+`patient-portal/appointments/Index.vue` com botões "Aceitar" (→
+`AcceptProposedAppointmentTimeAction`, `Confirmed`) e "Recusar" (reaproveita
+`CancelPatientAppointmentAction` com motivo fixo "Horário proposto
+recusado" — a mesma rota de cancelamento, não um endpoint novo). Sem
+contra-proposta do paciente.
+
+Componente novo `resources/js/components/appointments/SlotPicker.vue`
+(data + horários livres + seleção, com `baseUrl`/`date`/`startsAt` como
+props/v-model) extraído de `patient-portal/appointments/Create.vue` e
+reaproveitado por `Reschedule.vue` (portal) e `settings/appointments/
+Propose.vue` (staff) — três usos reais, não especulativo.

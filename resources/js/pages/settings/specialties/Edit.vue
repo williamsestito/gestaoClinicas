@@ -29,7 +29,7 @@ function cancel() {
 <template>
     <Head title="Editar especialidade" />
 
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 p-4">
         <PageHeader
             title="Editar especialidade"
             :description="`Atualize os dados de ${props.specialty.name}`"

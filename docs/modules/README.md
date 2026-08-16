@@ -38,13 +38,24 @@ Documentação de cada módulo de negócio conforme é implementado.
 - [patient-portal.md](patient-portal.md) — autocadastro público, login e
   portal do paciente (guard próprio, dependentes, sem Policy)
 
-Sem booking pelo portal, prontuário ou cobrança — ver
-[public-integration.md](public-integration.md#disponibilidade-pública) e
-[availability.md](availability.md) para os limites explícitos desta fase.
+## Etapa 3.2 do roadmap (implementada)
+
+- Booking público pelo portal e conversão de lead em agendamento — ver
+  [appointments.md](appointments.md) e [patient-portal.md](patient-portal.md)
+
+## Etapa 3.3 do roadmap (implementada)
+
+- [resources.md](resources.md) — recursos compartilhados (salas/
+  equipamentos) e seu conflito próprio
+- Encaixe configurável, pacotes de sessões, recorrência semanal, lista de
+  espera, cancelar/reagendar pelo portal e `AwaitingConfirmation` em uso —
+  ver [appointments.md](appointments.md) e [patient-portal.md](patient-portal.md)
+
+Sem prontuário ou cobrança — ver [roadmap.md](../roadmap.md) para os
+limites explícitos desta fase.
 
 ## Próximas fases
 
 Ver [roadmap.md](../roadmap.md) para a ordem completa das etapas
-(módulos por especialidade, pacientes, agenda, prontuário, comercial,
-financeiro, estoque, relatórios, billing e piloto) e os critérios de
-fechamento de cada uma.
+(prontuário, comercial, financeiro, estoque, relatórios, billing e piloto)
+e os critérios de fechamento de cada uma.
