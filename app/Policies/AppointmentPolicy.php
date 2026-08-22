@@ -12,11 +12,11 @@ use App\Models\User;
 use App\Support\Authorization\PermissionChecker;
 
 /**
- * Agendamentos são escopados por organização. `manageStatus` cobre o
- * profissional vinculado ao agendamento (via `professional.user_id`) —
- * gestão própria é limitada a transições de status do próprio atendimento
- * (check-in/início/conclusão/não comparecimento), nunca criar/reagendar/
- * cancelar (exclusivo de quem tem `appointments.manage`).
+ * Agendamentos são escopados por organização. `confirm`/`manageStatus`
+ * cobrem o profissional vinculado ao agendamento (via `professional.user_id`)
+ * — gestão própria é limitada a transições de status do próprio atendimento
+ * (confirmar/check-in/início/conclusão/não comparecimento), nunca criar/
+ * reagendar/cancelar (exclusivo de quem tem `appointments.manage`).
  */
 class AppointmentPolicy
 {
@@ -56,7 +56,8 @@ class AppointmentPolicy
 
     public function confirm(User $user, Appointment $appointment): bool
     {
-        return $this->hasBroadAccess($user, $appointment->organization_id);
+        return $this->hasBroadAccess($user, $appointment->organization_id)
+            || $this->hasOwnAccess($user, $appointment, PermissionKey::AppointmentsManageOwn);
     }
 
     public function proposeAlternateTime(User $user, Appointment $appointment): bool

@@ -68,7 +68,9 @@ describe('patient-portal/appointments/Create', () => {
 
         expect(fetch).toHaveBeenCalledWith(
             expect.stringContaining('/portal/agendamentos/horarios'),
-            expect.objectContaining({ headers: { Accept: 'application/json' } }),
+            expect.objectContaining({
+                headers: { Accept: 'application/json' },
+            }),
         );
         expect(wrapper.text()).toContain('09:00');
     });
@@ -94,7 +96,9 @@ describe('patient-portal/appointments/Create', () => {
         await wrapper.find('form').trigger('submit');
 
         expect(formState.post).toHaveBeenCalledWith(
-            expect.stringContaining(`/portal/pacientes/${patient.id}/agendamentos`),
+            expect.stringContaining(
+                `/portal/pacientes/${patient.id}/agendamentos`,
+            ),
         );
     });
 });

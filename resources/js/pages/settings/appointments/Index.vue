@@ -202,7 +202,10 @@ function statusVariant(
                     </tr>
                 </thead>
                 <tbody class="divide-y">
-                    <tr v-for="appointment in appointments" :key="appointment.id">
+                    <tr
+                        v-for="appointment in appointments"
+                        :key="appointment.id"
+                    >
                         <td class="px-4 py-3">
                             {{ formatTime(appointment.starts_at) }}–{{
                                 formatTime(appointment.ends_at)
@@ -249,7 +252,9 @@ function statusVariant(
                                     variant="outline"
                                     size="sm"
                                 >
-                                    <Link :href="editPropose(appointment.id).url">
+                                    <Link
+                                        :href="editPropose(appointment.id).url"
+                                    >
                                         Propor outro horário
                                     </Link>
                                 </Button>
@@ -291,9 +296,11 @@ function statusVariant(
                                 </Button>
                                 <Button
                                     v-if="
-                                        !['completed', 'cancelled', 'no_show'].includes(
-                                            appointment.status,
-                                        )
+                                        ![
+                                            'completed',
+                                            'cancelled',
+                                            'no_show',
+                                        ].includes(appointment.status)
                                     "
                                     variant="outline"
                                     size="sm"

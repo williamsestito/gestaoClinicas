@@ -66,9 +66,7 @@ describe('ProfessionalForm', () => {
                 },
             },
         });
-        expect(editWrapper.find('#professional-password').exists()).toBe(
-            false,
-        );
+        expect(editWrapper.find('#professional-password').exists()).toBe(false);
     });
 
     it('never pre-fills the document field with the masked value received from the backend', () => {

@@ -14,19 +14,37 @@ use App\Models\User;
 use App\Support\Authorization\PermissionChecker;
 
 /**
- * Visualização liberada para qualquer membro ativo da organização; gestão
- * do cadastro exige o proprietário ou a permissão granular correspondente
- * via papel atribuído. Gerir vínculos com unidades/serviços tem permissões
- * próprias (`ProfessionalsManageUnits`/`ProfessionalsManageServices`) —
- * vincular um profissional a um `User` nunca é autorizado por esta policy
- * nem concede permissões: isso depende exclusivamente de
- * OrganizationMembership/Role (ver App\Support\Authorization\PermissionChecker).
+ * Visualização liberada para qualquer membro ativo da organização — com
+ * uma exceção deliberada: um usuário que é ele mesmo um profissional
+ * vinculado (`Professional.user_id`) só enxerga a própria ficha por essa
+ * via; para ver a de um colega, precisa da permissão granular
+ * (`ProfessionalsView`/`ProfessionalsManage`) ou ser proprietário — nunca
+ * o simples "membro ativo" (ver `isLinkedProfessional()`). Sem essa
+ * exceção, qualquer profissional autoatendido enxergaria unidades,
+ * jornada e ausências de qualquer colega, o que nunca foi a intenção da
+ * regra original (pensada para recepção/administração precisarem
+ * consultar o cadastro de qualquer profissional, não para o próprio
+ * profissional). Gestão do cadastro exige o proprietário ou a permissão
+ * granular correspondente via papel atribuído. Gerir vínculos com
+ * unidades/serviços tem permissões próprias
+ * (`ProfessionalsManageUnits`/`ProfessionalsManageServices`) — vincular um
+ * profissional a um `User` nunca é autorizado por esta policy nem concede
+ * permissões: isso depende exclusivamente de OrganizationMembership/Role
+ * (ver App\Support\Authorization\PermissionChecker).
  *
- * Autoatendimento ("Minha agenda"): `manageAvailability()`/
- * `manageTimeBlocks()` também aceitam o próprio profissional vinculado ao
- * usuário autenticado, desde que ele tenha a permissão granular
- * correspondente (`ProfessionalOwnAvailabilityManage`/
- * `ProfessionalOwnTimeBlocksManage`) — ver `hasOwnAccess()`.
+ * Autoatendimento — dados próprios: `update()` (dados gerais: nome,
+ * contato, CPF, data de nascimento, biografia) e `manageSpecialties()`
+ * também aceitam o próprio profissional vinculado, SEM exigir nenhuma
+ * permissão granular extra — corrigir/completar o próprio cadastro básico
+ * é esperado de qualquer profissional autoatendido, não uma permissão
+ * administrativa (ver `isSelfProfessional()`). Deliberadamente NÃO
+ * estendido a `manageUnits()`/`manageServices()`: em quais unidades atua e
+ * quais serviços executa continuam decisões operacionais da clínica, não
+ * do próprio profissional. `manageAvailability()`/`manageTimeBlocks()`
+ * seguem exigindo a permissão granular correspondente
+ * (`ProfessionalOwnAvailabilityManage`/`ProfessionalOwnTimeBlocksManage`)
+ * — ver `hasOwnAccess()` — porque afetam a agenda pública, não só o
+ * próprio cadastro.
  */
 class ProfessionalPolicy
 {
@@ -43,11 +61,25 @@ class ProfessionalPolicy
             return $user->is_platform_admin;
         }
 
+        if ($this->isLinkedProfessional($user, $organization->id)) {
+            return $this->hasBroadProfessionalAccess($user, $organization->id)
+                || $this->permissionChecker->can($user, PermissionKey::ProfessionalsView, $organization->id);
+        }
+
         return $this->hasActiveMembership($user, $organization->id);
     }
 
     public function view(User $user, Professional $professional): bool
     {
+        if ($this->isSelfProfessional($user, $professional)) {
+            return true;
+        }
+
+        if ($this->isLinkedProfessional($user, $professional->organization_id)) {
+            return $this->hasBroadProfessionalAccess($user, $professional->organization_id)
+                || $this->permissionChecker->can($user, PermissionKey::ProfessionalsView, $professional->organization_id);
+        }
+
         return $this->hasActiveMembership($user, $professional->organization_id);
     }
 
@@ -60,7 +92,8 @@ class ProfessionalPolicy
     public function update(User $user, Professional $professional): bool
     {
         return $this->hasActiveMembership($user, $professional->organization_id, requireOwner: true)
-            || $this->permissionChecker->can($user, PermissionKey::ProfessionalsManage, $professional->organization_id);
+            || $this->permissionChecker->can($user, PermissionKey::ProfessionalsManage, $professional->organization_id)
+            || $this->isSelfProfessional($user, $professional);
     }
 
     public function activate(User $user, Professional $professional): bool
@@ -96,7 +129,8 @@ class ProfessionalPolicy
     public function manageSpecialties(User $user, Professional $professional): bool
     {
         return $this->hasActiveMembership($user, $professional->organization_id, requireOwner: true)
-            || $this->permissionChecker->can($user, PermissionKey::ProfessionalsManageSpecialties, $professional->organization_id);
+            || $this->permissionChecker->can($user, PermissionKey::ProfessionalsManageSpecialties, $professional->organization_id)
+            || $this->isSelfProfessional($user, $professional);
     }
 
     public function manageUnits(User $user, Professional $professional): bool
@@ -157,15 +191,14 @@ class ProfessionalPolicy
     }
 
     /**
-     * Autoatendimento: o profissional gerencia somente o próprio cadastro,
-     * nunca o de outro. O vínculo `Professional.user_id` sozinho nunca
-     * basta — exige também membership ativo na mesma organização, e-mail
-     * verificado, usuário ativo e a permissão granular correspondente (o
-     * papel "Profissional" a recebe por padrão, mas ela pode ser revogada
-     * como qualquer outra permissão do catálogo — o vínculo não é um bypass
-     * de autorização).
+     * Identidade: é o próprio profissional, com vínculo ativo, e-mail
+     * verificado e usuário ativo. Sozinho, já basta para `view()` — ver a
+     * própria ficha nunca deveria depender de uma permissão extra — mas
+     * NÃO basta para gerir nada (jornada, ausências, unidades...), que
+     * sempre revalida a permissão granular correspondente em
+     * `hasOwnAccess()`.
      */
-    private function hasOwnAccess(User $user, Professional $professional, PermissionKey $permission): bool
+    private function isSelfProfessional(User $user, Professional $professional): bool
     {
         if ($professional->user_id === null || $professional->user_id !== $user->id) {
             return false;
@@ -175,11 +208,39 @@ class ProfessionalPolicy
             return false;
         }
 
-        if (! $this->hasActiveMembership($user, $professional->organization_id)) {
+        return $this->hasActiveMembership($user, $professional->organization_id);
+    }
+
+    /**
+     * Autoatendimento: o profissional gerencia somente o próprio cadastro,
+     * nunca o de outro. O vínculo `Professional.user_id` sozinho nunca
+     * basta — exige também a permissão granular correspondente (o papel
+     * "Profissional" a recebe por padrão, mas ela pode ser revogada como
+     * qualquer outra permissão do catálogo — o vínculo não é um bypass de
+     * autorização).
+     */
+    private function hasOwnAccess(User $user, Professional $professional, PermissionKey $permission): bool
+    {
+        if (! $this->isSelfProfessional($user, $professional)) {
             return false;
         }
 
         return $this->permissionChecker->can($user, $permission, $professional->organization_id);
+    }
+
+    /**
+     * É o usuário mesmo um profissional vinculado nesta organização
+     * (qualquer um, não necessariamente o `$professional` sendo
+     * verificado)? Define se `view()`/`viewAny()` aplicam a exceção de
+     * autoatendimento (só a própria ficha) em vez do acesso amplo padrão
+     * de "qualquer membro ativo".
+     */
+    private function isLinkedProfessional(User $user, string $organizationId): bool
+    {
+        return Professional::query()
+            ->where('organization_id', $organizationId)
+            ->where('user_id', $user->id)
+            ->exists();
     }
 
     private function hasUnitScopedAccess(User $user, string $organizationId, Unit $unit, PermissionKey $permission): bool

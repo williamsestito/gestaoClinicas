@@ -31,8 +31,9 @@ const selectedServiceId = ref<string | null>(null);
 const selectedProfessionalId = ref<string | null>(null);
 const selectedDate = ref<string | null>(null);
 const currentMonth = ref('2026-08');
-const loading = ref<string | null>(null);
+const loadingKeys = ref<Set<string>>(new Set());
 const error = ref<string | null>(null);
+const isLoading = (key: string) => loadingKeys.value.has(key);
 
 vi.mock('@/composables/usePublicAvailabilitySearch', () => ({
     usePublicAvailabilitySearch: () => ({
@@ -49,7 +50,7 @@ vi.mock('@/composables/usePublicAvailabilitySearch', () => ({
         selectedProfessionalId,
         selectedDate,
         currentMonth,
-        loading,
+        isLoading,
         error,
         isAnyProfessional: computed(
             () => selectedProfessionalId.value === 'any',
@@ -65,6 +66,7 @@ vi.mock('@/composables/usePublicAvailabilitySearch', () => ({
 }));
 
 const schedulingServiceId = ref<number | null>(null);
+const schedulingProfessionalId = ref<string | null>(null);
 const selectedProfessionalName = ref<string | null>(null);
 const preferredDate = ref<string | null>(null);
 const preferredPeriod = ref<string | null>(null);
@@ -72,6 +74,7 @@ const preferredPeriod = ref<string | null>(null);
 vi.mock('@/composables/useLandingScheduling', () => ({
     useLandingScheduling: () => ({
         selectedServiceId: schedulingServiceId,
+        selectedProfessionalId: schedulingProfessionalId,
         selectedProfessionalName,
         preferredDate,
         preferredPeriod,
@@ -91,10 +94,11 @@ function resetState() {
     selectedProfessionalId.value = null;
     selectedDate.value = null;
     currentMonth.value = '2026-08';
-    loading.value = null;
+    loadingKeys.value = new Set();
     error.value = null;
     vi.clearAllMocks();
     schedulingServiceId.value = null;
+    schedulingProfessionalId.value = null;
     selectedProfessionalName.value = null;
     preferredDate.value = null;
     preferredPeriod.value = null;
@@ -196,7 +200,7 @@ describe('LandingAvailabilitySearch', () => {
         units.value = [defaultUnit];
         selectedUnitId.value = 'unit-1';
         selectedServiceId.value = 'svc-1';
-        loading.value = 'dates';
+        loadingKeys.value = new Set(['dates']);
 
         const wrapper = mount(LandingAvailabilitySearch);
         await nextTick();
@@ -225,7 +229,7 @@ describe('LandingAvailabilitySearch', () => {
         selectedUnitId.value = 'unit-1';
         selectedServiceId.value = 'svc-1';
         selectedDate.value = '2026-08-03';
-        loading.value = 'times';
+        loadingKeys.value = new Set(['times']);
 
         const wrapper = mount(LandingAvailabilitySearch);
         await nextTick();
@@ -326,7 +330,7 @@ describe('LandingAvailabilitySearch', () => {
         ];
     }
 
-    it('writes a free-text summary and structured date/period into the scheduling composable when a time slot is chosen, never a service id', async () => {
+    it('writes a free-text summary, the real professional id, and structured date/period into the scheduling composable when a time slot is chosen, never a service id', async () => {
         setupSingleSlot();
 
         const wrapper = mount(LandingAvailabilitySearch, {
@@ -340,8 +344,11 @@ describe('LandingAvailabilitySearch', () => {
         await button?.trigger('click');
 
         // Service.id (ULID operacional) nunca é gravado no campo numérico
-        // selectedServiceId (que espera um SiteService promocional).
+        // selectedServiceId (que espera um SiteService promocional) — mas
+        // professional_id é o mesmo espaço de id nos dois lados, então É
+        // gravado estruturalmente (ver LandingAvailabilitySearch.vue).
         expect(schedulingServiceId.value).toBeNull();
+        expect(schedulingProfessionalId.value).toBe('prof-1');
         expect(selectedProfessionalName.value).toContain('Dra. Ana Souza');
         expect(selectedProfessionalName.value).toContain(
             'Consulta de avaliação',

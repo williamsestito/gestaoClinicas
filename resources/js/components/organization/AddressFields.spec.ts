@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { AddressForm } from '@/types/organization';
 import AddressFields from './AddressFields.vue';
 
 const blankAddress = {
@@ -171,6 +172,48 @@ describe('AddressFields', () => {
         expect(wrapper.text()).toContain(
             'Não foi possível consultar o CEP neste momento. Você pode preencher o endereço manualmente.',
         );
+    });
+
+    it('emits the updated number and complement as the person types them, not just on CEP lookup', async () => {
+        const wrapper = mount(AddressFields, {
+            props: {
+                modelValue: { ...blankAddress },
+                states: ['SP'],
+            },
+        });
+
+        await wrapper.find('#address-number').setValue('123');
+        let emitted = wrapper.emitted('update:modelValue');
+        expect(emitted).toBeTruthy();
+        expect(
+            (emitted![emitted!.length - 1][0] as Record<string, string>).number,
+        ).toBe('123');
+
+        await wrapper.find('#address-complement').setValue('Sala 4');
+        emitted = wrapper.emitted('update:modelValue');
+        expect(
+            (emitted![emitted!.length - 1][0] as Record<string, string>)
+                .complement,
+        ).toBe('Sala 4');
+    });
+
+    it('never loses a manually typed number/complement when the parent re-renders with the emitted value', async () => {
+        const wrapper = mount(AddressFields, {
+            props: {
+                modelValue: { ...blankAddress },
+                states: ['SP'],
+            },
+        });
+
+        await wrapper.find('#address-number').setValue('123');
+        const emitted = wrapper.emitted('update:modelValue')!;
+        const latest = emitted[emitted.length - 1][0] as AddressForm;
+
+        await wrapper.setProps({ modelValue: latest });
+
+        expect(
+            (wrapper.find('#address-number').element as HTMLInputElement).value,
+        ).toBe('123');
     });
 
     it('disables the manual search button while a lookup is in progress', async () => {

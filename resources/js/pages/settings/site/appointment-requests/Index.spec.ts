@@ -155,14 +155,21 @@ describe('settings/site/appointment-requests/Index', () => {
     });
 
     it('hides the convert-to-appointment link when the lead is already scheduled', () => {
-        const wrapper = mountIndex([makeRequest({ status: 'scheduled' })], true);
+        const wrapper = mountIndex(
+            [makeRequest({ status: 'scheduled' })],
+            true,
+        );
 
-        expect(wrapper.find('a[href*="appointment_request_id"]').exists()).toBe(false);
+        expect(wrapper.find('a[href*="appointment_request_id"]').exists()).toBe(
+            false,
+        );
     });
 
     it('hides the convert-to-appointment link when the user lacks permission', () => {
         const wrapper = mountIndex([makeRequest({ status: 'pending' })], false);
 
-        expect(wrapper.find('a[href*="appointment_request_id"]').exists()).toBe(false);
+        expect(wrapper.find('a[href*="appointment_request_id"]').exists()).toBe(
+            false,
+        );
     });
 });

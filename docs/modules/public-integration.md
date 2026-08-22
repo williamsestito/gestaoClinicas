@@ -79,10 +79,63 @@ específico não é usado no site nesta fase.
 
 ## Disponibilidade pública
 
-Não implementada nesta fase. Nenhum endpoint expõe jornada, ausências,
-bloqueios, intervalos ou slots — a landing continua usando apenas a
-solicitação manual de agendamento já existente
-(`PublicAppointmentRequestController`, inalterada).
+Implementada (Etapa 3.2): `App\Http\Controllers\PublicAvailabilityController` +
+`App\Services\Availability\PublicAvailabilityFinder` expõem unidade →
+especialidade → serviço → profissional → data → horário, somente leitura,
+sem autenticação (`throttle:60,1`). Nunca cria/reserva nada — só teoriza
+disponibilidade a partir de jornada/bloqueios reais. A solicitação manual
+de agendamento (`PublicAppointmentRequestController`) continua sendo o
+único jeito de efetivamente registrar um lead.
+
+`AppointmentRequest.professional_id` (ULID, FK para `professionals`,
+adicionada depois, no mesmo espaço de id do cadastro operacional — ao
+contrário de `service_id`, que referencia o catálogo promocional
+`site_services`, um id numérico diferente) é preenchida quando a pessoa
+escolhe um profissional específico — seja num horário concreto da busca de
+disponibilidade (`slot.professional_id`, sempre um profissional real,
+mesmo em modo "qualquer profissional"), seja no card de "Agendar" de um
+profissional com cadastro operacional vinculado (`PublicProfessional.professional_id`,
+nulo para uma ficha puramente promocional). Permite ao profissional
+localizar depois a própria solicitação em "Meus pré-agendamentos" (ver
+`App\Http\Controllers\Organization\MyAppointmentRequestsController`) — sem
+essa coluna, o único registro de "para qual profissional" era texto livre
+dentro de `notes`, impossível de consultar.
+
+**Escopo de organização (achado de security-review, corrigido no mesmo
+dia)**: a validação de `professional_id` em `StoreAppointmentRequestRequest`
+e a FK no banco (`appointment_requests_org_professional_fk`, composta por
+`organization_id` + `professional_id`, mesmo padrão de
+`professional_dashboard_reminders`) exigem que o profissional pertença à
+mesma organização resolvida por `Organization::query()->first()` — sem
+isso, um profissional ativo de qualquer organização era aceito e gravado
+junto com o `organization_id` da instalação atual, uma inconsistência
+cross-tenant. `UpdateOwnAppointmentRequestStatusRequest`/
+`UpdateOwnAppointmentRequestNotesRequest` ganharam a mesma checagem
+explícita de `organization_id` (defesa em profundidade: um usuário pode
+legitimamente ter `Professional` ativo em mais de uma organização, então o
+vínculo com o profissional sozinho nunca foi suficiente).
+
+### Correspondência com paciente já cadastrado
+
+`AppointmentRequest.patient_id` (ULID, FK para `patients`, `nullOnDelete`) e
+`AppointmentRequest.document` (CPF opcional, dígitos apenas) são resolvidos
+por `App\Actions\Public\CreateAppointmentRequestAction` no momento da
+criação — nunca depois, e nunca cria/altera um `Patient` a partir de um
+lead público:
+
+- Quem envia já logado no portal do paciente (`request()->user('patient')`)
+  é vinculado diretamente ao próprio paciente da conta (vínculo `self` em
+  `PatientUserLink`), sem heurística nenhuma.
+- Anônimo: tenta localizar um `Patient` já cadastrado na organização, na
+  ordem CPF → telefone (`phone` ou `whatsapp`) → e-mail — CPF primeiro por
+  ser o identificador mais confiável. Sem correspondência, a solicitação
+  segue sem paciente vinculado (`patient_id = null`), nunca bloqueia o
+  envio.
+
+O CPF é o único campo novo verdadeiramente sensível deste formulário
+público; a validação (`App\Rules\CpfCnpjRule`) e a normalização
+(`App\Support\Documents\Document::onlyDigits()`) são as mesmas usadas no
+cadastro administrativo de pacientes, e o campo é sempre opcional.
 
 ## Interface administrativa
 

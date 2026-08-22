@@ -7,6 +7,7 @@ import LandingSchedulingSection from './LandingSchedulingSection.vue';
 const { formState, postMock } = vi.hoisted(() => ({
     formState: {
         service_id: null as number | null,
+        professional_id: null as string | null,
         name: '',
         phone: '',
         email: '',
@@ -22,9 +23,18 @@ const { formState, postMock } = vi.hoisted(() => ({
         recentlySuccessful: false,
         post: vi.fn(),
         reset: vi.fn(),
+        clearErrors: vi.fn(),
     },
     postMock: vi.fn(),
 }));
+
+formState.clearErrors = ((...fields: string[]) => {
+    if (fields.length > 0) {
+        fields.forEach((field) => delete formState.errors[field]);
+    } else {
+        formState.errors = {};
+    }
+}) as typeof formState.clearErrors;
 
 formState.post = postMock;
 
@@ -47,6 +57,7 @@ beforeEach(() => {
     formState.processing = false;
     formState.recentlySuccessful = false;
     formState.service_id = null;
+    formState.professional_id = null;
     formState.name = '';
     formState.phone = '';
     formState.terms_accepted = false;
@@ -55,6 +66,7 @@ beforeEach(() => {
     formState.preferred_period = '';
     formState.errors = {};
     useLandingScheduling().selectedServiceId.value = null;
+    useLandingScheduling().selectedProfessionalId.value = null;
     useLandingScheduling().selectedProfessionalName.value = null;
     useLandingScheduling().preferredDate.value = null;
     useLandingScheduling().preferredPeriod.value = null;
@@ -105,6 +117,29 @@ describe('LandingSchedulingSection', () => {
         expect(wrapper.find('form').exists()).toBe(false);
     });
 
+    it('clears the shared scheduling state once the submission succeeds, leaving the page as if freshly reloaded', async () => {
+        const scheduling = useLandingScheduling();
+        scheduling.selectedServiceId.value = 1;
+        scheduling.selectedProfessionalId.value = 'prof-1';
+        scheduling.selectedProfessionalName.value = 'Dra. Ana — 09:00';
+        scheduling.preferredDate.value = '2026-08-10';
+        scheduling.preferredPeriod.value = 'Manhã';
+
+        const wrapper = mount(LandingSchedulingSection);
+        await wrapper.find('form').trigger('submit');
+
+        const onSuccess = postMock.mock.calls.at(-1)?.[1]?.onSuccess as
+            (() => void) | undefined;
+        onSuccess?.();
+
+        expect(formState.reset).toHaveBeenCalled();
+        expect(scheduling.selectedServiceId.value).toBeNull();
+        expect(scheduling.selectedProfessionalId.value).toBeNull();
+        expect(scheduling.selectedProfessionalName.value).toBeNull();
+        expect(scheduling.preferredDate.value).toBeNull();
+        expect(scheduling.preferredPeriod.value).toBeNull();
+    });
+
     it('labels the submit button "Criar pré-agendamento" and only validates/submits on that click', () => {
         const wrapper = mount(LandingSchedulingSection);
 
@@ -120,6 +155,14 @@ describe('LandingSchedulingSection', () => {
         mount(LandingSchedulingSection);
 
         expect(formState.service_id).toBe(1);
+    });
+
+    it('pre-fills the hidden professional_id from the shared composable, so the professional can find their own request later', () => {
+        useLandingScheduling().selectedProfessionalId.value = 'prof-ulid-1';
+
+        mount(LandingSchedulingSection);
+
+        expect(formState.professional_id).toBe('prof-ulid-1');
     });
 
     it('renders an optional preferred date field bounded to a sensible window', () => {
@@ -255,5 +298,48 @@ describe('LandingSchedulingSection', () => {
 
         expect(postMock).not.toHaveBeenCalled();
         expect(formState.errors).toEqual({});
+    });
+
+    it('surfaces a backend service_id validation failure instead of silently doing nothing', async () => {
+        formState.errors = { service_id: 'O serviço selecionado é inválido.' };
+
+        const wrapper = mount(LandingSchedulingSection);
+
+        expect(wrapper.text()).toContain('O serviço selecionado é inválido.');
+    });
+
+    it('lets the visitor recover from a stale service selection and resubmit without it', async () => {
+        const scheduling = useLandingScheduling();
+        scheduling.selectedServiceId.value = 42;
+        scheduling.selectedProfessionalId.value = 'prof-stale';
+        formState.service_id = 42;
+        formState.professional_id = 'prof-stale';
+        formState.errors = { service_id: 'O serviço selecionado é inválido.' };
+
+        const wrapper = mount(LandingSchedulingSection);
+
+        await wrapper.find('button.underline').trigger('click');
+
+        expect(formState.service_id).toBeNull();
+        expect(formState.professional_id).toBeNull();
+        expect(scheduling.selectedServiceId.value).toBeNull();
+        expect(scheduling.selectedProfessionalId.value).toBeNull();
+        expect(formState.errors.service_id).toBeUndefined();
+    });
+
+    it('surfaces a backend professional_id validation failure and lets the visitor recover from it too', async () => {
+        formState.errors = {
+            professional_id: 'O profissional selecionado é inválido.',
+        };
+
+        const wrapper = mount(LandingSchedulingSection);
+
+        expect(wrapper.text()).toContain(
+            'O profissional selecionado é inválido.',
+        );
+
+        await wrapper.find('button.underline').trigger('click');
+
+        expect(formState.errors.professional_id).toBeUndefined();
     });
 });

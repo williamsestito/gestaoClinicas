@@ -44,8 +44,10 @@ paciente (`PatientUser`/`PatientUserLink`, guard próprio, dependentes),
 booking real pelo portal (com cancelar/reagendar), conversão assistida de
 lead e de lista de espera em agendamento real, recursos compartilhados
 (salas/equipamentos, com conflito próprio), "encaixe" configurável por
-organização, pacotes de sessões, recorrência semanal e
-`AwaitingConfirmation` (staff propõe horário, paciente aceita/recusa).
+organização, pacotes de sessões, recorrência semanal,
+`AwaitingConfirmation` (staff propõe horário, paciente aceita/recusa) e
+dashboard de autoatendimento do profissional (pré-agendamentos pendentes,
+"meus pacientes", lembretes tipo post-it).
 
 Não existe: Prontuário, Produto/Venda/Financeiro/Estoque, mesclagem de
 pacientes, assinatura/billing, recursos vinculados por serviço, RRULE
@@ -265,6 +267,69 @@ vaga na lista de espera, granularidade de encaixe por serviço/profissional,
 RRULE genérico de recorrência, prazo mínimo de antecedência para
 cancelar/reagendar pelo portal, vínculo de recurso por serviço (em vez de
 só por agendamento).
+
+## Etapa 3.4 — Dashboard do profissional (autoatendimento) ✅ concluída em 2026-08-22
+
+Entregue: `DashboardController::index()` passa a renderizar
+`resources/js/components/dashboard/ProfessionalDashboard.vue` em vez do
+dashboard administrativo quando o papel ativo do usuário é exatamente
+`SystemRole::Professional` — alerta de pré-agendamentos pendentes,
+contadores "em aberto"/"agendados"/"executados" por período (dia/semana/
+mês), prévia de agenda e lembretes tipo post-it
+(`App\Models\ProfessionalDashboardReminder`, único registro do módulo de
+profissionais com exclusão física e sem `AuditLogger` — conteúdo pessoal,
+não dado de negócio). "Meus pacientes" (`MyPatientsController`, escopado a
+`primary_professional_id`) e "Meus pré-agendamentos"
+(`MyAppointmentRequestsController`, autoatendimento sem `Policy` dedicada,
+mesmo padrão de `MyScheduleController`) dão ao profissional acesso de
+leitura/gestão só ao próprio recorte de dados. `ProfessionalPolicy`
+ganhou uma exceção deliberada: um profissional autoatendido só vê a
+própria ficha, nunca a de um colega, sem uma permissão dedicada para isso.
+
+Habilitado por duas mudanças de suporte:
+
+- `AppointmentRequest` ganhou `professional_id` (localizar depois "para
+  qual profissional" era a solicitação) e correspondência automática com
+  `Patient` já cadastrado (`CreateAppointmentRequestAction::resolvePatientId()`
+  — por `PatientUserLink` quando logado no portal, senão por CPF → telefone
+  → e-mail, nessa ordem, só como indício, nunca cria/altera um `Patient`).
+  Ver [docs/modules/public-integration.md](modules/public-integration.md).
+- `SeedSystemRolesAction` deixou de pular papéis já existentes: agora
+  sincroniza aditivamente (`syncWithoutDetaching`) qualquer `PermissionKey`
+  nova que passou a fazer parte do conjunto padrão de um papel de sistema
+  desde a última sincronização daquela organização — sem isso, organizações
+  criadas antes de `patients.view-own`/`appointments.view-own` existirem
+  nunca receberiam essas permissões.
+
+**Achados de security-review (corrigidos no mesmo dia, antes do commit)**:
+
+1. `StoreAppointmentRequestRequest::professional_id` validava só
+   `status=active`, sem escopo de organização — um profissional de
+   qualquer organização era aceito no formulário público e gravado junto
+   com o `organization_id` da instalação atual (a instalação é
+   single-tenant por padrão, mas nada no banco impede uma segunda
+   `Organization` de existir via autoatendimento de onboarding).
+   Corrigido: validação escopada por `Organization::query()->first()->id`
+   + FK composta `appointment_requests_org_professional_fk`
+   (`organization_id` + `professional_id` → `professionals`), mesmo padrão
+   já usado em `professional_dashboard_reminders`.
+2. `UpdateOwnAppointmentRequestStatusRequest`/`NotesRequest` autorizavam só
+   pelo vínculo com o profissional, sem checar `organization_id` — um
+   usuário pode legitimamente ter `Professional` ativo em mais de uma
+   organização, então o vínculo sozinho nunca foi suficiente (diferente do
+   equivalente administrativo, `AppointmentRequestController`, que já
+   checava). Corrigido com a mesma checagem explícita de organização.
+
+Testes: `tests/Feature/Professionals/ProfessionalDashboardTest.php`,
+`DashboardReminderTest.php`, `MyAppointmentRequestsTest.php`,
+`tests/Feature/Patients/MyPatientsTest.php`,
+`tests/Feature/Organization/SeedSystemRolesActionTest.php`, mais os casos
+novos de isolamento cross-tenant em `AppointmentRequestSubmissionTest.php`
+e `MyAppointmentRequestsTest.php` cobrindo os dois achados acima. Suíte
+completa (965 casos, mesmas 2 falhas pré-existentes e não relacionadas de
+`PublicAvailabilityEndpointsTest` já registradas na Etapa 3.3) e Vitest
+(609 casos) verdes; `pint`/`composer analyse`/`vue-tsc`/ESLint/Prettier
+limpos.
 
 ## Etapa 4 — Prontuário e documentos
 

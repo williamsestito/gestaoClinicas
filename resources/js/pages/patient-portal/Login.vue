@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import patientPortal from '@/routes/patient-portal';
+import { store as loginStore } from '@/routes/patient-portal/login';
 
 defineOptions({
     layout: {
@@ -33,7 +34,7 @@ defineProps<{
     </div>
 
     <Form
-        v-bind="patientPortal.login.form()"
+        v-bind="loginStore.form()"
         :reset-on-success="['password']"
         v-slot="{ errors, processing }"
         class="flex flex-col gap-6"

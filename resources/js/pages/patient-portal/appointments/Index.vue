@@ -135,7 +135,9 @@ function declineProposedTime(appointment: AppointmentRow) {
                             {{ appointment.unit_name }}
                         </p>
                         <p
-                            v-if="appointment.status === 'awaiting_confirmation'"
+                            v-if="
+                                appointment.status === 'awaiting_confirmation'
+                            "
                             class="text-sm text-muted-foreground"
                         >
                             A clínica propôs este novo horário — confirme ou
@@ -149,7 +151,9 @@ function declineProposedTime(appointment: AppointmentRow) {
                         </Badge>
 
                         <div
-                            v-if="appointment.status === 'awaiting_confirmation'"
+                            v-if="
+                                appointment.status === 'awaiting_confirmation'
+                            "
                             class="flex gap-2"
                         >
                             <Button
@@ -168,14 +172,17 @@ function declineProposedTime(appointment: AppointmentRow) {
                         </div>
 
                         <div
-                            v-else-if="canCancelOrReschedule(appointment.status)"
+                            v-else-if="
+                                canCancelOrReschedule(appointment.status)
+                            "
                             class="flex gap-2"
                         >
                             <Link
                                 :href="
-                                    patientPortal.appointments.reschedule.edit(
-                                        [patient.id, appointment.id],
-                                    )
+                                    patientPortal.appointments.reschedule.edit([
+                                        patient.id,
+                                        appointment.id,
+                                    ])
                                 "
                             >
                                 <Button variant="outline" size="sm">

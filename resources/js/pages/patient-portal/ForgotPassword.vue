@@ -32,7 +32,10 @@ defineProps<{
     </div>
 
     <div class="space-y-6">
-        <Form v-bind="patientPortal.password.email.form()" v-slot="{ errors, processing }">
+        <Form
+            v-bind="patientPortal.password.email.form()"
+            v-slot="{ errors, processing }"
+        >
             <div class="grid gap-2">
                 <Label for="email">E-mail</Label>
                 <Input

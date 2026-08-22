@@ -77,11 +77,20 @@ complexidade de auto-referência que já foi evitada em Paciente (ver
 `AppointmentPolicy` seguindo o padrão de `ProfessionalPolicy`/`PatientPolicy`:
 - Amplo: owner ou `appointments.manage` — único caminho para criar,
   reagendar ou cancelar.
-- Próprio: `manageStatus()` (check-in/início/conclusão/não comparecimento)
-  também aceita o profissional vinculado ao agendamento (via
-  `professional.user_id`) com a permissão granular `appointments.manage-own`
-  — nunca o vínculo sozinho, sempre com membership ativo e permissão
-  explícita. Este papel nunca pode criar/reagendar/cancelar.
+- Próprio: `confirm()`/`manageStatus()` (confirmar/check-in/início/conclusão/
+  não comparecimento) também aceitam o profissional vinculado ao
+  agendamento (via `professional.user_id`) com a permissão granular
+  `appointments.manage-own` — nunca o vínculo sozinho, sempre com
+  membership ativo e permissão explícita. Este papel nunca pode criar/
+  reagendar/cancelar. `confirm()` passou a aceitar "próprio" nesta etapa
+  (antes era só amplo): o profissional confirmando o próprio agendamento
+  em `Requested`/`AwaitingConfirmation` é o gatilho para o paciente ver a
+  mudança refletida no portal, sem nenhuma sincronização adicional — os
+  dois lados leem a mesma linha de `Appointment`. Exposto na UI via
+  `resources/js/components/dashboard/ProfessionalDashboard.vue` (botões
+  contextuais por status na prévia da agenda), reaproveitando as mesmas
+  rotas/Actions do staff (`ConfirmAppointmentAction`, `CheckInAppointmentAction`,
+  `StartAppointmentAction`, `CompleteAppointmentAction`, `MarkAppointmentNoShowAction`).
 
 `ClinicAdmin`+`Reception` recebem `Manage`; `UnitManager`/`Auditor`
 recebem `View`; `Professional` recebe `ViewOwn`+`ManageOwn`.
@@ -166,6 +175,17 @@ mesmo lead duas vezes) e que não está `Cancelled`; depois marca
 nullable, mesmo padrão de vínculo de `site_professionals.professional_id`
 — não FK composta). Qualquer uma dessas validações falhando desfaz também
 a criação do `Appointment`, já que tudo roda na mesma `DB::transaction()`.
+
+Depois da conversão, `App\Http\Controllers\Organization\MyAppointmentRequestsController::index()`
+carrega `appointment:id,status` junto com o lead e expõe
+`appointment_status`/`appointment_status_label` em "Meus pré-agendamentos"
+— lido direto do `Appointment` vinculado a cada requisição, então qualquer
+confirmação/check-in/conclusão feita depois (pelo próprio profissional, via
+`confirm()`, ou por staff) aparece ali na próxima vez que a tela recarrega,
+sem sincronizar nada manualmente. O status do lead (`AppointmentRequestStatus`)
+e o status do agendamento real (`AppointmentStatus`) continuam sendo dois
+campos independentes — o segundo só existe quando `appointment_id` está
+preenchido.
 
 **Fora desta etapa (decisão registrada)**: criação automática de `Patient`
 a partir dos dados do lead, mapeamento automático `SiteService` → `Service`

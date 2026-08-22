@@ -172,7 +172,6 @@ enum SystemRole: string
 
             self::Professional => [
                 PermissionKey::DashboardView,
-                PermissionKey::UnitsView,
                 PermissionKey::SettingsView,
                 PermissionKey::PatientsViewOwn,
                 PermissionKey::AppointmentsViewOwn,

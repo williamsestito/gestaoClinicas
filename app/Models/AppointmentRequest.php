@@ -22,10 +22,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $organization_id
  * @property string|null $unit_id
  * @property int|null $service_id
+ * @property string|null $professional_id
+ * @property string|null $patient_id
  * @property string|null $appointment_id
  * @property string $name
  * @property string $phone
  * @property string|null $email
+ * @property string|null $document dígitos apenas, sem máscara (ver App\Support\Documents\Document)
  * @property string|null $preferred_period
  * @property Carbon|null $preferred_date
  * @property string|null $notes
@@ -43,10 +46,13 @@ class AppointmentRequest extends Model
         'organization_id',
         'unit_id',
         'service_id',
+        'professional_id',
+        'patient_id',
         'appointment_id',
         'name',
         'phone',
         'email',
+        'document',
         'preferred_period',
         'preferred_date',
         'notes',
@@ -88,5 +94,17 @@ class AppointmentRequest extends Model
     public function appointment(): BelongsTo
     {
         return $this->belongsTo(Appointment::class);
+    }
+
+    /** @return BelongsTo<Professional, $this> */
+    public function professional(): BelongsTo
+    {
+        return $this->belongsTo(Professional::class);
+    }
+
+    /** @return BelongsTo<Patient, $this> */
+    public function patient(): BelongsTo
+    {
+        return $this->belongsTo(Patient::class);
     }
 }

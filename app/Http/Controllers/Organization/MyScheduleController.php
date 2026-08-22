@@ -49,6 +49,22 @@ class MyScheduleController extends Controller
         return to_route('settings.professionals.time-blocks.index', $professional);
     }
 
+    /**
+     * "Meus dados" — mesmo formato: encaminha para a ficha administrativa
+     * (Dados gerais) do próprio profissional, já autorizada para
+     * autoatendimento por `ProfessionalPolicy::view()`/`update()`.
+     */
+    public function profile(TenantContext $tenant): Response|RedirectResponse
+    {
+        $professional = $this->resolveOwnProfessional($tenant);
+
+        if ($professional === null) {
+            return $this->emptyState();
+        }
+
+        return to_route('settings.professionals.edit', $professional);
+    }
+
     private function resolveOwnProfessional(TenantContext $tenant): ?Professional
     {
         $organization = $tenant->organization();

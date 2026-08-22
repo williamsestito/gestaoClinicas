@@ -18,6 +18,21 @@ defineProps<{
 
 const { lookup, status } = useCepLookup();
 
+// `defineModel` só notifica o pai (`update:modelValue`) quando `.value` é
+// reatribuído por inteiro — nunca quando uma propriedade dele é mutada
+// (`address.value.x = y`). `v-model="address.x"` compila exatamente para
+// essa mutação por propriedade, então nunca chegava a notificar o pai.
+// Isso passava despercebido para rua/bairro/cidade/UF só porque
+// `fillFromCep()` reatribui o objeto inteiro como efeito colateral da
+// busca por CEP — número e complemento nunca entram nesse retorno, então
+// nunca tinham nenhum outro gatilho de sincronização.
+function updateField<K extends keyof AddressForm>(
+    field: K,
+    value: AddressForm[K],
+) {
+    address.value = { ...address.value, [field]: value };
+}
+
 async function fillFromCep(options: { force?: boolean } = {}) {
     const result = await lookup(address.value.postal_code, options);
 
@@ -62,9 +77,10 @@ watch(
                     class="flex-1"
                     @update:model-value="
                         (value) =>
-                            (address.postal_code = maskPostalCode(
-                                String(value),
-                            ))
+                            updateField(
+                                'postal_code',
+                                maskPostalCode(String(value)),
+                            )
                     "
                     @blur="fillFromCep()"
                 />
@@ -113,8 +129,11 @@ watch(
                 <Label for="address-street">Rua</Label>
                 <Input
                     id="address-street"
-                    v-model="address.street"
+                    :model-value="address.street"
                     name="address[street]"
+                    @update:model-value="
+                        (value) => updateField('street', String(value))
+                    "
                 />
                 <InputError :message="errors?.street" />
             </div>
@@ -122,8 +141,11 @@ watch(
                 <Label for="address-number">Número</Label>
                 <Input
                     id="address-number"
-                    v-model="address.number"
+                    :model-value="address.number"
                     name="address[number]"
+                    @update:model-value="
+                        (value) => updateField('number', String(value))
+                    "
                 />
                 <InputError :message="errors?.number" />
             </div>
@@ -133,8 +155,11 @@ watch(
             <Label for="address-complement">Complemento (opcional)</Label>
             <Input
                 id="address-complement"
-                v-model="address.complement"
+                :model-value="address.complement"
                 name="address[complement]"
+                @update:model-value="
+                    (value) => updateField('complement', String(value))
+                "
             />
             <InputError :message="errors?.complement" />
         </div>
@@ -144,8 +169,11 @@ watch(
                 <Label for="address-neighborhood">Bairro</Label>
                 <Input
                     id="address-neighborhood"
-                    v-model="address.neighborhood"
+                    :model-value="address.neighborhood"
                     name="address[neighborhood]"
+                    @update:model-value="
+                        (value) => updateField('neighborhood', String(value))
+                    "
                 />
                 <InputError :message="errors?.neighborhood" />
             </div>
@@ -153,8 +181,11 @@ watch(
                 <Label for="address-city">Cidade</Label>
                 <Input
                     id="address-city"
-                    v-model="address.city"
+                    :model-value="address.city"
                     name="address[city]"
+                    @update:model-value="
+                        (value) => updateField('city', String(value))
+                    "
                 />
                 <InputError :message="errors?.city" />
             </div>
@@ -162,8 +193,15 @@ watch(
                 <Label for="address-state">UF</Label>
                 <select
                     id="address-state"
-                    v-model="address.state"
+                    :value="address.state"
                     name="address[state]"
+                    @change="
+                        (event) =>
+                            updateField(
+                                'state',
+                                (event.target as HTMLSelectElement).value,
+                            )
+                    "
                     class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                     <option value="" disabled>UF</option>

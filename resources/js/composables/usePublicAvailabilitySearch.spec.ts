@@ -20,15 +20,15 @@ describe('usePublicAvailabilitySearch', () => {
         };
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse([unit])));
 
-        const { units, loading, error, loadUnits } =
+        const { units, isLoading, error, loadUnits } =
             usePublicAvailabilitySearch();
-        expect(loading.value).toBeNull();
+        expect(isLoading('units')).toBe(false);
 
         await loadUnits();
 
         expect(units.value).toEqual([unit]);
         expect(error.value).toBeNull();
-        expect(loading.value).toBeNull();
+        expect(isLoading('units')).toBe(false);
     });
 
     it('sets a pt-BR error message and keeps the list empty when the units request fails', async () => {
@@ -270,6 +270,54 @@ describe('usePublicAvailabilitySearch', () => {
         await Promise.resolve();
 
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('keeps isLoading("dates") true while the slower of two concurrent requests is still pending', async () => {
+        // selectService() dispara loadProfessionals() e loadDates() ao mesmo
+        // tempo; antes da correção, um `loading` único era sobrescrito pela
+        // última chamada síncrona e zerado assim que a PRIMEIRA promise
+        // resolvia — mesmo que fosse a de profissionais, deixando o
+        // calendário (ainda carregando) sem spinner e aparentando "pronto".
+        let resolveProfessionals: (() => void) | undefined;
+        let resolveDates: (() => void) | undefined;
+        const fetchMock = vi.fn().mockImplementation((url: string) => {
+            if (url.includes('/disponibilidade/profissionais')) {
+                return new Promise((resolve) => {
+                    resolveProfessionals = () => resolve(jsonResponse([]));
+                });
+            }
+
+            return new Promise((resolve) => {
+                resolveDates = () => resolve(jsonResponse([]));
+            });
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        const search = usePublicAvailabilitySearch();
+        search.selectedUnitId.value = 'unit-1';
+
+        search.selectService('svc-1');
+        await Promise.resolve();
+
+        expect(search.isLoading('professionals')).toBe(true);
+        expect(search.isLoading('dates')).toBe(true);
+
+        resolveProfessionals?.();
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(search.isLoading('professionals')).toBe(false);
+        expect(search.isLoading('dates')).toBe(true);
+
+        resolveDates?.();
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(search.isLoading('dates')).toBe(false);
     });
 
     it('is not a singleton — each call returns independent state', () => {

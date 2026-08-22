@@ -8,10 +8,16 @@ defineProps<{
     professionals: PublicProfessional[];
 }>();
 
-const { selectedProfessionalName } = useLandingScheduling();
+const { selectedProfessionalId, selectedProfessionalName } =
+    useLandingScheduling();
 
-function selectProfessional(name: string) {
-    selectedProfessionalName.value = name;
+// `professional_id` vem nulo para uma ficha puramente promocional
+// (SiteProfessional sem vínculo com o cadastro operacional) — nesse caso
+// não há profissional real para registrar na solicitação, só o texto nas
+// observações mesmo.
+function selectProfessional(professional: PublicProfessional) {
+    selectedProfessionalId.value = professional.professional_id;
+    selectedProfessionalName.value = professional.name;
 }
 </script>
 
@@ -114,7 +120,7 @@ function selectProfessional(name: string) {
                 <a
                     href="#scheduling"
                     class="mt-4 w-full"
-                    @click="selectProfessional(professional.name)"
+                    @click="selectProfessional(professional)"
                 >
                     <Button class="w-full rounded-full" variant="outline">
                         Agendar

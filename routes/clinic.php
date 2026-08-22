@@ -4,8 +4,11 @@ use App\Http\Controllers\Organization\AppointmentController;
 use App\Http\Controllers\Organization\AppointmentRequestController;
 use App\Http\Controllers\Organization\AuditLogController;
 use App\Http\Controllers\Organization\DashboardController;
+use App\Http\Controllers\Organization\DashboardReminderController;
 use App\Http\Controllers\Organization\InvitationController;
 use App\Http\Controllers\Organization\LegalEntityController;
+use App\Http\Controllers\Organization\MyAppointmentRequestsController;
+use App\Http\Controllers\Organization\MyPatientsController;
 use App\Http\Controllers\Organization\MyScheduleController;
 use App\Http\Controllers\Organization\OnboardingController;
 use App\Http\Controllers\Organization\OrganizationContextController;
@@ -334,6 +337,32 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
             ->name('settings.my-schedule.availability');
         Route::get('settings/minha-agenda/ausencias', [MyScheduleController::class, 'timeBlocks'])
             ->name('settings.my-schedule.time-blocks');
+        Route::get('settings/meu-cadastro', [MyScheduleController::class, 'profile'])
+            ->name('settings.my-schedule.profile');
+
+        // "Meus pacientes" — mesmo padrão de "Minha agenda": nunca aceita
+        // {professional} na URL, sempre resolvido a partir do usuário
+        // autenticado.
+        Route::get('settings/meus-pacientes', [MyPatientsController::class, 'index'])
+            ->name('settings.my-patients.index');
+
+        // "Meus pré-agendamentos" — mesmo padrão. O vínculo de posse de
+        // {appointmentRequest} é validado dentro do próprio FormRequest
+        // (ver UpdateOwnAppointmentRequestStatusRequest), não por
+        // middleware — o profissional dono nunca é resolvido pela URL.
+        Route::get('settings/meus-pre-agendamentos', [MyAppointmentRequestsController::class, 'index'])
+            ->name('settings.my-appointment-requests.index');
+        Route::patch('settings/meus-pre-agendamentos/{appointmentRequest}/status', [MyAppointmentRequestsController::class, 'updateStatus'])
+            ->name('settings.my-appointment-requests.status');
+        Route::patch('settings/meus-pre-agendamentos/{appointmentRequest}/notes', [MyAppointmentRequestsController::class, 'updateNotes'])
+            ->name('settings.my-appointment-requests.notes');
+
+        // Lembretes tipo post-it do dashboard do profissional — mesmo
+        // padrão dos demais "meus-*": nunca aceita {professional} na URL.
+        Route::post('dashboard/lembretes', [DashboardReminderController::class, 'store'])
+            ->name('dashboard.reminders.store');
+        Route::delete('dashboard/lembretes/{reminder}', [DashboardReminderController::class, 'destroy'])
+            ->name('dashboard.reminders.destroy');
 
         Route::get('settings/professionals', [ProfessionalController::class, 'index'])
             ->name('settings.professionals.index');

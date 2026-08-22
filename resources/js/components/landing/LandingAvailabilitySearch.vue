@@ -26,7 +26,7 @@ const {
     selectedProfessionalId,
     selectedDate,
     currentMonth,
-    loading,
+    isLoading,
     error,
     isAnyProfessional,
     loadUnits,
@@ -43,9 +43,20 @@ const {
 // (SiteService, id numérico) — são espaços de id diferentes, nunca
 // convertidos entre si. Por isso só preenchemos o campo de observações
 // (texto livre) e os campos estruturados de data/período, nunca o campo
-// `service_id` do formulário manual.
-const { selectedProfessionalName, preferredDate, preferredPeriod } =
-    useLandingScheduling();
+// `service_id` do formulário manual. Profissional é diferente: tanto aqui
+// quanto em `appointment_requests.professional_id` é o mesmo cadastro
+// operacional (ULID) — por isso `sharedSelectedProfessionalId` pode ser
+// preenchido diretamente, sem o mesmo cuidado de conversão. Renomeado no
+// destructure (`as`) porque `usePublicAvailabilitySearch()` já expõe seu
+// próprio `selectedProfessionalId` local — o filtro de profissional da
+// busca, um conceito diferente deste (o vínculo real a ser enviado com a
+// solicitação manual).
+const {
+    selectedProfessionalId: sharedSelectedProfessionalId,
+    selectedProfessionalName,
+    preferredDate,
+    preferredPeriod,
+} = useLandingScheduling();
 
 onMounted(() => {
     void loadUnits();
@@ -120,6 +131,7 @@ function periodForTime(time: string): string {
 
 function chooseTimeForScheduling(slot: {
     time: string;
+    professional_id: string;
     professional_name: string;
     service_name: string;
 }) {
@@ -129,6 +141,7 @@ function chooseTimeForScheduling(slot: {
     const serviceName = service?.name ?? slot.service_name;
     const dateLabel = formatSelectedDate();
 
+    sharedSelectedProfessionalId.value = slot.professional_id;
     selectedProfessionalName.value = `${slot.professional_name} — ${serviceName}, ${dateLabel} às ${slot.time}`;
     preferredDate.value = selectedDate.value;
     preferredPeriod.value = periodForTime(slot.time);
@@ -160,7 +173,7 @@ function chooseTimeForScheduling(slot: {
         </div>
 
         <div
-            v-if="units.length === 0 && loading === null"
+            v-if="units.length === 0 && !isLoading('units')"
             class="text-sm text-muted-foreground"
         >
             Nenhuma unidade disponível para consulta no momento.
@@ -172,7 +185,7 @@ function chooseTimeForScheduling(slot: {
                     >Unidade</label
                 >
                 <Select
-                    :model-value="selectedUnitId ?? undefined"
+                    :model-value="selectedUnitId ?? ''"
                     @update:model-value="
                         (value) => value && selectUnit(String(value))
                     "
@@ -208,7 +221,7 @@ function chooseTimeForScheduling(slot: {
                     >Especialidade</label
                 >
                 <Select
-                    :model-value="selectedSpecialtyId ?? undefined"
+                    :model-value="selectedSpecialtyId ?? ''"
                     @update:model-value="
                         (value) => selectSpecialty(value ? String(value) : null)
                     "
@@ -235,7 +248,7 @@ function chooseTimeForScheduling(slot: {
                     >Serviço ou procedimento</label
                 >
                 <Select
-                    :model-value="selectedServiceId ?? undefined"
+                    :model-value="selectedServiceId ?? ''"
                     @update:model-value="
                         (value) => value && selectService(String(value))
                     "
@@ -257,7 +270,7 @@ function chooseTimeForScheduling(slot: {
                     v-if="
                         selectedUnitId &&
                         services.length === 0 &&
-                        loading !== 'services'
+                        !isLoading('services')
                     "
                     class="text-xs text-muted-foreground"
                 >
@@ -272,7 +285,7 @@ function chooseTimeForScheduling(slot: {
                     >Profissional</label
                 >
                 <Select
-                    :model-value="selectedProfessionalId ?? undefined"
+                    :model-value="selectedProfessionalId ?? ''"
                     @update:model-value="
                         (value) => value && selectProfessional(String(value))
                     "
@@ -328,7 +341,7 @@ function chooseTimeForScheduling(slot: {
                 </div>
 
                 <div
-                    v-if="loading === 'dates'"
+                    v-if="isLoading('dates')"
                     class="flex items-center gap-2 text-sm text-muted-foreground"
                     aria-live="polite"
                 >
@@ -381,7 +394,7 @@ function chooseTimeForScheduling(slot: {
                 </p>
 
                 <div
-                    v-if="loading === 'times'"
+                    v-if="isLoading('times')"
                     class="flex items-center gap-2 text-sm text-muted-foreground"
                     aria-live="polite"
                 >

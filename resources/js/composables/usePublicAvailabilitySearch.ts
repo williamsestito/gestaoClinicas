@@ -44,6 +44,9 @@ export type AvailabilityTime = {
 
 const ANY_PROFESSIONAL = 'any';
 
+export type LoadingKey =
+    'units' | 'specialties' | 'services' | 'professionals' | 'dates' | 'times';
+
 /**
  * Estado e chamadas da busca pública de disponibilidade — unidade →
  * especialidade → serviço → profissional (opcional) → data → horário.
@@ -66,16 +69,27 @@ export function usePublicAvailabilitySearch() {
     const selectedDate = ref<string | null>(null);
     const currentMonth = ref(new Date().toISOString().slice(0, 7));
 
-    const loading = ref<
-        | 'units'
-        | 'specialties'
-        | 'services'
-        | 'professionals'
-        | 'dates'
-        | 'times'
-        | null
-    >(null);
+    // Um Set (não um único valor) porque etapas seguidas disparam buscas em
+    // paralelo (ex.: escolher a unidade carrega especialidades e serviços
+    // ao mesmo tempo) — um ref único era sobrescrito pela última chamada
+    // síncrona e zerado pela primeira Promise a resolver, mesmo com a outra
+    // ainda em andamento, fazendo a tela parecer "pronta" (sem spinner, sem
+    // dado) enquanto uma busca mais lenta ainda respondia. Cada chave só sai
+    // do Set quando a própria busca dela termina.
+    const loadingKeys = ref<Set<LoadingKey>>(new Set());
     const error = ref<string | null>(null);
+
+    function isLoading(key: LoadingKey): boolean {
+        return loadingKeys.value.has(key);
+    }
+
+    function startLoading(key: LoadingKey): void {
+        loadingKeys.value.add(key);
+    }
+
+    function stopLoading(key: LoadingKey): void {
+        loadingKeys.value.delete(key);
+    }
 
     async function fetchJson<T>(url: string): Promise<T[]> {
         const response = await fetch(url, {
@@ -92,7 +106,7 @@ export function usePublicAvailabilitySearch() {
     }
 
     async function loadUnits() {
-        loading.value = 'units';
+        startLoading('units');
         error.value = null;
 
         try {
@@ -101,7 +115,7 @@ export function usePublicAvailabilitySearch() {
             error.value =
                 'Não foi possível carregar as unidades. Tente novamente.';
         } finally {
-            loading.value = null;
+            stopLoading('units');
         }
     }
 
@@ -110,7 +124,7 @@ export function usePublicAvailabilitySearch() {
             return;
         }
 
-        loading.value = 'specialties';
+        startLoading('specialties');
         error.value = null;
 
         try {
@@ -122,7 +136,7 @@ export function usePublicAvailabilitySearch() {
             error.value =
                 'Não foi possível carregar as especialidades. Tente novamente.';
         } finally {
-            loading.value = null;
+            stopLoading('specialties');
         }
     }
 
@@ -131,7 +145,7 @@ export function usePublicAvailabilitySearch() {
             return;
         }
 
-        loading.value = 'services';
+        startLoading('services');
         error.value = null;
 
         try {
@@ -149,7 +163,7 @@ export function usePublicAvailabilitySearch() {
             error.value =
                 'Não foi possível carregar os serviços. Tente novamente.';
         } finally {
-            loading.value = null;
+            stopLoading('services');
         }
     }
 
@@ -158,7 +172,7 @@ export function usePublicAvailabilitySearch() {
             return;
         }
 
-        loading.value = 'professionals';
+        startLoading('professionals');
         error.value = null;
 
         try {
@@ -177,7 +191,7 @@ export function usePublicAvailabilitySearch() {
             error.value =
                 'Não foi possível carregar os profissionais. Tente novamente.';
         } finally {
-            loading.value = null;
+            stopLoading('professionals');
         }
     }
 
@@ -186,7 +200,7 @@ export function usePublicAvailabilitySearch() {
             return;
         }
 
-        loading.value = 'dates';
+        startLoading('dates');
         error.value = null;
 
         try {
@@ -210,7 +224,7 @@ export function usePublicAvailabilitySearch() {
             error.value =
                 'Não foi possível carregar o calendário. Tente novamente.';
         } finally {
-            loading.value = null;
+            stopLoading('dates');
         }
     }
 
@@ -223,7 +237,7 @@ export function usePublicAvailabilitySearch() {
             return;
         }
 
-        loading.value = 'times';
+        startLoading('times');
         error.value = null;
 
         try {
@@ -247,7 +261,7 @@ export function usePublicAvailabilitySearch() {
             error.value =
                 'Não foi possível carregar os horários. Tente novamente.';
         } finally {
-            loading.value = null;
+            stopLoading('times');
         }
     }
 
@@ -324,7 +338,7 @@ export function usePublicAvailabilitySearch() {
         selectedProfessionalId,
         selectedDate,
         currentMonth,
-        loading,
+        isLoading,
         error,
         isAnyProfessional,
         loadUnits,

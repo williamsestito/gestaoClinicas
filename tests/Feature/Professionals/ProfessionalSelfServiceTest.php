@@ -15,6 +15,7 @@ use App\Models\OrganizationMembership;
 use App\Models\Professional;
 use App\Models\ProfessionalUnit;
 use App\Models\Role;
+use App\Models\Specialty;
 use App\Models\Unit;
 use App\Models\User;
 
@@ -159,4 +160,84 @@ it('blocks an inactive user from managing their own agenda even when linked', fu
         'effective_from' => '2026-08-01',
         'effective_until' => '2026-08-30',
     ])->assertRedirect('/');
+});
+
+it('lets a self-linked professional view their own profile pages, but not a colleague\'s', function () {
+    [$user, $organization, $professional] = selfServiceSetup();
+    $colleague = Professional::factory()->for($organization)->create(['status' => RecordStatus::Active]);
+
+    $this->actingAs($user)->get("/settings/professionals/{$professional->id}/edit")->assertOk();
+    $this->actingAs($user)->get("/settings/professionals/{$professional->id}/units")->assertOk();
+
+    $this->actingAs($user)->get("/settings/professionals/{$colleague->id}/edit")->assertForbidden();
+    $this->actingAs($user)->get("/settings/professionals/{$colleague->id}/units")->assertForbidden();
+    $this->actingAs($user)->get('/settings/professionals')->assertForbidden();
+});
+
+it('redirects "Meus dados" to the professional own edit page when linked', function () {
+    [$user, , $professional] = selfServiceSetup();
+
+    $this->actingAs($user)->get('/settings/meu-cadastro')
+        ->assertRedirect("/settings/professionals/{$professional->id}/edit");
+});
+
+it('lets a self-linked professional update their own core data, including birth date', function () {
+    [$user, , $professional] = selfServiceSetup();
+
+    $this->actingAs($user)->put("/settings/professionals/{$professional->id}", [
+        'name' => $professional->name,
+        'display_name' => $professional->display_name,
+        'birth_date' => '1990-05-20',
+        'bio' => 'Minha própria biografia.',
+    ])->assertRedirect('/settings/professionals');
+
+    expect($professional->fresh()->birth_date->toDateString())->toBe('1990-05-20')
+        ->and($professional->fresh()->bio)->toBe('Minha própria biografia.');
+});
+
+it('blocks a self-linked professional from editing a colleague\'s core data', function () {
+    [$user, $organization] = selfServiceSetup();
+    $colleague = Professional::factory()->for($organization)->create(['status' => RecordStatus::Active]);
+
+    $this->actingAs($user)->put("/settings/professionals/{$colleague->id}", [
+        'name' => 'Hackeado', 'display_name' => 'Hackeado',
+    ])->assertForbidden();
+});
+
+it('lets a self-linked professional add their own specialty', function () {
+    [$user, $organization, $professional] = selfServiceSetup();
+    $specialty = Specialty::factory()->for($organization)->create(['status' => RecordStatus::Active]);
+
+    $this->actingAs($user)->post("/settings/professionals/{$professional->id}/specialties", [
+        'specialty_id' => $specialty->id,
+    ])->assertRedirect();
+
+    expect($professional->specialtyLinks()->where('specialty_id', $specialty->id)->exists())->toBeTrue();
+});
+
+it('lets a self-linked professional create and manage their own professional registration', function () {
+    [$user, , $professional] = selfServiceSetup();
+
+    $this->actingAs($user)->post("/settings/professionals/{$professional->id}/registrations", [
+        'council' => 'CRM',
+        'registration_number' => '12345',
+        'state' => 'SC',
+    ])->assertRedirect();
+
+    $registration = $professional->registrations()->firstOrFail();
+
+    $this->actingAs($user)->patch("/settings/professionals/{$professional->id}/registrations/{$registration->id}/primary")
+        ->assertRedirect();
+
+    expect($registration->fresh()->is_primary)->toBeTrue();
+});
+
+it('blocks a self-linked professional from managing a colleague\'s professional registration', function () {
+    [$user, $organization] = selfServiceSetup();
+    $colleague = Professional::factory()->for($organization)->create(['status' => RecordStatus::Active]);
+
+    $this->actingAs($user)->post("/settings/professionals/{$colleague->id}/registrations", [
+        'council' => 'CRM',
+        'registration_number' => '99999',
+    ])->assertForbidden();
 });

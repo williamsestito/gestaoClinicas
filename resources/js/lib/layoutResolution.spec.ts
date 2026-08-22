@@ -50,6 +50,8 @@ describe('resolveLayoutKind', () => {
         'settings/resources/Index',
         'settings/patients/Index',
         'settings/appointments/Index',
+        'settings/my-patients/Index',
+        'settings/my-appointment-requests/Index',
     ])(
         'uses the plain app layout for %s — neither the clinic-identity nor the personal account layout',
         (name) => {
@@ -71,12 +73,8 @@ describe('resolveLayoutKind', () => {
     it('uses the auth layout for patient-portal guest pages (login/register/password)', () => {
         expect(resolveLayoutKind('patient-portal/Login')).toBe('auth');
         expect(resolveLayoutKind('patient-portal/Register')).toBe('auth');
-        expect(resolveLayoutKind('patient-portal/ForgotPassword')).toBe(
-            'auth',
-        );
-        expect(resolveLayoutKind('patient-portal/ResetPassword')).toBe(
-            'auth',
-        );
+        expect(resolveLayoutKind('patient-portal/ForgotPassword')).toBe('auth');
+        expect(resolveLayoutKind('patient-portal/ResetPassword')).toBe('auth');
     });
 
     it('uses the patient-portal layout for authenticated portal pages', () => {

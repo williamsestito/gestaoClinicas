@@ -66,6 +66,22 @@ permissões — diferente de `ProfessionalPolicy::viewAny()`, que libera
 qualquer membro ativo da organização. Essa é uma divergência deliberada:
 dado pessoal de paciente é mais sensível que um diretório de profissionais.
 
+## Autoatendimento — "Meus pacientes"
+
+`App\Http\Controllers\Organization\MyPatientsController` (rota
+`settings/meus-pacientes`, mesmo padrão de "Minha agenda": nunca aceita
+`professional_id` da URL, sempre resolvido a partir do usuário
+autenticado) lista só pacientes com `primary_professional_id` apontando
+para o profissional vinculado ao usuário logado — nunca a base completa da
+clínica, que continua exigindo `PatientsView`/`PatientsManage`. Reaproveita
+`App\Queries\PatientListQuery` com o novo parâmetro opcional
+`primaryProfessionalId`. Cada linha da lista aponta para a mesma tela
+`settings.patients.edit` já usada pelo staff — `PatientPolicy::view()` já
+autoriza o próprio profissional vinculado, então não existe uma tela de
+"visualização" separada; o formulário aparece editável, mas
+`PatientPolicy::update()` continua bloqueando a gravação para quem só tem
+`PatientsViewOwn` (sem `PatientsManage`).
+
 ## Foto do paciente — armazenamento privado
 
 Diferente da foto do profissional (disco `public`, propositalmente exposta

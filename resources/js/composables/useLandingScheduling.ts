@@ -6,15 +6,18 @@ import { ref } from 'vue';
  * LandingSchedulingSection: ao clicar em "Agendar" num serviço, o
  * formulário já abre com esse serviço pré-selecionado; ao clicar num
  * profissional ou num horário concreto da busca de disponibilidade, os
- * campos de observações/data/período preferencial já vêm preenchidos (não
- * existe seleção real de profissional/data/hora no formulário — só o
- * serviço tem coluna própria em `appointment_requests`; os demais dados só
- * viram texto/preferência, e a solicitação real só é enviada quando a
- * pessoa preenche os dados pessoais e confirma). Módulo-singleton — não
- * precisa de uma store completa (Pinia não está instalado neste projeto)
- * para um valor compartilhado entre seções da mesma página.
+ * campos de observações/data/período preferencial já vêm preenchidos.
+ * `selectedProfessionalId` é o vínculo estruturado real (ULID do cadastro
+ * operacional) — permite ao profissional encontrar o próprio
+ * pré-agendamento depois (ver settings/meus-pre-agendamentos);
+ * `selectedProfessionalName` continua existindo separadamente só para
+ * compor o texto legível das observações, nunca usado para autorização ou
+ * consulta. Módulo-singleton — não precisa de uma store completa (Pinia
+ * não está instalado neste projeto) para um valor compartilhado entre
+ * seções da mesma página.
  */
 const selectedServiceId = ref<number | null>(null);
+const selectedProfessionalId = ref<string | null>(null);
 const selectedProfessionalName = ref<string | null>(null);
 /**
  * Data/período sugeridos pela busca de disponibilidade ao clicar num
@@ -28,6 +31,7 @@ const preferredPeriod = ref<string | null>(null);
 export function useLandingScheduling() {
     return {
         selectedServiceId,
+        selectedProfessionalId,
         selectedProfessionalName,
         preferredDate,
         preferredPeriod,

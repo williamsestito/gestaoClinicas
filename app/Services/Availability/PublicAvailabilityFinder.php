@@ -217,8 +217,13 @@ final class PublicAvailabilityFinder
             ->where('unit_scope', '!=', ProfessionalServiceUnitScope::None->value)
             ->with(['professional', 'unitLinks'])
             ->get()
-            ->filter(fn (ProfessionalService $link) => $link->professional->status === RecordStatus::Active
-                && ! $link->professional->trashed()
+            // `professional` vem null quando o vínculo aponta para um
+            // profissional excluído logicamente (a global scope de
+            // SoftDeletes já filtra o eager load) — DeleteProfessionalAction
+            // nunca desativa retroativamente os vínculos de serviço, então
+            // isso é esperado, não um erro de dados.
+            ->filter(fn (ProfessionalService $link) => $link->professional !== null
+                && $link->professional->status === RecordStatus::Active
                 && $link->compatibleUnitIds()->contains($unitId));
 
         if ($specialtyId !== null) {

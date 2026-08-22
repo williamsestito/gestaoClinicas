@@ -75,7 +75,12 @@ export interface TenantUnitSummary {
 export interface TenantContext {
     organization: (TenantOrganizationSummary & { status: string }) | null;
     unit: (TenantUnitSummary & { status: string }) | null;
-    membership: { id: string; status: string; is_owner: boolean } | null;
+    membership: {
+        id: string;
+        status: string;
+        is_owner: boolean;
+        role_name: string | null;
+    } | null;
     availableOrganizations: TenantOrganizationSummary[];
     availableUnits: TenantUnitSummary[];
     isOwner: boolean;

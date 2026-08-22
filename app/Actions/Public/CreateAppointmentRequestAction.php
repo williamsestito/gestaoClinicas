@@ -7,8 +7,12 @@ namespace App\Actions\Public;
 use App\Enums\AppointmentRequestStatus;
 use App\Enums\AuditAction;
 use App\Enums\OrganizationMembershipStatus;
+use App\Enums\PatientUserLinkRole;
 use App\Models\AppointmentRequest;
 use App\Models\Organization;
+use App\Models\Patient;
+use App\Models\PatientUser;
+use App\Models\PatientUserLink;
 use App\Models\Unit;
 use App\Notifications\NewAppointmentRequestNotification;
 use App\Support\Auditing\AuditLogger;
@@ -31,7 +35,7 @@ class CreateAppointmentRequestAction
     /**
      * @param  array<string, mixed>  $data
      */
-    public function handle(array $data, ?Organization $organization, ?Unit $unit): AppointmentRequest
+    public function handle(array $data, ?Organization $organization, ?Unit $unit, ?PatientUser $patientUser = null): AppointmentRequest
     {
         $existing = $this->findRecentDuplicate($data, $organization);
 
@@ -39,13 +43,18 @@ class CreateAppointmentRequestAction
             return $existing;
         }
 
+        $patientId = $this->resolvePatientId($data, $organization, $patientUser);
+
         $appointmentRequest = AppointmentRequest::query()->create([
             'organization_id' => $organization?->id,
             'unit_id' => $unit?->id,
             'service_id' => $data['service_id'] ?? null,
+            'professional_id' => $data['professional_id'] ?? null,
+            'patient_id' => $patientId,
             'name' => $data['name'],
             'phone' => $data['phone'],
             'email' => $data['email'] ?? null,
+            'document' => $data['document'] ?? null,
             'preferred_period' => $data['preferred_period'] ?? null,
             'preferred_date' => $data['preferred_date'] ?? null,
             'notes' => $data['notes'] ?? null,
@@ -61,6 +70,8 @@ class CreateAppointmentRequestAction
                 'name' => $appointmentRequest->name,
                 'phone' => $appointmentRequest->phone,
                 'service_id' => $appointmentRequest->service_id,
+                'professional_id' => $appointmentRequest->professional_id,
+                'patient_id' => $appointmentRequest->patient_id,
                 'status' => $appointmentRequest->status->value,
             ],
             organization: $organization,
@@ -83,6 +94,7 @@ class CreateAppointmentRequestAction
             ->where('created_at', '>=', now()->subMinutes(self::DUPLICATE_WINDOW_MINUTES));
 
         $query = $this->matchNullable($query, 'service_id', $data['service_id'] ?? null);
+        $query = $this->matchNullable($query, 'professional_id', $data['professional_id'] ?? null);
         $query = $this->matchNullable($query, 'preferred_date', $data['preferred_date'] ?? null);
         $query = $this->matchNullable($query, 'preferred_period', $data['preferred_period'] ?? null);
 
@@ -96,6 +108,72 @@ class CreateAppointmentRequestAction
     private function matchNullable(Builder $query, string $column, mixed $value): Builder
     {
         return $value === null ? $query->whereNull($column) : $query->where($column, $value);
+    }
+
+    /**
+     * Vincula a solicitação a um paciente já cadastrado, quando existir —
+     * evita que a clínica precise cruzar leads e cadastros manualmente.
+     * Quando quem envia já está logado no portal, o vínculo é direto (o
+     * próprio paciente da conta, papel "self"); anônimo, tenta localizar por
+     * CPF, depois telefone, depois e-mail, na ordem de confiabilidade —
+     * nunca cria nem altera um Patient a partir de um lead público.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function resolvePatientId(array $data, ?Organization $organization, ?PatientUser $patientUser): ?string
+    {
+        if ($organization === null) {
+            return null;
+        }
+
+        if ($patientUser !== null) {
+            return PatientUserLink::query()
+                ->where('patient_user_id', $patientUser->id)
+                ->where('organization_id', $organization->id)
+                ->where('role', PatientUserLinkRole::Self)
+                ->value('patient_id');
+        }
+
+        return $this->matchExistingPatient($data, $organization)?->id;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function matchExistingPatient(array $data, Organization $organization): ?Patient
+    {
+        $document = $data['document'] ?? null;
+
+        if ($document !== null) {
+            $byDocument = Patient::query()
+                ->where('organization_id', $organization->id)
+                ->where('document', $document)
+                ->first();
+
+            if ($byDocument !== null) {
+                return $byDocument;
+            }
+        }
+
+        $byPhone = Patient::query()
+            ->where('organization_id', $organization->id)
+            ->where(fn (Builder $query) => $query
+                ->where('phone', $data['phone'])
+                ->orWhere('whatsapp', $data['phone']))
+            ->first();
+
+        if ($byPhone !== null) {
+            return $byPhone;
+        }
+
+        if (empty($data['email'])) {
+            return null;
+        }
+
+        return Patient::query()
+            ->where('organization_id', $organization->id)
+            ->where('email', $data['email'])
+            ->first();
     }
 
     private function notifyOwners(AppointmentRequest $appointmentRequest, ?Organization $organization): void

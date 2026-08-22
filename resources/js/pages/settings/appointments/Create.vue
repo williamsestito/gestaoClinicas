@@ -92,10 +92,9 @@ async function loadSessionPackages() {
         return;
     }
 
-    const response = await fetch(
-        patientSessionPackages(form.patient_id).url,
-        { headers: { Accept: 'application/json' } },
-    );
+    const response = await fetch(patientSessionPackages(form.patient_id).url, {
+        headers: { Accept: 'application/json' },
+    });
 
     sessionPackages.value = response.ok
         ? ((await response.json()) as { packages: SessionPackageOption[] })
@@ -322,8 +321,7 @@ function submit() {
                             @change="
                                 toggleResource(
                                     resource.id,
-                                    ($event.target as HTMLInputElement)
-                                        .checked,
+                                    ($event.target as HTMLInputElement).checked,
                                 )
                             "
                         />
@@ -380,7 +378,11 @@ function submit() {
 
             <div class="grid gap-2">
                 <Label for="appointment-notes">Observações (opcional)</Label>
-                <Textarea id="appointment-notes" v-model="form.notes" rows="3" />
+                <Textarea
+                    id="appointment-notes"
+                    v-model="form.notes"
+                    rows="3"
+                />
                 <InputError :message="form.errors.notes" />
             </div>
 

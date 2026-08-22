@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Actions\Public\CreateAppointmentRequestAction;
 use App\Http\Requests\StoreAppointmentRequestRequest;
 use App\Models\Organization;
+use App\Models\PatientUser;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 
@@ -34,7 +35,10 @@ class PublicAppointmentRequestController extends Controller
         $organization = Organization::query()->first();
         $headquarters = $organization?->headquarters()->first();
 
-        $this->action->handle($request->validated(), $organization, $headquarters);
+        /** @var PatientUser|null $patientUser */
+        $patientUser = $request->user('patient');
+
+        $this->action->handle($request->validated(), $organization, $headquarters, $patientUser);
 
         return $this->successResponse();
     }

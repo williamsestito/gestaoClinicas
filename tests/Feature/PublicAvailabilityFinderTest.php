@@ -94,6 +94,20 @@ it('never lists a professional from another organization', function () {
     expect($result)->toHaveCount(1);
 });
 
+it('silently skips a service link pointing to a logically deleted professional', function () {
+    [$organization, $unit, $specialty, $service, $professional] = publicAvailabilitySetup();
+
+    $deletedProfessional = Professional::factory()->for($organization)->create(['status' => RecordStatus::Active]);
+    ProfessionalService::factory()->for($deletedProfessional)->create(['organization_id' => $organization->id, 'service_id' => $service->id, 'status' => RecordStatus::Active]);
+    $deletedProfessional->delete();
+
+    $finder = app(PublicAvailabilityFinder::class);
+    $result = $finder->eligibleProfessionals($organization, $unit->id, $service->id, $specialty->id);
+
+    expect($result->pluck('id'))->toContain($professional->id)
+        ->not->toContain($deletedProfessional->id);
+});
+
 it('marks a monday as available and a tuesday as unavailable within the vigency window', function () {
     [$organization, $unit, $specialty, $service, $professional] = publicAvailabilitySetup();
     $finder = app(PublicAvailabilityFinder::class);

@@ -19,7 +19,7 @@ class CreateProfessionalRegistrationRequest extends FormRequest
         /** @var Professional|null $professional */
         $professional = $this->route('professional');
 
-        return $this->user()?->can('create', [ProfessionalRegistration::class, $professional?->organization]) === true;
+        return $this->user()?->can('create', [ProfessionalRegistration::class, $professional?->organization, $professional]) === true;
     }
 
     protected function prepareForValidation(): void

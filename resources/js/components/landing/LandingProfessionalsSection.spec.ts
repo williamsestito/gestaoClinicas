@@ -26,6 +26,7 @@ function makeProfessional(
 
 beforeEach(() => {
     useLandingScheduling().selectedProfessionalName.value = null;
+    useLandingScheduling().selectedProfessionalId.value = null;
 });
 
 describe('LandingProfessionalsSection', () => {
@@ -57,6 +58,34 @@ describe('LandingProfessionalsSection', () => {
         expect(useLandingScheduling().selectedProfessionalName.value).toBe(
             'Dr. João',
         );
+    });
+
+    it('links the real professional id when clicking "Agendar" on an operational profile', async () => {
+        const wrapper = mount(LandingProfessionalsSection, {
+            props: {
+                professionals: [
+                    makeProfessional({ professional_id: 'prof-ulid-1' }),
+                ],
+            },
+        });
+
+        await wrapper.find('a[href="#scheduling"]').trigger('click');
+
+        expect(useLandingScheduling().selectedProfessionalId.value).toBe(
+            'prof-ulid-1',
+        );
+    });
+
+    it('never fabricates a professional id for a purely promotional profile', async () => {
+        const wrapper = mount(LandingProfessionalsSection, {
+            props: {
+                professionals: [makeProfessional({ professional_id: null })],
+            },
+        });
+
+        await wrapper.find('a[href="#scheduling"]').trigger('click');
+
+        expect(useLandingScheduling().selectedProfessionalId.value).toBeNull();
     });
 
     it('shows a placeholder icon when there is no photo', () => {

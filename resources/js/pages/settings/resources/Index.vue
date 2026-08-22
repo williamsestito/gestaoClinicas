@@ -264,13 +264,9 @@ function formatDate(value: string): string {
                             <th class="px-4 py-2 font-medium">Recurso</th>
                             <th class="px-4 py-2 font-medium">Unidade</th>
                             <th class="px-4 py-2 font-medium">Tipo</th>
-                            <th class="px-4 py-2 font-medium">
-                                Agendamentos
-                            </th>
+                            <th class="px-4 py-2 font-medium">Agendamentos</th>
                             <th class="px-4 py-2 font-medium">Status</th>
-                            <th class="px-4 py-2 font-medium">
-                                Atualizado em
-                            </th>
+                            <th class="px-4 py-2 font-medium">Atualizado em</th>
                             <th class="px-4 py-2 font-medium">
                                 <span class="sr-only">Ações</span>
                             </th>

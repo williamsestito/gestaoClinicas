@@ -18,11 +18,13 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { useLandingScheduling } from '@/composables/useLandingScheduling';
+import { maskCpf } from '@/lib/masks';
 import { store } from '@/routes/appointment-requests';
 import LandingAvailabilitySearch from './LandingAvailabilitySearch.vue';
 
 const {
     selectedServiceId,
+    selectedProfessionalId,
     selectedProfessionalName,
     preferredDate,
     preferredPeriod,
@@ -102,9 +104,11 @@ function captureUtm(): Record<string, string> {
 
 const form = useForm({
     service_id: null as number | null,
+    professional_id: null as string | null,
     name: '',
     phone: '',
     email: '',
+    document: '',
     preferred_period: '',
     preferred_date: '',
     notes: '',
@@ -121,6 +125,16 @@ watch(
     (id) => {
         if (id !== null) {
             form.service_id = id;
+        }
+    },
+    { immediate: true },
+);
+
+watch(
+    selectedProfessionalId,
+    (id) => {
+        if (id !== null) {
+            form.professional_id = id;
         }
     },
     { immediate: true },
@@ -173,6 +187,21 @@ watch(
     { immediate: true },
 );
 
+// Recuperação para quando `service_id`/`professional_id` falham na
+// validação (ex.: o serviço/profissional selecionado foi desativado/
+// excluído depois que a página carregou) — sem isso, o único jeito de
+// perceber o problema era o InputError acima; a pessoa ainda precisava
+// saber que precisava rolar até a seção de serviços/equipe e escolher de
+// novo. Ambos são sempre opcionais no envio manual, então limpar a
+// seleção sempre desbloqueia o reenvio.
+function clearSelectedServiceAndProfessional() {
+    selectedServiceId.value = null;
+    selectedProfessionalId.value = null;
+    form.service_id = null;
+    form.professional_id = null;
+    form.clearErrors('service_id', 'professional_id');
+}
+
 function submit() {
     // A validação (nome, telefone, aceite dos termos etc.) só acontece
     // aqui, ao confirmar — nunca antes, ao escolher serviço/horário.
@@ -180,7 +209,20 @@ function submit() {
     // desabilitado enquanto form.processing é true).
     form.post(store().url, {
         preserveScroll: true,
-        onSuccess: () => form.reset(),
+        onSuccess: () => {
+            form.reset();
+            // form.reset() só limpa os campos locais do formulário — o
+            // estado compartilhado (useLandingScheduling(), um singleton de
+            // módulo que sobrevive à navegação SPA) precisa ser limpo à
+            // parte, senão a próxima pessoa a abrir o formulário nesta
+            // mesma aba veria a seleção de serviço/profissional/data da
+            // solicitação anterior já enviada.
+            selectedServiceId.value = null;
+            selectedProfessionalId.value = null;
+            selectedProfessionalName.value = null;
+            preferredDate.value = null;
+            preferredPeriod.value = null;
+        },
     });
 }
 </script>
@@ -245,6 +287,24 @@ function submit() {
             class="grid gap-5 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8"
             @submit.prevent="submit"
         >
+            <div
+                v-if="form.errors.service_id || form.errors.professional_id"
+                class="grid gap-2"
+            >
+                <p class="text-sm text-destructive">
+                    {{ form.errors.service_id || form.errors.professional_id }}
+                    Você ainda pode enviar o pré-agendamento
+                    <button
+                        type="button"
+                        class="underline underline-offset-2"
+                        @click="clearSelectedServiceAndProfessional"
+                    >
+                        sem essa seleção
+                    </button>
+                    .
+                </p>
+            </div>
+
             <div class="grid gap-2">
                 <Label for="name">Nome completo</Label>
                 <Input
@@ -277,6 +337,22 @@ function submit() {
                     />
                     <InputError :message="form.errors.email" />
                 </div>
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="document">CPF (opcional)</Label>
+                <Input
+                    id="document"
+                    :model-value="form.document"
+                    autocomplete="off"
+                    @update:model-value="
+                        (v) => (form.document = maskCpf(String(v)))
+                    "
+                />
+                <p class="text-xs text-muted-foreground">
+                    Ajuda a localizar seu cadastro, caso você já seja paciente.
+                </p>
+                <InputError :message="form.errors.document" />
             </div>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">

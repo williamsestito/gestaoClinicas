@@ -63,6 +63,32 @@ final class ProfessionalOperationalStatusResolver
             $warnings[] = 'O registro profissional principal está vencido.';
         }
 
+        // Campos opcionais na criação (ver CreateProfessionalRequest — só
+        // nome, e-mail, CPF e senha são obrigatórios) mas esperados num
+        // cadastro completo. Nunca bloqueiam a operação — só um lembrete
+        // que persiste até o próprio profissional (ou um administrador)
+        // completar o cadastro.
+        if ($professional->birth_date === null) {
+            $warnings[] = 'Data de nascimento não informada.';
+        }
+
+        if (blank($professional->bio)) {
+            $warnings[] = 'Biografia não preenchida.';
+        }
+
+        if (! $professional->specialtyLinks()->where('status', RecordStatus::Active)->exists()) {
+            $warnings[] = 'Nenhuma especialidade cadastrada.';
+        }
+
+        // Nunca `$primaryRegistration === null` aqui: um profissional pode
+        // ter um registro cadastrado e ativo que ainda não foi marcado como
+        // principal (`is_primary`) — isso não é "nenhum registro", é só
+        // "nenhum definido como principal ainda", uma situação diferente
+        // que não merece o mesmo aviso.
+        if (! $professional->registrations()->where('status', RecordStatus::Active)->exists()) {
+            $warnings[] = 'Nenhum registro profissional cadastrado.';
+        }
+
         $now = Carbon::now();
         $hasOngoingTimeBlock = $professional->timeBlocks()
             ->where('status', RecordStatus::Active)

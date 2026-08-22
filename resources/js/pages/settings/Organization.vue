@@ -103,13 +103,15 @@ function submit() {
                     :disabled="!canUpdate"
                 />
                 <div class="grid gap-1">
-                    <Label for="org-allow-overlap">Permitir encaixe na agenda</Label>
+                    <Label for="org-allow-overlap"
+                        >Permitir encaixe na agenda</Label
+                    >
                     <p class="text-sm text-muted-foreground">
-                        Quando ativado, a agenda deixa de bloquear
-                        sobreposição de horário do mesmo profissional (ex.:
-                        encaixe de urgência). Recursos (salas/equipamentos)
-                        continuam sempre bloqueando sobreposição, mesmo com
-                        esta opção ativada.
+                        Quando ativado, a agenda deixa de bloquear sobreposição
+                        de horário do mesmo profissional (ex.: encaixe de
+                        urgência). Recursos (salas/equipamentos) continuam
+                        sempre bloqueando sobreposição, mesmo com esta opção
+                        ativada.
                     </p>
                 </div>
                 <InputError :message="form.errors.allow_appointment_overlap" />

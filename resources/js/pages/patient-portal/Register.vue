@@ -191,9 +191,7 @@ function submit() {
                         type="date"
                         required
                     />
-                    <InputError
-                        :message="form.errors.dependent_birth_date"
-                    />
+                    <InputError :message="form.errors.dependent_birth_date" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="dependent_document">

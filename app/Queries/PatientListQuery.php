@@ -24,8 +24,13 @@ final class PatientListQuery
         ?string $search,
         ?RecordStatus $status,
         int $perPage = 20,
+        ?string $primaryProfessionalId = null,
     ): LengthAwarePaginator {
         $query = $organization->patients()->withTrashed()->orderBy('name');
+
+        if ($primaryProfessionalId !== null) {
+            $query->where('primary_professional_id', $primaryProfessionalId);
+        }
 
         if ($status !== null) {
             $query->where('status', $status);

@@ -143,10 +143,7 @@ function submit() {
                     :placeholder="professional?.document ?? undefined"
                     @input="onDocumentInput"
                 />
-                <p
-                    v-if="mode === 'edit'"
-                    class="text-xs text-muted-foreground"
-                >
+                <p v-if="mode === 'edit'" class="text-xs text-muted-foreground">
                     Deixe em branco para manter o documento atual.
                 </p>
                 <InputError :message="form.errors.document" />
@@ -191,8 +188,7 @@ function submit() {
 
                 <p class="text-xs text-muted-foreground sm:col-span-2">
                     O profissional já é criado com acesso ao sistema (papel
-                    "Profissional") usando o e-mail e a senha informados
-                    acima.
+                    "Profissional") usando o e-mail e a senha informados acima.
                 </p>
             </template>
 

@@ -71,6 +71,54 @@ it('blocks a user without appointments.manage from confirming', function () {
     expect($appointment->fresh()->status)->toBe(AppointmentStatus::Requested);
 });
 
+it('lets the linked professional confirm their own requested appointment via manage-own', function () {
+    $setup = appointmentSetup();
+    $appointment = createRequestedAppointment($setup);
+
+    $professionalUser = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+    $setup['professional']->update(['user_id' => $professionalUser->id]);
+
+    $permission = Permission::query()->firstOrCreate(
+        ['key' => PermissionKey::AppointmentsManageOwn->value],
+        ['group' => PermissionKey::AppointmentsManageOwn->group(), 'label' => PermissionKey::AppointmentsManageOwn->label()],
+    );
+    $role = Role::factory()->for($setup['organization'])->create();
+    $role->permissions()->attach($permission);
+    OrganizationMembership::factory()->for($setup['organization'])->for($professionalUser)->create([
+        'status' => OrganizationMembershipStatus::Active,
+        'role_id' => $role->id,
+    ]);
+
+    $this->actingAs($professionalUser)->patch("/settings/appointments/{$appointment->id}/confirm")
+        ->assertRedirect();
+
+    expect($appointment->fresh()->status)->toBe(AppointmentStatus::Confirmed);
+});
+
+it('blocks a professional without manage-own from confirming a colleague\'s appointment', function () {
+    $setup = appointmentSetup();
+    $appointment = createRequestedAppointment($setup);
+
+    $professionalUser = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+    // Sem vínculo com o Professional do agendamento — colega, não o dono.
+
+    $permission = Permission::query()->firstOrCreate(
+        ['key' => PermissionKey::AppointmentsManageOwn->value],
+        ['group' => PermissionKey::AppointmentsManageOwn->group(), 'label' => PermissionKey::AppointmentsManageOwn->label()],
+    );
+    $role = Role::factory()->for($setup['organization'])->create();
+    $role->permissions()->attach($permission);
+    OrganizationMembership::factory()->for($setup['organization'])->for($professionalUser)->create([
+        'status' => OrganizationMembershipStatus::Active,
+        'role_id' => $role->id,
+    ]);
+
+    $this->actingAs($professionalUser)->patch("/settings/appointments/{$appointment->id}/confirm")
+        ->assertForbidden();
+
+    expect($appointment->fresh()->status)->toBe(AppointmentStatus::Requested);
+});
+
 it('lets staff decline (cancel) a requested appointment', function () {
     $setup = appointmentSetup();
     $appointment = createRequestedAppointment($setup);

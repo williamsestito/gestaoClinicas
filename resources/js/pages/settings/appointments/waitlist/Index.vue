@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import EmptyState from '@/components/EmptyState.vue';
 import PatientSearchSelect from '@/components/appointments/PatientSearchSelect.vue';
+import EmptyState from '@/components/EmptyState.vue';
 import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDateBr, formatDateTimeBr } from '@/lib/masks';
 import { dashboard } from '@/routes';
-import { create as createAppointment, index } from '@/routes/settings/appointments';
+import {
+    create as createAppointment,
+    index,
+} from '@/routes/settings/appointments';
 import { cancel, store } from '@/routes/settings/appointments/waitlist';
 
 type Option = { id: string; name?: string; display_name?: string };
@@ -28,7 +31,7 @@ type WaitlistRow = {
     created_at: string;
 };
 
-const props = defineProps<{
+defineProps<{
     entries: WaitlistRow[];
     units: Option[];
     professionals: Option[];
@@ -55,7 +58,10 @@ const form = useForm({
 });
 
 function submit() {
-    form.post(store().url, { preserveScroll: true, onSuccess: () => form.reset() });
+    form.post(store().url, {
+        preserveScroll: true,
+        onSuccess: () => form.reset(),
+    });
 }
 
 function cancelEntry(entryId: string) {
@@ -168,7 +174,11 @@ function formatPreferredDate(value: string | null): string | null {
                         class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                     >
                         <option value="" disabled>Selecione</option>
-                        <option v-for="unit in units" :key="unit.id" :value="unit.id">
+                        <option
+                            v-for="unit in units"
+                            :key="unit.id"
+                            :value="unit.id"
+                        >
                             {{ unit.name }}
                         </option>
                     </select>

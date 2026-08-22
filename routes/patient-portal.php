@@ -29,7 +29,9 @@ Route::prefix('portal')->name('patient-portal.')->group(function () {
         Route::post('registrar', [RegisteredPatientUserController::class, 'store'])->middleware('throttle:patient-register');
 
         Route::get('login', [PatientAuthenticatedSessionController::class, 'create'])->name('login');
-        Route::post('login', [PatientAuthenticatedSessionController::class, 'store'])->middleware('throttle:patient-login');
+        Route::post('login', [PatientAuthenticatedSessionController::class, 'store'])
+            ->middleware('throttle:patient-login')
+            ->name('login.store');
 
         Route::get('esqueci-senha', [PatientPasswordResetController::class, 'create'])->name('password.request');
         Route::post('esqueci-senha', [PatientPasswordResetController::class, 'store'])

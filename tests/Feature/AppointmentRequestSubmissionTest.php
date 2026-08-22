@@ -7,6 +7,9 @@ use App\Models\AppointmentRequest;
 use App\Models\LegalEntity;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\Patient;
+use App\Models\PatientUserLink;
+use App\Models\Professional;
 use App\Models\SiteService;
 use App\Models\Unit;
 use App\Models\User;
@@ -290,6 +293,145 @@ it('notifies the organization owner about a new appointment request', function (
     ])->assertRedirect();
 
     NotificationFacade::assertSentTo($owner, NewAppointmentRequestNotification::class);
+});
+
+it('stores the optional CPF as digits only, regardless of mask', function () {
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => '529.982.247-25',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertSessionHasNoErrors();
+
+    expect(AppointmentRequest::query()->where('name', 'Paciente Teste')->firstOrFail()->document)
+        ->toBe('52998224725');
+});
+
+it('rejects an invalid CPF', function () {
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => '111.111.111-11',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertSessionHasErrors('document');
+
+    expect(AppointmentRequest::query()->count())->toBe(0);
+});
+
+it('accepts a professional_id that belongs to the resolved organization', function () {
+    $organization = Organization::factory()->create();
+    $professional = Professional::factory()->for($organization)->create();
+
+    $this->post('/agendamento', [
+        'professional_id' => $professional->id,
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertSessionHasNoErrors();
+
+    expect(AppointmentRequest::query()->where('name', 'Paciente Teste')->firstOrFail()->professional_id)
+        ->toBe($professional->id);
+});
+
+it('rejects a professional_id that belongs to a different organization', function () {
+    // A instalação pública resolve sempre a primeira Organization (ver
+    // PublicAppointmentRequestController::store()) — este teste garante
+    // que um profissional de outra organização, mesmo existente e ativo,
+    // nunca é aceito nem gravado junto com o organization_id resolvido.
+    $organization = Organization::factory()->create();
+    $otherOrganization = Organization::factory()->create();
+    $otherProfessional = Professional::factory()->for($otherOrganization)->create();
+
+    $this->post('/agendamento', [
+        'professional_id' => $otherProfessional->id,
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertSessionHasErrors('professional_id');
+
+    expect(AppointmentRequest::query()->count())->toBe(0);
+});
+
+it('links the request to an existing patient found by CPF, over phone/e-mail', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+    $patient = Patient::factory()->for($organization)->create([
+        'document' => '52998224725',
+        'phone' => '(11) 90000-0000',
+        'email' => 'outro@example.com',
+    ]);
+
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'email' => 'diferente@example.com',
+        'document' => '529.982.247-25',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertRedirect();
+
+    expect(AppointmentRequest::query()->where('name', 'Paciente Teste')->firstOrFail()->patient_id)
+        ->toBe($patient->id);
+});
+
+it('links the request to an existing patient found by phone when no CPF is given', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+    $patient = Patient::factory()->for($organization)->create(['phone' => '(47) 99999-0000']);
+
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertRedirect();
+
+    expect(AppointmentRequest::query()->where('name', 'Paciente Teste')->firstOrFail()->patient_id)
+        ->toBe($patient->id);
+});
+
+it('leaves the request unlinked when no matching patient exists', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertRedirect();
+
+    expect(AppointmentRequest::query()->where('name', 'Paciente Teste')->firstOrFail()->patient_id)
+        ->toBeNull();
+});
+
+it('links the request directly to the logged-in patient portal account, skipping the matching heuristics', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+
+    // Um paciente diferente bateria por telefone se a heurística de match
+    // fosse usada — a conta logada tem prioridade sobre qualquer matching.
+    Patient::factory()->for($organization)->create(['phone' => '(47) 99999-0000']);
+
+    $link = PatientUserLink::factory()->for($organization)->create();
+
+    $this->actingAs($link->patientUser, 'patient')->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertRedirect();
+
+    expect(AppointmentRequest::query()->where('name', 'Paciente Teste')->firstOrFail()->patient_id)
+        ->toBe($link->patient_id);
 });
 
 it('keeps the appointment request even when notifying the owner fails', function () {

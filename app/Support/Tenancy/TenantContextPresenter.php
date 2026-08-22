@@ -82,6 +82,7 @@ class TenantContextPresenter
                 'id' => $membership->id,
                 'status' => $membership->status->value,
                 'is_owner' => $membership->is_owner,
+                'role_name' => $membership->is_owner ? null : $membership->role?->name,
             ] : null,
             'availableOrganizations' => $availableOrganizations,
             'availableUnits' => $availableUnits,

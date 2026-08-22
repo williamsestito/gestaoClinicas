@@ -11,6 +11,7 @@ use App\Models\LegalEntity;
 use App\Models\Organization;
 use App\Models\Professional;
 use App\Models\ProfessionalRegistration;
+use App\Models\ProfessionalSpecialty;
 use App\Models\ProfessionalTimeBlock;
 use App\Models\ProfessionalUnit;
 use App\Models\ProfessionalWorkingHour;
@@ -97,6 +98,59 @@ it('warns when the primary registration is expired', function () {
     $result = (new ProfessionalOperationalStatusResolver)->resolve($professional);
 
     expect($result->warnings)->toContain('O registro profissional principal está vencido.');
+});
+
+it('warns when optional-at-creation profile fields are still missing', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->for($organization)->create();
+    $unit = Unit::factory()->for($organization)->create(['legal_entity_id' => $legalEntity->id, 'status' => RecordStatus::Active]);
+    $professional = Professional::factory()->for($organization)->create(['status' => RecordStatus::Active, 'birth_date' => null, 'bio' => null]);
+    $link = ProfessionalUnit::factory()->for($professional)->create(['organization_id' => $organization->id, 'unit_id' => $unit->id]);
+    ProfessionalWorkingHour::factory()->for($link, 'professionalUnit')->create([
+        'organization_id' => $organization->id,
+        'weekday' => Weekday::Monday,
+    ]);
+
+    $result = (new ProfessionalOperationalStatusResolver)->resolve($professional);
+
+    expect($result->isOperational)->toBeTrue()
+        ->and($result->warnings)->toContain(
+            'Data de nascimento não informada.',
+            'Biografia não preenchida.',
+            'Nenhuma especialidade cadastrada.',
+            'Nenhum registro profissional cadastrado.',
+        );
+});
+
+it('never warns about missing profile fields once they are filled in', function () {
+    $professional = fullyOperationalProfessional();
+    $professional->update(['birth_date' => '1990-01-01', 'bio' => 'Biografia completa.']);
+    ProfessionalSpecialty::factory()->for($professional)->create(['organization_id' => $professional->organization_id, 'status' => RecordStatus::Active]);
+    ProfessionalRegistration::factory()->for($professional)->create(['organization_id' => $professional->organization_id, 'is_primary' => true]);
+
+    $result = (new ProfessionalOperationalStatusResolver)->resolve($professional);
+
+    expect($result->warnings)->not->toContain(
+        'Data de nascimento não informada.',
+        'Biografia não preenchida.',
+        'Nenhuma especialidade cadastrada.',
+        'Nenhum registro profissional cadastrado.',
+    );
+});
+
+it('never warns about a missing registration when one exists but isn\'t marked as primary yet', function () {
+    $professional = fullyOperationalProfessional();
+    $professional->update(['birth_date' => '1990-01-01', 'bio' => 'Biografia completa.']);
+    ProfessionalSpecialty::factory()->for($professional)->create(['organization_id' => $professional->organization_id, 'status' => RecordStatus::Active]);
+    ProfessionalRegistration::factory()->for($professional)->create([
+        'organization_id' => $professional->organization_id,
+        'is_primary' => false,
+        'status' => RecordStatus::Active,
+    ]);
+
+    $result = (new ProfessionalOperationalStatusResolver)->resolve($professional);
+
+    expect($result->warnings)->not->toContain('Nenhum registro profissional cadastrado.');
 });
 
 it('warns when there is an ongoing time block', function () {

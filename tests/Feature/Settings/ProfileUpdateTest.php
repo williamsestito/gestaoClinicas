@@ -93,6 +93,9 @@ class ProfileUpdateTest extends TestCase
         $this->assertSame('39053344705', $user->cpf, 'CPF deve ser normalizado para apenas dígitos.');
         $this->assertSame('01310100', $user->address_postal_code, 'CEP deve ser normalizado para apenas dígitos.');
         $this->assertSame('Av. Paulista', $user->address_street);
+        $this->assertSame('1000', $user->address_number);
+        $this->assertSame('Sala 1', $user->address_complement);
+        $this->assertSame('Bela Vista', $user->address_neighborhood);
         $this->assertSame('São Paulo', $user->address_city);
         $this->assertSame('SP', $user->address_state);
     }

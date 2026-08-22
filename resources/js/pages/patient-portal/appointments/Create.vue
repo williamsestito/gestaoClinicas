@@ -135,7 +135,11 @@ function submit() {
 
             <div class="grid gap-2">
                 <Label for="appointment-notes">Observações (opcional)</Label>
-                <Textarea id="appointment-notes" v-model="form.notes" rows="3" />
+                <Textarea
+                    id="appointment-notes"
+                    v-model="form.notes"
+                    rows="3"
+                />
                 <InputError :message="form.errors.notes" />
             </div>
 

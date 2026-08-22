@@ -10,6 +10,8 @@ import {
     FileText,
     Globe,
     History,
+    IdCard,
+    Inbox,
     LayoutGrid,
     MapPin,
     Search,
@@ -23,8 +25,11 @@ import { index as indexAppointments } from '@/routes/settings/appointments';
 import { index as indexAudit } from '@/routes/settings/audit';
 import { index as indexLegalEntities } from '@/routes/settings/legal-entities';
 import { edit as editModules } from '@/routes/settings/modules';
+import { index as indexMyAppointmentRequests } from '@/routes/settings/my-appointment-requests';
+import { index as indexMyPatients } from '@/routes/settings/my-patients';
 import {
     availability as myAvailability,
+    profile as myProfile,
     timeBlocks as myTimeBlocks,
 } from '@/routes/settings/my-schedule';
 import { edit as editOrganization } from '@/routes/settings/organization';
@@ -94,6 +99,12 @@ export function buildNavGroups(permissions: string[]): NavGroup[] {
             title: 'Área profissional',
             items: [
                 {
+                    title: 'Meus dados',
+                    href: myProfile(),
+                    icon: IdCard,
+                    permission: 'professional-availability.view-own',
+                },
+                {
                     title: 'Minha agenda',
                     href: myAvailability(),
                     icon: CalendarClock,
@@ -104,6 +115,18 @@ export function buildNavGroups(permissions: string[]): NavGroup[] {
                     href: myTimeBlocks(),
                     icon: CalendarOff,
                     permission: 'professional-time-blocks.view-own',
+                },
+                {
+                    title: 'Meus pacientes',
+                    href: indexMyPatients(),
+                    icon: Contact,
+                    permission: 'patients.view-own',
+                },
+                {
+                    title: 'Meus pré-agendamentos',
+                    href: indexMyAppointmentRequests(),
+                    icon: Inbox,
+                    permission: 'professional-availability.view-own',
                 },
             ],
         },

@@ -56,9 +56,7 @@ defineOptions({
                         <Button as-child variant="outline" size="sm">
                             <Link
                                 :href="
-                                    patientPortal.appointments.index(
-                                        patient.id,
-                                    )
+                                    patientPortal.appointments.index(patient.id)
                                 "
                             >
                                 Agendamentos
