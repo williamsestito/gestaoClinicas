@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Upload } from '@lucide/vue';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -48,14 +49,26 @@ function clear() {
                 v-if="previewUrl ?? props.currentUrl"
                 :src="previewUrl ?? props.currentUrl ?? undefined"
                 :alt="`Pré-visualização de ${label}`"
-                class="size-12 rounded-md border border-border object-cover"
+                class="size-12 shrink-0 rounded-md border border-border object-cover"
             />
+            <button
+                type="button"
+                class="flex items-center gap-2 rounded-md border border-dashed border-input px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+                @click="inputRef?.click()"
+            >
+                <Upload class="size-4" />
+                {{
+                    (previewUrl ?? props.currentUrl)
+                        ? 'Trocar imagem'
+                        : 'Selecionar imagem'
+                }}
+            </button>
             <input
                 :id="id"
                 ref="inputRef"
                 type="file"
                 accept="image/*"
-                class="text-sm"
+                class="hidden"
                 @change="onChange"
             />
             <Button

@@ -16,6 +16,7 @@
 |
 */
 
+use App\Http\Controllers\PatientPortal\MedicalRecordController;
 use App\Http\Controllers\PatientPortal\PatientAppointmentController;
 use App\Http\Controllers\PatientPortal\PatientAuthenticatedSessionController;
 use App\Http\Controllers\PatientPortal\PatientAvailabilityController;
@@ -94,6 +95,9 @@ Route::prefix('portal')->name('patient-portal.')->group(function () {
         });
         Route::get('pacientes/{patient}/agendamentos', [PatientAppointmentController::class, 'index'])
             ->name('appointments.index');
+        // Etapa 4 — prontuários finalizados e liberados (RN-014).
+        Route::get('pacientes/{patient}/prontuarios', [MedicalRecordController::class, 'index'])
+            ->name('medical-records.index');
         Route::patch('pacientes/{patient}/pre-agendamentos/{appointmentRequest}/cancelar', [PatientAppointmentController::class, 'cancelRequest'])
             ->middleware('throttle:patient-portal-write')
             ->name('appointment-requests.cancel');

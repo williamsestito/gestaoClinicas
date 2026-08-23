@@ -11,6 +11,7 @@ use App\Enums\SystemRole;
 use App\Models\Appointment;
 use App\Models\AppointmentRequest;
 use App\Models\LegalEntity;
+use App\Models\MedicalRecord;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\Professional;
@@ -150,4 +151,30 @@ it('shows an empty state for a Professional-role user without a linked professio
     $response = $this->actingAs($user)->get('/dashboard');
 
     $response->assertOk()->assertInertia(fn ($page) => $page->where('professionalDashboard', null));
+});
+
+it('shows a soft reminder count for completed appointments without a medical record yet (Etapa 4, never blocks completion)', function () {
+    [$user, $organization, $professional] = professionalDashboardSetup();
+    $today = Carbon::today()->setTime(10, 0);
+
+    $withoutRecord = Appointment::factory()->for($organization)->for($professional)->create([
+        'status' => AppointmentStatus::Completed,
+        'starts_at' => $today,
+        'ends_at' => $today->copy()->addMinutes(30),
+        'completed_at' => $today,
+    ]);
+    $withRecord = Appointment::factory()->for($organization)->for($professional)->create([
+        'status' => AppointmentStatus::Completed,
+        'starts_at' => $today->copy()->addHour(),
+        'ends_at' => $today->copy()->addHour()->addMinutes(30),
+        'completed_at' => $today->copy()->addHour(),
+    ]);
+    MedicalRecord::factory()->create(['appointment_id' => $withRecord->id]);
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    $response->assertOk()->assertInertia(fn ($page) => $page
+        ->where('professionalDashboard.completedWithoutMedicalRecordCount', 1));
+
+    expect($withoutRecord->fresh()->status)->toBe(AppointmentStatus::Completed);
 });

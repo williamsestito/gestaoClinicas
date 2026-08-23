@@ -6,6 +6,9 @@ use App\Models\Appointment;
 use App\Models\AppointmentRequest;
 use App\Models\Invitation;
 use App\Models\LegalEntity;
+use App\Models\MedicalRecord;
+use App\Models\MedicalRecordAddendum;
+use App\Models\MedicalRecordFile;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\OrganizationModule;
@@ -155,6 +158,9 @@ class AppServiceProvider extends ServiceProvider
             'resource' => SharedResource::class,
             'session_package' => SessionPackage::class,
             'waitlist_entry' => WaitlistEntry::class,
+            'medical_record' => MedicalRecord::class,
+            'medical_record_addendum' => MedicalRecordAddendum::class,
+            'medical_record_file' => MedicalRecordFile::class,
         ]);
     }
 

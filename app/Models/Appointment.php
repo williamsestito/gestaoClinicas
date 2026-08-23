@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -119,5 +120,11 @@ class Appointment extends Model
         // real da migration é `resource_id` (o model se chama SharedResource
         // só para evitar colisão com o pseudo-tipo `resource` do PHPDoc).
         return $this->belongsToMany(SharedResource::class, 'appointment_resource', 'appointment_id', 'resource_id')->withTimestamps();
+    }
+
+    /** @return HasOne<MedicalRecord, $this> */
+    public function medicalRecord(): HasOne
+    {
+        return $this->hasOne(MedicalRecord::class);
     }
 }

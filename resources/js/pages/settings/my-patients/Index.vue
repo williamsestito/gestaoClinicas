@@ -7,6 +7,7 @@ import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
+import { patientHistory } from '@/routes/settings/medical-records';
 import { index } from '@/routes/settings/my-patients';
 import { edit } from '@/routes/settings/patients';
 
@@ -154,10 +155,19 @@ function applyFilters() {
                                     :deleted-at="patient.deleted_at"
                                 />
                             </td>
-                            <td class="px-4 py-3 text-right">
+                            <td
+                                class="flex justify-end gap-2 px-4 py-3 text-right"
+                            >
                                 <Button variant="outline" size="sm" as-child>
                                     <Link :href="edit(patient.id).url">
                                         Ver
+                                    </Link>
+                                </Button>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link
+                                        :href="patientHistory(patient.id).url"
+                                    >
+                                        Prontuário
                                     </Link>
                                 </Button>
                             </td>

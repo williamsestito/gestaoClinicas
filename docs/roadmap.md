@@ -49,13 +49,17 @@ organização, pacotes de sessões, recorrência semanal,
 dashboard de autoatendimento do profissional (pré-agendamentos pendentes,
 "meus pacientes", lembretes tipo post-it), CPF obrigatório e popup de
 confirmação no formulário público, pré-agendamentos (leads) visíveis e
-canceláveis no portal do paciente, foto de perfil pelo portal, e bloqueio
-de solicitação duplicada por profissional.
+canceláveis no portal do paciente, foto de perfil pelo portal, bloqueio
+de solicitação duplicada por profissional, e prontuário clínico versionado
+(rascunho/finalização/adendo, separação estrita de acesso clínico,
+documentos categorizados com auditoria, modelos por especialidade via
+`specialty_data`, visibilidade no portal do paciente só para registros
+finalizados e liberados).
 
-Não existe: Prontuário, Produto/Venda/Financeiro/Estoque, mesclagem de
-pacientes, assinatura/billing, recursos vinculados por serviço, RRULE
-genérico de recorrência, notificação automática de vaga na lista de
-espera.
+Não existe: Produto/Venda/Financeiro/Estoque, mesclagem de pacientes,
+assinatura/billing, recursos vinculados por serviço, RRULE genérico de
+recorrência, notificação automática de vaga na lista de espera,
+odontograma.
 
 ---
 
@@ -662,19 +666,120 @@ fechar**:
   agendamento — violava a regra do projeto de nunca logar dado sensível
   de paciente. Removido.
 
-## Etapa 4 — Prontuário e documentos
+## Etapa 4 — Prontuário e documentos ✅ concluída em 2026-08-23
 
-- `MedicalRecord` versionado: rascunho editável, finalização imutável,
-  correção só por adendo (RN-007).
-- Separação de acesso: só profissional autor ou usuário clínico autorizado
-  cria/vê conteúdo clínico (RN-006, RN-016 — proprietário não tem acesso
-  clínico automático).
-- Upload/captura de arquivos (PDF/JPEG/PNG), categorias, auditoria de
-  visualização/download/exportação (RN-008).
-- Formulários por especialidade usam o `ModuleKey` da Etapa 1 (núcleo comum
-  sempre disponível; odontograma fica para pós-MVP conforme o próprio PDF).
-- Portal do paciente passa a exibir registros finalizados e liberados
-  (RN-014).
+Fonte de regras: PDF `Documento_Visão_Requisitos_Plano_de_Entregas_Gestão_
+Clínicas.pdf` (Seção 10 — Prontuário, Seção 11 — Documentos e arquivos,
+Apêndice A — RN-006 a RN-020). Detalhes completos em
+[docs/modules/medical-records.md](modules/medical-records.md).
+
+- **`MedicalRecord` versionado**: 1:1 com `Appointment` (nunca uma
+  entidade "Atendimento" separada), `status` `draft`/`finalized`.
+  Rascunho editável livremente; finalização (`finalized_at`) torna os
+  campos clínicos imutáveis (rejeitados por `ValidationException` e pela
+  Policy); correção só por adendo (`MedicalRecordAddendum`, tabela
+  só-de-criação, sem update/delete) — RN-007. Nenhuma tabela nova tem
+  soft delete nem rota de exclusão.
+- **Desvio deliberado do padrão de autorização do resto do app**: em todo
+  outro domínio o caminho amplo é `owner || permissão`
+  (`PermissionChecker::can()`, que sempre libera owner/platform-admin).
+  RN-015/RN-016 proíbem exatamente esse bypass para dados clínicos —
+  `MedicalRecordPolicy` nunca chama `PermissionChecker::can()` para o
+  caminho amplo, consultando a permissão do papel diretamente. Duas
+  permissões novas: `medical-records.manage-own` (papel padrão
+  "Profissional", propagada a organizações existentes) e
+  `medical-records.manage` (**não** entra em nenhum papel padrão — só via
+  papel customizado da própria clínica). Recepção/financeiro/estoque
+  nunca acessam, mesmo sendo proprietário ou admin (RN-006).
+- **Retorno**: `has_return_right`/`return_window_days` (padrão 15 dias) no
+  próprio `MedicalRecord`.
+- **Documentos e arquivos**: upload de PDF/JPEG/PNG (validação de
+  conteúdo real, não só extensão), categorizado
+  (`MedicalRecordFileCategory` — só categorias clinicamente sensíveis do
+  PDF entram: Exame, Fotografia clínica, Prescrição, Atestado/Declaração,
+  Consentimento, Encaminhamento, Laudo). Toda visualização/download
+  audita explicitamente (RN-008). Captura por câmera usa
+  `<input type="file" capture>` simples — sem recorte/rotação/correção de
+  perspectiva (RF-ARQ-002 do PDF, fora do MVP).
+- **Especialidades**: `specialty_data` (JSON) reserva espaço para
+  formulários de Estética/Massagens sem alterar o núcleo — só o núcleo
+  comum tem UI pronta nesta etapa. Odontograma fica de fora (Seção 2.2 do
+  PDF — "fora do primeiro lançamento comercial" — e Fase 8).
+- **Portal do paciente**: só mostra registros `finalized` **e**
+  liberados (`released_to_patient_at`, carimbo independente de
+  `finalized_at`) — RN-014. Mesmo padrão anti-IDOR do resto do portal
+  (`PatientUser::patients()->findOrFail()`, nunca Policy/route-model-binding
+  direto). Sem rota de download de arquivo no portal ainda.
+- **Entradas de UI**: link "Prontuário" em cada item da agenda do
+  dashboard do profissional e em "Meus pacientes" (histórico), nunca na
+  tela administrativa compartilhada de paciente (usada por recepção).
+- **Lembrete não bloqueante**: concluir um atendimento sem prontuário
+  nunca é bloqueado (decisão explícita do produto) — dashboard do
+  profissional só ganha um contador aditivo
+  (`completedWithoutMedicalRecordCount`) e um link direto.
+  `CompleteAppointmentAction`/`AppointmentController::complete()` não
+  foram alterados.
+
+Testes: `MedicalRecordAccessTest.php` (11 casos — autor próprio, colega
+bloqueado, recepção/financeiro/estoque bloqueados, proprietário com vínculo
+real ao papel "Proprietário" bloqueado, proprietário que também é o
+profissional autor do registro bloqueado, platform admin bloqueado,
+permissão customizada concedida, isolamento cross-tenant),
+`MedicalRecordLifecycleTest.php` (9 casos — rascunho editável, finalização
+imutável, adendo preserva conteúdo/autor, sem rota de update/delete de
+adendo, liberação ao paciente), `MedicalRecordFileTest.php` (6 casos —
+upload válido/rejeitado, auditoria de visualização/download, colega
+bloqueado), `MedicalRecordVisibilityTest.php` (4 casos — portal só exibe
+finalizado+liberado, isolado por paciente), ampliação de
+`ProfessionalDashboardTest.php` (contador aditivo, comportamento de
+conclusão intacto). `Show.spec.ts`, `MedicalRecordHistory.spec.ts`,
+patient-portal `medical-records/Index.spec.ts`, ampliação de
+`my-patients/Index.spec.ts` e `ProfessionalDashboard.spec.ts` novos/
+ampliados no frontend. Suíte completa e Vitest verdes; `pint`/
+`composer analyse`/`vue-tsc`/ESLint/Prettier limpos.
+
+**Fechamento da etapa — `security-review` sobre o diff completo, um
+achado crítico corrigido antes de fechar**:
+
+- **Bypass de acesso clínico do proprietário via permissão realmente
+  concedida (severidade alta, RN-015/RN-016)**: `SystemRole::Owner->defaultPermissions()`
+  retornava `PermissionKey::cases()` — literalmente todas as permissões,
+  incluindo as duas novas de prontuário —, e `SeedSystemRolesAction`
+  grava esse conjunto de verdade no papel "Proprietário" de cada
+  organização. `MedicalRecordPolicy` foi desenhada para nunca conceder
+  acesso clínico via o atalho `is_owner`/`is_platform_admin` de
+  `PermissionChecker::can()`, consultando a permissão do papel
+  diretamente — mas como o papel do proprietário *realmente tinha* essa
+  permissão (não um atalho, uma concessão de fato), todo proprietário de
+  toda organização passava a ter acesso clínico irrestrito de qualquer
+  jeito, o mesmo problema por uma porta diferente. Um segundo caminho
+  menor do mesmo problema: o trecho "próprio autor" da Policy ainda
+  chamava `PermissionChecker::can()`, cujo atalho de `is_owner` libera
+  acesso independente da permissão real do papel — um proprietário que
+  também é o profissional autor do registro passava pelo atalho sem
+  precisar de `medical-records.manage-own` de verdade. **Corrigido** em
+  duas frentes: `SystemRole::Owner->defaultPermissions()` agora exclui
+  explicitamente `MedicalRecordsManage`/`MedicalRecordsManageOwn` do
+  conjunto padrão do proprietário; `MedicalRecordPolicy::hasClinicalAccess()`
+  não chama mais `PermissionChecker::can()` em nenhum dos dois caminhos
+  (próprio e amplo), sempre consultando a permissão real do papel. Dois
+  testes de regressão novos em `MedicalRecordAccessTest.php`: proprietário
+  com vínculo real ao papel seedado (não mais um vínculo sintético com
+  `role_id: null`) continua bloqueado, e proprietário que também é autor
+  do registro continua bloqueado sem a permissão explícita.
+
+**Ajuste adicional achado em teste manual, após o fechamento acima**:
+`SeedSystemRolesAction::syncWithoutDetaching` só roda quando é chamada, e
+só era chamada em `OnboardOrganizationAction` (organização nova) — nenhuma
+organização já existente recebia `MedicalRecordsManageOwn` no papel
+"Profissional" de fato, apesar do código já contar com isso (o próprio
+profissional autenticado como "Dr Augusto" recebeu 403 ao abrir seu
+próprio prontuário, mesmo sendo o autor). Corrigido dos dois lados: banco
+de desenvolvimento sincronizado manualmente uma vez, e criado
+`php artisan app:sync-system-roles` (`app/Console/Commands/SyncSystemRoles.php`,
+com `SyncSystemRolesCommandTest.php`) para rodar isso de forma repetível
+sempre que uma etapa futura adicionar uma permissão ao conjunto padrão de
+um papel já em uso por clínicas existentes.
 
 ## Etapa 5 — Comercial (produtos, serviços, vendas)
 

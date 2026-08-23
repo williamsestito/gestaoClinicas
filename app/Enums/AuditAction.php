@@ -23,6 +23,8 @@ enum AuditAction: string
     case ConflictDetected = 'conflict_detected';
     case Linked = 'linked';
     case Unlinked = 'unlinked';
+    case Viewed = 'viewed';
+    case Downloaded = 'downloaded';
 
     public function label(): string
     {
@@ -44,6 +46,8 @@ enum AuditAction: string
             self::ConflictDetected => 'Conflito detectado (operação bloqueada)',
             self::Linked => 'Vínculo criado',
             self::Unlinked => 'Vínculo removido',
+            self::Viewed => 'Visualizado',
+            self::Downloaded => 'Baixado',
         };
     }
 }

@@ -104,10 +104,18 @@ class DashboardController extends Controller
 
         $agendaLimit = 200;
         $agenda = $baseQuery()
-            ->with(['patient:id,name,preferred_name', 'service:id,name', 'unit:id,name'])
+            ->with(['patient:id,name,preferred_name', 'service:id,name', 'unit:id,name', 'medicalRecord:id,appointment_id'])
             ->orderBy('starts_at')
             ->limit($agendaLimit)
             ->get();
+
+        // Etapa 4 — lembrete aditivo, nunca bloqueia a conclusão do
+        // atendimento (decisão explícita do usuário): atendimentos
+        // concluídos no período sem nenhum prontuário aberto ainda.
+        $completedWithoutMedicalRecordCount = $baseQuery()
+            ->where('status', AppointmentStatus::Completed)
+            ->whereDoesntHave('medicalRecord')
+            ->count();
 
         $pendingRequests = AppointmentRequest::query()
             ->with('service:id,name')
@@ -137,8 +145,10 @@ class DashboardController extends Controller
                 'patient_name' => $appointment->patient->preferred_name ?: $appointment->patient->name,
                 'service_name' => $appointment->service->name,
                 'unit_name' => $appointment->unit->name,
+                'medical_record_id' => $appointment->medicalRecord?->id,
             ])->values(),
             'agendaTruncated' => $agenda->count() >= $agendaLimit,
+            'completedWithoutMedicalRecordCount' => $completedWithoutMedicalRecordCount,
             'pendingAppointmentRequestsCount' => $pendingRequests->count(),
             'pendingAppointmentRequests' => $pendingRequests->take(5)->map(fn (AppointmentRequest $appointmentRequest) => [
                 'id' => $appointmentRequest->id,

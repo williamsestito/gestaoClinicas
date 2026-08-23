@@ -13,8 +13,10 @@ export type ProfessionalDashboardData = {
         patient_name: string;
         service_name: string;
         unit_name: string;
+        medical_record_id: string | null;
     }[];
     agendaTruncated: boolean;
+    completedWithoutMedicalRecordCount: number;
     pendingAppointmentRequestsCount: number;
     pendingAppointmentRequests: {
         id: string;
@@ -34,7 +36,7 @@ export type ProfessionalDashboardData = {
 </script>
 
 <script setup lang="ts">
-import { router, useForm } from '@inertiajs/vue3';
+import { Link, router, useForm } from '@inertiajs/vue3';
 import { AlarmClock, AlertTriangle, CalendarDays, Plus, X } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import TextLink from '@/components/TextLink.vue';
@@ -77,6 +79,7 @@ import {
     noShow as noShowAppointment,
     start as startAppointment,
 } from '@/routes/settings/appointments';
+import { show as showMedicalRecord } from '@/routes/settings/medical-records';
 import { index as myAppointmentRequests } from '@/routes/settings/my-appointment-requests';
 
 type Period = ProfessionalDashboardData['period'];
@@ -422,6 +425,24 @@ function dismissFiredAlarm() {
             </div>
         </div>
 
+        <div
+            v-if="data.completedWithoutMedicalRecordCount > 0"
+            class="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30"
+            role="status"
+        >
+            <AlertTriangle
+                class="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400"
+            />
+            <p class="font-medium text-amber-900 dark:text-amber-200">
+                {{ data.completedWithoutMedicalRecordCount }}
+                {{
+                    data.completedWithoutMedicalRecordCount === 1
+                        ? 'atendimento concluído sem prontuário registrado ainda'
+                        : 'atendimentos concluídos sem prontuário registrado ainda'
+                }}
+            </p>
+        </div>
+
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Card>
                 <CardHeader class="pb-2">
@@ -713,6 +734,19 @@ function dismissFiredAlarm() {
                                     "
                                     >Concluir</Button
                                 >
+                                <Link :href="showMedicalRecord(appointment.id)">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                    >
+                                        {{
+                                            appointment.medical_record_id
+                                                ? 'Prontuário'
+                                                : 'Abrir prontuário'
+                                        }}
+                                    </Button>
+                                </Link>
                             </div>
                         </li>
                     </ul>

@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureActiveOrganization;
 use App\Http\Middleware\EnsureActiveUnit;
 use App\Http\Middleware\EnsureAppointmentMembership;
 use App\Http\Middleware\EnsureLegalEntityMembership;
+use App\Http\Middleware\EnsureMedicalRecordMembership;
 use App\Http\Middleware\EnsureNoActiveOrganization;
 use App\Http\Middleware\EnsureOrganizationMembership;
 use App\Http\Middleware\EnsurePatientMembership;
@@ -87,6 +88,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.patient-membership' => EnsurePatientMembership::class,
             'tenant.appointment-membership' => EnsureAppointmentMembership::class,
             'tenant.professional-membership' => EnsureProfessionalMembership::class,
+            'tenant.medical-record-membership' => EnsureMedicalRecordMembership::class,
             'patient.active' => EnsurePatientUserIsActive::class,
             'patient.share-portal-data' => SharePatientPortalData::class,
         ]);

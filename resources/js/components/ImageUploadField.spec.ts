@@ -86,6 +86,41 @@ describe('ImageUploadField', () => {
         expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([null]);
     });
 
+    it('labels the trigger button "Trocar imagem" when there is already a current image', () => {
+        const wrapper = mount(ImageUploadField, {
+            props: {
+                id: 'hero_image',
+                label: 'Banner principal',
+                currentUrl: 'https://example.test/storage/hero.webp',
+            },
+        });
+
+        expect(
+            wrapper
+                .findAll('button')
+                .some((button) => button.text().includes('Trocar imagem')),
+        ).toBe(true);
+    });
+
+    it('opens the file picker when the upload button is clicked, and hides the native input', () => {
+        const wrapper = mount(ImageUploadField, {
+            props: { id: 'hero_image', label: 'Banner principal' },
+        });
+
+        const input = wrapper.find('input[type="file"]')
+            .element as HTMLInputElement;
+        const clickSpy = vi.spyOn(input, 'click');
+
+        expect(input.className).toContain('hidden');
+
+        const trigger = wrapper
+            .findAll('button')
+            .find((button) => button.text().includes('Selecionar imagem'));
+        trigger?.trigger('click');
+
+        expect(clickSpy).toHaveBeenCalledOnce();
+    });
+
     it('revokes the previous preview url when a second file is selected', async () => {
         const wrapper = mount(ImageUploadField, {
             props: { id: 'hero_image', label: 'Banner principal' },

@@ -83,6 +83,20 @@ enum PermissionKey: string
     case AppointmentsViewOwn = 'appointments.view-own';
     case AppointmentsManageOwn = 'appointments.manage-own';
 
+    /**
+     * Conteúdo clínico (prontuário) — nunca concedida a proprietário/admin da
+     * plataforma automaticamente (RN-015/RN-016 do documento de visão:
+     * "administrador da plataforma"/"proprietário administrativo não possui
+     * acesso clínico automático"). `MedicalRecordPolicy` por isso NÃO usa
+     * `PermissionChecker::can()` para `MedicalRecordsManage` — esse método
+     * sempre libera owner/platform-admin (ver seu próprio docblock), o que
+     * violaria as duas regras. Concessão só via papel customizado que a
+     * própria clínica cria e atribui explicitamente (ex.: "Responsável
+     * técnico").
+     */
+    case MedicalRecordsManage = 'medical-records.manage';
+    case MedicalRecordsManageOwn = 'medical-records.manage-own';
+
     case ProfessionalsView = 'professionals.view';
     case ProfessionalsManage = 'professionals.manage';
     case ProfessionalsManageSpecialties = 'professionals.manage-specialties';
@@ -176,6 +190,9 @@ enum PermissionKey: string
             self::AppointmentsViewOwn => 'Visualizar os próprios atendimentos',
             self::AppointmentsManageOwn => 'Gerenciar os próprios atendimentos (confirmar, check-in, início, conclusão, reagendar, cancelar, converter pré-agendamento)',
 
+            self::MedicalRecordsManage => 'Gerenciar prontuários de qualquer paciente (acesso clínico amplo)',
+            self::MedicalRecordsManageOwn => 'Gerenciar prontuários dos próprios atendimentos',
+
             self::ProfessionalsView => 'Visualizar profissionais',
             self::ProfessionalsManage => 'Gerenciar profissionais',
             self::ProfessionalsManageSpecialties => 'Gerenciar especialidades do profissional',
@@ -217,6 +234,7 @@ enum PermissionKey: string
             str_starts_with($this->value, 'resources.') => 'Recursos',
             str_starts_with($this->value, 'patients.') => 'Pacientes',
             str_starts_with($this->value, 'appointments.') => 'Agendamentos',
+            str_starts_with($this->value, 'medical-records.') => 'Prontuário',
             str_starts_with($this->value, 'professional-registrations.') => 'Registros profissionais',
             str_starts_with($this->value, 'professional-availability.') => 'Jornada e disponibilidade',
             str_starts_with($this->value, 'professional-time-blocks.') => 'Ausências e bloqueios',

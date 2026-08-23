@@ -7,6 +7,8 @@ use App\Http\Controllers\Organization\DashboardController;
 use App\Http\Controllers\Organization\DashboardReminderController;
 use App\Http\Controllers\Organization\InvitationController;
 use App\Http\Controllers\Organization\LegalEntityController;
+use App\Http\Controllers\Organization\MedicalRecordController;
+use App\Http\Controllers\Organization\MedicalRecordFileController;
 use App\Http\Controllers\Organization\MyAppointmentRequestsController;
 use App\Http\Controllers\Organization\MyPatientsController;
 use App\Http\Controllers\Organization\MyScheduleController;
@@ -319,6 +321,32 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
                 ->name('settings.appointments.complete');
             Route::patch('settings/appointments/{appointment}/no-show', [AppointmentController::class, 'noShow'])
                 ->name('settings.appointments.no-show');
+
+            // Etapa 4 — prontuário do atendimento (ver docs/modules/medical-records.md).
+            Route::get('settings/appointments/{appointment}/prontuario', [MedicalRecordController::class, 'show'])
+                ->name('settings.medical-records.show');
+        });
+
+        Route::middleware('tenant.medical-record-membership')->group(function () {
+            Route::patch('settings/prontuarios/{medicalRecord}', [MedicalRecordController::class, 'update'])
+                ->name('settings.medical-records.update');
+            Route::patch('settings/prontuarios/{medicalRecord}/finalizar', [MedicalRecordController::class, 'finalize'])
+                ->name('settings.medical-records.finalize');
+            Route::patch('settings/prontuarios/{medicalRecord}/liberar', [MedicalRecordController::class, 'release'])
+                ->name('settings.medical-records.release');
+            Route::post('settings/prontuarios/{medicalRecord}/adendos', [MedicalRecordController::class, 'addAddendum'])
+                ->name('settings.medical-records.add-addendum');
+            Route::post('settings/prontuarios/{medicalRecord}/arquivos', [MedicalRecordFileController::class, 'store'])
+                ->name('settings.medical-record-files.store');
+            Route::get('settings/prontuarios/{medicalRecord}/arquivos/{file}', [MedicalRecordFileController::class, 'show'])
+                ->name('settings.medical-record-files.show');
+            Route::get('settings/prontuarios/{medicalRecord}/arquivos/{file}/download', [MedicalRecordFileController::class, 'download'])
+                ->name('settings.medical-record-files.download');
+        });
+
+        Route::middleware('tenant.patient-membership')->group(function () {
+            Route::get('settings/meus-pacientes/{patient}/prontuarios', [MedicalRecordController::class, 'patientHistory'])
+                ->name('settings.medical-records.patient-history');
         });
 
         // Etapa 3.3 do roadmap — lista de espera. Reaproveita a permissão

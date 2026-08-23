@@ -50,6 +50,7 @@ const professionalDashboard = {
     counters: { open: 1, scheduled: 2, completed: 3 },
     agenda: [],
     agendaTruncated: false,
+    completedWithoutMedicalRecordCount: 0,
     pendingAppointmentRequestsCount: 0,
     pendingAppointmentRequests: [],
     reminders: [],

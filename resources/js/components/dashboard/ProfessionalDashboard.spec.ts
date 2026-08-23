@@ -51,9 +51,11 @@ const baseData = {
             patient_name: 'Ana Souza',
             service_name: 'Consulta',
             unit_name: 'Matriz',
+            medical_record_id: null as string | null,
         },
     ],
     agendaTruncated: false,
+    completedWithoutMedicalRecordCount: 0,
     pendingAppointmentRequestsCount: 2,
     pendingAppointmentRequests: [
         {
@@ -550,5 +552,54 @@ describe('ProfessionalDashboard', () => {
         });
 
         expect(wrapper.text()).not.toContain('Ver mês inteiro');
+    });
+
+    it('shows a soft reminder for completed appointments without a medical record, without blocking anything', () => {
+        const wrapper = mount(ProfessionalDashboard, {
+            props: {
+                data: makeData({ completedWithoutMedicalRecordCount: 2 }),
+            },
+        });
+
+        expect(wrapper.text()).toContain(
+            '2 atendimentos concluídos sem prontuário registrado ainda',
+        );
+    });
+
+    it('hides the medical record reminder when the count is zero', () => {
+        const wrapper = mount(ProfessionalDashboard, {
+            props: {
+                data: makeData({ completedWithoutMedicalRecordCount: 0 }),
+            },
+        });
+
+        expect(wrapper.text()).not.toContain('prontuário registrado ainda');
+    });
+
+    it('shows a "Prontuário" link for each agenda entry, labeled differently when one already exists', () => {
+        const wrapper = mount(ProfessionalDashboard, {
+            props: {
+                data: makeData({
+                    agenda: [
+                        {
+                            ...baseData.agenda[0],
+                            id: 'apt-new',
+                            medical_record_id: null,
+                        },
+                        {
+                            ...baseData.agenda[0],
+                            id: 'apt-existing',
+                            medical_record_id: 'rec-1',
+                        },
+                    ],
+                }),
+            },
+        });
+
+        const links = wrapper.findAll('a');
+        expect(links.some((link) => link.text() === 'Abrir prontuário')).toBe(
+            true,
+        );
+        expect(links.some((link) => link.text() === 'Prontuário')).toBe(true);
     });
 });

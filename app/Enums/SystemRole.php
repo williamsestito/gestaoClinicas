@@ -48,16 +48,30 @@ enum SystemRole: string
 
     /**
      * Permissões concedidas por padrão a este papel de sistema. O
-     * proprietário não depende disto (tem acesso total via `is_owner`),
-     * mas ainda recebe o conjunto completo para consistência quando o
-     * papel é exibido/reatribuído.
+     * proprietário não depende disto para a maior parte do sistema (tem
+     * acesso total via `is_owner` em `PermissionChecker`), mas ainda
+     * recebe o conjunto completo para consistência quando o papel é
+     * exibido/reatribuído — **exceto** as duas permissões clínicas
+     * (`MedicalRecordsManage`/`MedicalRecordsManageOwn`), deliberadamente
+     * excluídas: `App\Policies\MedicalRecordPolicy` é a única Policy do
+     * sistema que nunca usa o atalho de `is_owner`/`is_platform_admin` e
+     * consulta a permissão real do papel (RN-015/RN-016) — se essas duas
+     * chaves estivessem aqui, todo proprietário teria acesso clínico
+     * irrestrito de verdade (não um bypass, uma permissão de fato
+     * concedida), o mesmo problema que RN-016 proíbe.
      *
      * @return array<int, PermissionKey>
      */
     public function defaultPermissions(): array
     {
         return match ($this) {
-            self::Owner => PermissionKey::cases(),
+            self::Owner => array_values(array_filter(
+                PermissionKey::cases(),
+                fn (PermissionKey $key): bool => ! in_array($key, [
+                    PermissionKey::MedicalRecordsManage,
+                    PermissionKey::MedicalRecordsManageOwn,
+                ], true),
+            )),
 
             self::ClinicAdmin => [
                 PermissionKey::DashboardView,
@@ -176,6 +190,7 @@ enum SystemRole: string
                 PermissionKey::PatientsViewOwn,
                 PermissionKey::AppointmentsViewOwn,
                 PermissionKey::AppointmentsManageOwn,
+                PermissionKey::MedicalRecordsManageOwn,
                 PermissionKey::ProfessionalOwnAvailabilityView,
                 PermissionKey::ProfessionalOwnAvailabilityManage,
                 PermissionKey::ProfessionalOwnTimeBlocksView,
