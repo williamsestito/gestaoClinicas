@@ -143,6 +143,38 @@ it('rejects a duplicate document within the same clinic but allows it in another
     expect(Patient::query()->where('document', '52998224725')->count())->toBe(2);
 });
 
+it('allows creating a patient with a document that already belonged to an archived (soft-deleted) patient', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+    $archived = Patient::factory()->for($organization)->create(['document' => '52998224725']);
+    $archived->delete();
+
+    $this->actingAs($user)->post('/settings/patients', [
+        'name' => 'Novo Cadastro',
+        'birth_date' => '1990-05-10',
+        'document' => '529.982.247-25',
+        'emergency_contacts' => validEmergencyContacts(),
+    ])->assertSessionHasNoErrors();
+
+    expect(Patient::query()->where('document', '52998224725')->count())->toBe(1);
+});
+
+it('allows updating a patient to a document that already belonged to an archived (soft-deleted) patient', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+    $archived = Patient::factory()->for($organization)->create(['document' => '52998224725']);
+    $archived->delete();
+    $patient = Patient::factory()->for($organization)->create();
+
+    $this->actingAs($user)->put("/settings/patients/{$patient->id}", [
+        'name' => $patient->name,
+        'birth_date' => $patient->birth_date->toDateString(),
+        'document' => '529.982.247-25',
+    ])->assertSessionHasNoErrors();
+
+    expect($patient->fresh()->document)->toBe('52998224725');
+});
+
 it('updates a patient', function () {
     $user = actingOwnerWithActiveContext();
     $patient = Patient::factory()->for($user->organizationMemberships()->first()->organization)->create();

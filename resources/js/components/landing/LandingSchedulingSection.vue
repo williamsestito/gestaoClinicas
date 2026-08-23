@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
+import { Link, useForm } from '@inertiajs/vue3';
 import { CheckCircle2 } from '@lucide/vue';
-import { watch } from 'vue';
+import { computed, ref, useTemplateRef, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PhoneInput from '@/components/PhoneInput.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -19,7 +27,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { useLandingScheduling } from '@/composables/useLandingScheduling';
 import { maskCpf } from '@/lib/masks';
+import { login } from '@/routes';
 import { store } from '@/routes/appointment-requests';
+import patientPortal from '@/routes/patient-portal';
 import LandingAvailabilitySearch from './LandingAvailabilitySearch.vue';
 
 const {
@@ -28,6 +38,9 @@ const {
     selectedProfessionalName,
     preferredDate,
     preferredPeriod,
+    preferredUnitId,
+    preferredServiceId,
+    preferredStartsAt,
 } = useLandingScheduling();
 
 const STEPS = [
@@ -51,6 +64,52 @@ const STEPS = [
 ];
 
 const PERIOD_OPTIONS = ['Manhã', 'Tarde', 'Noite'];
+
+const availabilitySearch = useTemplateRef<{ reset: () => void }>(
+    'availabilitySearch',
+);
+
+// Link "Ainda não tenho cadastro" leva os dados já digitados via query
+// string, para o formulário de cadastro do portal vir pré-preenchido — um
+// snapshot tirado ANTES de form.reset() no sucesso (ver submit() abaixo),
+// nunca os campos ao vivo do form: quando o popup é exibido, o form já
+// foi limpo, então ler form.* diretamente sempre geraria um link sem
+// query nenhuma. Só os campos realmente preenchidos, nunca string vazia.
+const submittedContact = ref({
+    name: '',
+    phone: '',
+    email: '',
+    document: '',
+});
+const registerHref = computed(() => {
+    const query: Record<string, string> = {};
+
+    if (submittedContact.value.name) {
+        query.name = submittedContact.value.name;
+    }
+
+    if (submittedContact.value.phone) {
+        query.phone = submittedContact.value.phone;
+    }
+
+    if (submittedContact.value.email) {
+        query.email = submittedContact.value.email;
+    }
+
+    if (submittedContact.value.document) {
+        query.document = submittedContact.value.document;
+    }
+
+    return patientPortal.register({ query });
+});
+
+// Popup de confirmação — o banner inline abaixo (`form.recentlySuccessful`)
+// já existia, mas fica invisível se a pessoa não estiver olhando para o
+// lugar certo da página no momento (ex.: LandingAvailabilitySearch acima
+// dele encolhe ao ser resetado, deslocando o layout). Um Dialog garante
+// que a confirmação seja vista independente da posição de rolagem, e
+// aproveita para oferecer o link do portal do paciente.
+const showConfirmationDialog = ref(false);
 
 const today = new Date();
 const minPreferredDate = today.toISOString().slice(0, 10);
@@ -111,6 +170,14 @@ const form = useForm({
     document: '',
     preferred_period: '',
     preferred_date: '',
+    // Estruturados (unidade/serviço reais + horário exato), preenchidos só
+    // quando o horário veio de um clique na busca de disponibilidade —
+    // permitem ao pré-agendamento pular a tela de conversão manual (ver
+    // "Meus pré-agendamentos"). Ficam vazios no envio manual sem busca,
+    // exatamente como antes desta etapa.
+    unit_id: '',
+    preferred_service_id: '',
+    preferred_starts_at: '',
     notes: '',
     terms_accepted: false,
     // Honeypot: campo escondido da navegação real; um preenchimento aqui só
@@ -187,6 +254,30 @@ watch(
     { immediate: true },
 );
 
+watch(
+    preferredUnitId,
+    (id) => {
+        form.unit_id = id ?? '';
+    },
+    { immediate: true },
+);
+
+watch(
+    preferredServiceId,
+    (id) => {
+        form.preferred_service_id = id ?? '';
+    },
+    { immediate: true },
+);
+
+watch(
+    preferredStartsAt,
+    (startsAt) => {
+        form.preferred_starts_at = startsAt ?? '';
+    },
+    { immediate: true },
+);
+
 // Recuperação para quando `service_id`/`professional_id` falham na
 // validação (ex.: o serviço/profissional selecionado foi desativado/
 // excluído depois que a página carregou) — sem isso, o único jeito de
@@ -210,6 +301,14 @@ function submit() {
     form.post(store().url, {
         preserveScroll: true,
         onSuccess: () => {
+            // Snapshot ANTES do reset — usado só pelo link "Ainda não
+            // tenho cadastro" do popup abaixo (ver registerHref).
+            submittedContact.value = {
+                name: form.name,
+                phone: form.phone,
+                email: form.email,
+                document: form.document,
+            };
             form.reset();
             // form.reset() só limpa os campos locais do formulário — o
             // estado compartilhado (useLandingScheduling(), um singleton de
@@ -222,6 +321,16 @@ function submit() {
             selectedProfessionalName.value = null;
             preferredDate.value = null;
             preferredPeriod.value = null;
+            preferredUnitId.value = null;
+            preferredServiceId.value = null;
+            preferredStartsAt.value = null;
+            // LandingAvailabilitySearch fica montado o tempo todo (só a
+            // mensagem de sucesso alterna abaixo) — sua própria seleção de
+            // unidade/especialidade/serviço/profissional/data não faz parte
+            // do estado compartilhado acima, então precisa ser limpa à
+            // parte, ou continuaria visível junto com o formulário vazio.
+            availabilitySearch.value?.reset();
+            showConfirmationDialog.value = true;
         },
     });
 }
@@ -266,7 +375,7 @@ function submit() {
             </li>
         </ol>
 
-        <LandingAvailabilitySearch />
+        <LandingAvailabilitySearch ref="availabilitySearch" />
 
         <div
             v-if="form.recentlySuccessful"
@@ -340,10 +449,11 @@ function submit() {
             </div>
 
             <div class="grid gap-2">
-                <Label for="document">CPF (opcional)</Label>
+                <Label for="document">CPF</Label>
                 <Input
                     id="document"
                     :model-value="form.document"
+                    required
                     autocomplete="off"
                     @update:model-value="
                         (v) => (form.document = maskCpf(String(v)))
@@ -434,5 +544,38 @@ function submit() {
                 a disponibilidade pelo telefone ou WhatsApp informado.
             </p>
         </form>
+
+        <Dialog
+            :open="showConfirmationDialog"
+            @update:open="showConfirmationDialog = $event"
+        >
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader class="items-center text-center">
+                    <CheckCircle2 class="mb-2 size-8 text-primary" />
+                    <DialogTitle>Pré-agendamento enviado!</DialogTitle>
+                    <DialogDescription>
+                        Sua solicitação foi encaminhada à clínica. Você receberá
+                        a confirmação do procedimento em breve, pelo telefone ou
+                        WhatsApp informado.
+                    </DialogDescription>
+                </DialogHeader>
+                <p class="text-center text-sm text-muted-foreground">
+                    Acompanhe o status da sua solicitação pelo portal do
+                    paciente.
+                </p>
+                <DialogFooter class="flex-col gap-2 sm:flex-col">
+                    <Button as-child class="w-full">
+                        <Link :href="login()">
+                            Acessar o portal do paciente
+                        </Link>
+                    </Button>
+                    <Button as-child variant="outline" class="w-full">
+                        <Link :href="registerHref">
+                            Ainda não tenho cadastro no portal
+                        </Link>
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </section>
 </template>

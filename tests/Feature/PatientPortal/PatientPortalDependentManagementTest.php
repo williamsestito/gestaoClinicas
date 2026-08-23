@@ -54,5 +54,5 @@ it('blocks an unauthenticated request from adding a dependent', function () {
         'birth_date' => Carbon::now()->subYears(5)->toDateString(),
         'relationship' => 'Mãe',
         'responsible_phone' => '(47) 99696-1511',
-    ])->assertRedirect('/portal/login');
+    ])->assertRedirect('/login');
 });

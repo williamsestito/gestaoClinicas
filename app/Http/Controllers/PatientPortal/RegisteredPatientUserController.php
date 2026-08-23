@@ -8,7 +8,9 @@ use App\Actions\PatientPortal\RegisterPatientUserAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PatientPortal\RegisterPatientUserRequest;
 use App\Models\Organization;
+use App\Support\Documents\Document;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,12 +26,28 @@ class RegisteredPatientUserController extends Controller
     /** Abaixo deste tempo entre a renderização do formulário e o envio, tratamos como automatizado. */
     private const MIN_FILL_TIME_MS = 3000;
 
-    public function create(): Response
+    /**
+     * `prefill`: dados já digitados no formulário público de agendamento
+     * (nome/telefone/e-mail/CPF), passados via query string pelo link
+     * "Ainda não tenho cadastro" do popup de confirmação (ver
+     * LandingSchedulingSection.vue) — evita a pessoa redigitar tudo.
+     * Só pré-preenche, nunca valida/confia nesses valores aqui; a
+     * validação de verdade continua em store().
+     */
+    public function create(Request $request): Response
     {
         $organization = Organization::query()->first();
 
         return Inertia::render('patient-portal/Register', [
             'organizationConfigured' => $organization !== null,
+            'prefill' => [
+                'name' => $request->string('name')->limit(255, '')->toString() ?: null,
+                'phone' => $request->string('phone')->limit(20, '')->toString() ?: null,
+                'email' => $request->string('email')->limit(255, '')->toString() ?: null,
+                'document' => $request->filled('document')
+                    ? Document::onlyDigits($request->string('document')->toString())
+                    : null,
+            ],
         ]);
     }
 
@@ -41,7 +59,7 @@ class RegisteredPatientUserController extends Controller
         if ($this->looksAutomated($request)) {
             Inertia::flash('toast', ['type' => 'success', 'message' => 'Cadastro enviado com sucesso.']);
 
-            return to_route('patient-portal.login');
+            return to_route('login');
         }
 
         $organization = Organization::query()->first();
@@ -73,6 +91,7 @@ class RegisteredPatientUserController extends Controller
                 'relationship' => $validated['relationship'] ?? null,
                 'responsible_phone' => $validated['responsible_phone'] ?? null,
             ],
+            $request->file('photo'),
         );
 
         $patientUser->sendEmailVerificationNotification();

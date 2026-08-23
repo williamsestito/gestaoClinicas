@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\PatientUserLinkRole;
+use App\Models\PatientUserLink;
 use App\Models\SiteSetting;
 use App\Support\Tenancy\TenantContextPresenter;
 use Illuminate\Http\Request;
@@ -44,6 +46,15 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user('web'),
             ],
             'tenant' => fn () => app(TenantContextPresenter::class)->toArray($request->user('web')),
+            // Compartilhado globalmente (não só na home do portal) porque
+            // PatientPortalLayout.vue usa isso para o item "Meus dados" do
+            // menu ir direto para o próprio cadastro, em qualquer página.
+            'patientPortal' => fn () => $request->user('patient') ? [
+                'ownPatientId' => PatientUserLink::query()
+                    ->where('patient_user_id', $request->user('patient')->id)
+                    ->where('role', PatientUserLinkRole::Self)
+                    ->value('patient_id'),
+            ] : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             // Favicon do site institucional — usado por app.blade.php para
             // renderizar as tags <link rel="icon"> reais em TODA página

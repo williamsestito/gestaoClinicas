@@ -27,7 +27,7 @@ class EnsurePatientUserIsActive
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('patient-portal.login')
+            return redirect()->route('login')
                 ->with('status', 'Esta conta está desativada. Entre em contato com a clínica se precisar reativá-la.');
         }
 

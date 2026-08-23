@@ -132,7 +132,7 @@ it('reschedules an appointment to a free slot and revalidates conflict', functio
     ])->assertSessionHasErrors('starts_at');
 });
 
-it('lets the linked professional check-in, start and complete their own appointment via manage-own, but not cancel it', function () {
+it('lets the linked professional check-in, start, complete, reschedule and cancel their own appointment via manage-own', function () {
     $setup = appointmentSetup();
     $appointment = createConfirmedAppointment($setup, Carbon::now()->subHour());
 
@@ -154,7 +154,12 @@ it('lets the linked professional check-in, start and complete their own appointm
         ->assertRedirect();
     expect($appointment->fresh()->status)->toBe(AppointmentStatus::CheckedIn);
 
+    // Autoatendimento ampliado (ver AppointmentPolicy::reschedule()/cancel()):
+    // o profissional vinculado também reagenda e cancela os próprios
+    // atendimentos, nunca os de outro profissional (ver
+    // ProfessionalAppointmentSelfServiceTest).
     $this->actingAs($professionalUser)->patch("/settings/appointments/{$appointment->id}/cancel", [
-        'reason' => 'Não deveria conseguir',
-    ])->assertForbidden();
+        'reason' => 'Paciente remarcou por telefone.',
+    ])->assertRedirect();
+    expect($appointment->fresh()->status)->toBe(AppointmentStatus::Cancelled);
 });

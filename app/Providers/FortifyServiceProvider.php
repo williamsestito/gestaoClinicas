@@ -4,9 +4,12 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Models\PatientUser;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -46,20 +49,60 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::createUsersUsing(CreateNewUser::class);
 
         Fortify::authenticateUsing(function (Request $request) {
-            $user = User::query()->where(Fortify::username(), $request->input(Fortify::username()))->first();
+            $email = (string) $request->input(Fortify::username());
+            $password = (string) $request->input('password');
 
-            if (! $user || ! Hash::check((string) $request->input('password'), $user->password)) {
-                return null;
+            $user = User::query()->where(Fortify::username(), $email)->first();
+
+            if ($user && Hash::check($password, $user->password)) {
+                if (! $user->is_active) {
+                    throw ValidationException::withMessages([
+                        Fortify::username() => 'Esta conta está desativada. Entre em contato com o suporte se precisar reativá-la.',
+                    ]);
+                }
+
+                return $user;
             }
 
-            if (! $user->is_active) {
-                throw ValidationException::withMessages([
-                    Fortify::username() => 'Esta conta está desativada. Entre em contato com o suporte se precisar reativá-la.',
-                ]);
-            }
+            $this->authenticatePatientOrFail($request, $email, $password);
 
-            return $user;
+            return null;
         });
+    }
+
+    /**
+     * Reconhece, pelo e-mail digitado em /login, uma conta de paciente do
+     * portal (guard "patient", tabela separada de `users`) e autentica
+     * direto no guard certo — sem redirecionar de volta ao formulário para
+     * um segundo POST no cliente, que já causou um bug real de componente
+     * Vue desmontado no meio do fluxo (a resposta de falha do primeiro
+     * guard é uma navegação Inertia completa).
+     *
+     * @throws HttpResponseException quando as credenciais batem com um
+     *                               paciente ativo — interrompe o pipeline
+     *                               de autenticação do Fortify e devolve
+     *                               o redirect para o portal.
+     * @throws ValidationException quando o paciente existe mas está
+     *                             inativo.
+     */
+    private function authenticatePatientOrFail(Request $request, string $email, string $password): void
+    {
+        $patientUser = PatientUser::query()->where('email', $email)->first();
+
+        if (! $patientUser || ! Hash::check($password, $patientUser->password)) {
+            return;
+        }
+
+        if (! $patientUser->is_active) {
+            throw ValidationException::withMessages([
+                Fortify::username() => 'Esta conta está desativada. Entre em contato com a clínica se precisar reativá-la.',
+            ]);
+        }
+
+        Auth::guard('patient')->login($patientUser, $request->boolean('remember'));
+        $request->session()->regenerate();
+
+        throw new HttpResponseException(redirect()->route('patient-portal.dashboard'));
     }
 
     /**
@@ -123,6 +166,12 @@ class FortifyServiceProvider extends ServiceProvider
 
         RateLimiter::for('direct-password-reset', function (Request $request) {
             return Limit::perMinute(20)->by($request->ip());
+        });
+
+        // App\Http\Controllers\Auth\SendPasswordResetLinkController — "esqueci
+        // minha senha" unificado de /login.
+        RateLimiter::for('forgot-password-link', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
         });
     }
 }

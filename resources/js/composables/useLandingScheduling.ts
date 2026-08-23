@@ -27,6 +27,20 @@ const selectedProfessionalName = ref<string | null>(null);
  */
 const preferredDate = ref<string | null>(null);
 const preferredPeriod = ref<string | null>(null);
+/**
+ * Unidade e serviço REAIS (cadastro operacional, ULID) e o horário exato
+ * (string local `YYYY-MM-DDTHH:mm:ss`, mesmo formato de `selectSlot()`)
+ * escolhidos na busca de disponibilidade — permitem ao pré-agendamento
+ * carregar tudo que `App\Actions\Organization\CreateAppointmentAction`
+ * precisa, sem exigir reescolher nada ao converter (ver "Meus
+ * pré-agendamentos"). `preferredServiceId` nunca é o mesmo espaço de id de
+ * `selectedServiceId` acima (que é o `SiteService` do formulário manual).
+ * Ficam `null` quando o lead nunca passou por um horário específico da
+ * busca — só pelo formulário manual.
+ */
+const preferredUnitId = ref<string | null>(null);
+const preferredServiceId = ref<string | null>(null);
+const preferredStartsAt = ref<string | null>(null);
 
 export function useLandingScheduling() {
     return {
@@ -35,5 +49,8 @@ export function useLandingScheduling() {
         selectedProfessionalName,
         preferredDate,
         preferredPeriod,
+        preferredUnitId,
+        preferredServiceId,
+        preferredStartsAt,
     };
 }

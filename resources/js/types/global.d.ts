@@ -20,6 +20,7 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             tenant: TenantContext | null;
+            patientPortal: { ownPatientId: string | null } | null;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

@@ -12,11 +12,17 @@ use App\Models\User;
 use App\Support\Authorization\PermissionChecker;
 
 /**
- * Agendamentos são escopados por organização. `confirm`/`manageStatus`
- * cobrem o profissional vinculado ao agendamento (via `professional.user_id`)
- * — gestão própria é limitada a transições de status do próprio atendimento
- * (confirmar/check-in/início/conclusão/não comparecimento), nunca criar/
- * reagendar/cancelar (exclusivo de quem tem `appointments.manage`).
+ * Agendamentos são escopados por organização. `confirm`/`manageStatus`/
+ * `reschedule`/`cancel` cobrem o profissional vinculado ao agendamento (via
+ * `professional.user_id`) para os PRÓPRIOS atendimentos — confirmar,
+ * check-in, início, conclusão, reagendar e cancelar, nunca os de outro
+ * profissional. `create()` (criar um agendamento do zero, sem vínculo com
+ * um pré-agendamento específico) continua exclusivo de quem tem
+ * `appointments.manage`; converter um pré-agendamento específico do próprio
+ * profissional é `AppointmentRequestPolicy::createFromOwnRequest()` — o
+ * Gate do Laravel resolve a policy pela classe do model recebido por
+ * `can()`/`authorize()`, então esse método precisa viver na policy de
+ * `AppointmentRequest`, não aqui.
  */
 class AppointmentPolicy
 {
@@ -46,12 +52,14 @@ class AppointmentPolicy
 
     public function reschedule(User $user, Appointment $appointment): bool
     {
-        return $this->hasBroadAccess($user, $appointment->organization_id);
+        return $this->hasBroadAccess($user, $appointment->organization_id)
+            || $this->hasOwnAccess($user, $appointment, PermissionKey::AppointmentsManageOwn);
     }
 
     public function cancel(User $user, Appointment $appointment): bool
     {
-        return $this->hasBroadAccess($user, $appointment->organization_id);
+        return $this->hasBroadAccess($user, $appointment->organization_id)
+            || $this->hasOwnAccess($user, $appointment, PermissionKey::AppointmentsManageOwn);
     }
 
     public function confirm(User $user, Appointment $appointment): bool

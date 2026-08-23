@@ -9,9 +9,11 @@ use App\Models\PatientResponsible;
 use App\Models\PatientUser;
 use App\Models\PatientUserLink;
 use Database\Factories\LegalEntityFactory;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 // O rate limit real (throttle:patient-register) usa o cache Redis do
 // ambiente de teste, que não é resetado por RefreshDatabase e vaza entre
@@ -34,6 +36,51 @@ it('renders the registration page with organizationConfigured true when an organ
     Organization::factory()->create();
 
     $this->get('/portal/registrar')->assertOk();
+});
+
+it('prefills the form from query string data sent by the public scheduling form', function () {
+    Organization::factory()->create();
+
+    $response = $this->get('/portal/registrar?'.http_build_query([
+        'name' => 'Maria Souza',
+        'phone' => '(47) 99999-0000',
+        'email' => 'maria@example.com',
+        'document' => '529.982.247-25',
+    ]));
+
+    $response->assertOk()->assertInertia(fn ($page) => $page
+        ->where('prefill.name', 'Maria Souza')
+        ->where('prefill.phone', '(47) 99999-0000')
+        ->where('prefill.email', 'maria@example.com')
+        ->where('prefill.document', '52998224725'));
+});
+
+it('leaves prefill fields null when no query string data is sent', function () {
+    Organization::factory()->create();
+
+    $response = $this->get('/portal/registrar');
+
+    $response->assertOk()->assertInertia(fn ($page) => $page
+        ->where('prefill.name', null)
+        ->where('prefill.phone', null)
+        ->where('prefill.email', null)
+        ->where('prefill.document', null));
+});
+
+it('accepts an optional photo on self-registration, stored on the private disk', function () {
+    Storage::fake('local');
+    Organization::factory()->create();
+    $payload = baseRegistrationPayload();
+    $payload['photo'] = UploadedFile::fake()->image('foto.jpg', 200, 200);
+
+    $this->post('/portal/registrar', $payload)->assertRedirect('/portal');
+
+    $patientUser = PatientUser::query()->where('email', 'maria@example.com')->firstOrFail();
+    $link = PatientUserLink::query()->where('patient_user_id', $patientUser->id)->firstOrFail();
+    $patient = Patient::query()->findOrFail($link->patient_id);
+
+    expect($patient->photo_path)->not->toBeNull();
+    Storage::disk('local')->assertExists($patient->photo_path);
 });
 
 it('registers a self patient user with a linked patient and no forced emergency contact', function () {
@@ -162,7 +209,7 @@ it('silently ignores a honeypot-triggered submission without creating anything',
     $payload = baseRegistrationPayload();
     $payload['website'] = 'https://spam.example.com';
 
-    $this->post('/portal/registrar', $payload)->assertRedirect('/portal/login');
+    $this->post('/portal/registrar', $payload)->assertRedirect('/login');
 
     expect(PatientUser::query()->count())->toBe(0);
 });

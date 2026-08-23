@@ -45,6 +45,11 @@ class StoreDashboardReminderRequest extends FormRequest
         return [
             'body' => ['required', 'string', 'max:280'],
             'color' => ['required', Rule::enum(DashboardReminderColor::class)],
+            // Já convertido para UTC no cliente (Date::toISOString(), a
+            // partir do horário local do navegador) — checado só no cliente
+            // enquanto o dashboard estiver aberto, nunca dispara nada no
+            // servidor (ver ProfessionalDashboard.vue).
+            'alarm_at' => ['nullable', 'date'],
         ];
     }
 }

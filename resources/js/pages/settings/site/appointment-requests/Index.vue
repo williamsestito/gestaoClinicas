@@ -75,12 +75,23 @@ defineOptions({
     },
 });
 
-const STATUS_OPTIONS: { value: AppointmentRequestStatus; label: string }[] = [
+const STATUS_FILTER_OPTIONS: {
+    value: AppointmentRequestStatus;
+    label: string;
+}[] = [
     { value: 'pending', label: 'Aguardando contato' },
     { value: 'contacted', label: 'Contato realizado' },
     { value: 'scheduled', label: 'Agendado' },
     { value: 'cancelled', label: 'Cancelado' },
 ];
+
+// "Agendado" nunca é uma opção editável aqui — só existe de verdade quando
+// o pré-agendamento é convertido em Appointment real pelo botão "Agendar"
+// (ver App\Actions\Organization\CreateAppointmentAction). Continua
+// disponível como filtro acima, para localizar quem já foi convertido.
+const EDITABLE_STATUS_OPTIONS = STATUS_FILTER_OPTIONS.filter(
+    (option) => option.value !== 'scheduled',
+);
 
 const search = ref(props.filters.search ?? '');
 const statusFilter = ref(props.filters.status ?? '');
@@ -198,7 +209,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                 >
                     <option value="">Todos</option>
                     <option
-                        v-for="option in STATUS_OPTIONS"
+                        v-for="option in STATUS_FILTER_OPTIONS"
                         :key="option.value"
                         :value="option.value"
                     >
@@ -322,7 +333,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem
-                                        v-for="option in STATUS_OPTIONS"
+                                        v-for="option in EDITABLE_STATUS_OPTIONS"
                                         :key="option.value"
                                         :value="option.value"
                                     >

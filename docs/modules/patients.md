@@ -48,6 +48,18 @@ similaridade/nome parecido, mesma filosofia já testada em
 consultado pelo formulário antes do submit — só avisa, nunca bloqueia a
 criação. Mesclagem de fato (Etapa 2.2) ainda não existe.
 
+**Bug real encontrado e corrigido (2026-08-22)**: a validação de CPF único
+(`CreatePatientRequest`/`UpdatePatientRequest`/
+`UpdatePatientPortalProfileRequest`) checava a tabela `patients` inteira,
+sem excluir registros arquivados (soft-deleted) — diferente do índice
+único de verdade no banco (`patients_unique_active_document`, ver
+migration de `patients`), que já é parcial (`WHERE deleted_at IS NULL`).
+Na prática, um paciente arquivado com um CPF X bloqueava **para sempre**
+qualquer novo cadastro com esse CPF — inclusive o próprio dono do CPF
+tentando apenas salvar o cadastro ativo dele sem mudar nada. Corrigido
+adicionando `->whereNull('deleted_at')` às três regras, espelhando o
+índice do banco.
+
 ## Listagem paginada no servidor
 
 Diferente de `Specialty`/`Service`/`Professional` (listagem inteira sem

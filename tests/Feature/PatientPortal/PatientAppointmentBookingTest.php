@@ -123,5 +123,5 @@ it('blocks an unauthenticated request from booking an appointment', function () 
         'professional_id' => $setup['professional']->id,
         'service_id' => $setup['service']->id,
         'starts_at' => appointmentMonday()->toDateString().'T09:00:00',
-    ])->assertRedirect('/portal/login');
+    ])->assertRedirect('/login');
 });

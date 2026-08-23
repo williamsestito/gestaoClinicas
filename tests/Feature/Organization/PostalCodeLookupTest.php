@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\PatientUser;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -67,6 +68,29 @@ it('caches a successful postal code lookup across all providers', function () {
     $this->actingAs($user)->getJson('/cep/01310930')->assertOk();
 
     Http::assertSentCount(1);
+});
+
+it('rejects an unauthenticated request', function () {
+    $this->getJson('/cep/01310930')->assertUnauthorized();
+});
+
+it('is also reachable by an authenticated patient portal account, not just staff', function () {
+    Http::fake([
+        'cep.awesomeapi.com.br/*' => Http::response([
+            'cep' => '01310930',
+            'address' => 'Avenida Paulista, 2100',
+            'state' => 'SP',
+            'district' => 'Bela Vista',
+            'city' => 'São Paulo',
+        ]),
+        '*' => Http::response([], 500),
+    ]);
+
+    $patientUser = PatientUser::factory()->create();
+
+    $this->actingAs($patientUser, 'patient')->getJson('/cep/01310930')
+        ->assertOk()
+        ->assertJson(['city' => 'São Paulo', 'state' => 'SP']);
 });
 
 afterEach(function () {

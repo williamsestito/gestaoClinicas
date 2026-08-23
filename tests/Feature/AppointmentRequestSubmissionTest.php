@@ -10,6 +10,7 @@ use App\Models\OrganizationMembership;
 use App\Models\Patient;
 use App\Models\PatientUserLink;
 use App\Models\Professional;
+use App\Models\Service;
 use App\Models\SiteService;
 use App\Models\Unit;
 use App\Models\User;
@@ -18,14 +19,21 @@ use Illuminate\Contracts\Notifications\Dispatcher;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 
-// O rate limit real (throttle:5,1) é aplicado na rota — desabilitado aqui
-// porque o estado do limiter usa o cache Redis do ambiente de teste, que
-// não é resetado por RefreshDatabase e vaza entre execuções da suíte.
+// O rate limit real (throttle:10,1) é aplicado na rota — desabilitado
+// aqui porque o estado do limiter usa o cache Redis do ambiente de teste,
+// que não é resetado por RefreshDatabase e vaza entre execuções da suíte
+// (mitigado para o Redis de dev em .env.testing, ver REDIS_CACHE_DB).
 beforeEach(fn () => $this->withoutMiddleware(ThrottleRequests::class));
 
 function renderedAtMs(int $millisecondsAgo = 5000): int
 {
     return (int) (microtime(true) * 1000) - $millisecondsAgo;
+}
+
+/** CPF válido reutilizado nos testes — dígitos verificadores corretos. */
+function validDocument(): string
+{
+    return '529.982.247-25';
 }
 
 it('creates a pending appointment request lead from the public form', function () {
@@ -39,6 +47,7 @@ it('creates a pending appointment request lead from the public form', function (
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'email' => 'paciente@example.com',
+        'document' => validDocument(),
         'preferred_period' => 'Manhã',
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
@@ -67,6 +76,17 @@ it('requires name and phone', function () {
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertSessionHasErrors(['name', 'phone']);
+});
+
+it('requires a document (CPF)', function () {
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertSessionHasErrors('document');
+
+    expect(AppointmentRequest::query()->count())->toBe(0);
 });
 
 it('rejects a service_id that does not exist', function () {
@@ -99,6 +119,7 @@ it('normalizes phone numbers into a consistent local format', function (string $
     $this->post('/agendamento', [
         'name' => 'Paciente Teste',
         'phone' => $input,
+        'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertSessionHasNoErrors();
@@ -147,6 +168,7 @@ it('accepts a valid preferred_date within the allowed window', function () {
     $this->post('/agendamento', [
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'preferred_date' => now()->addDays(5)->toDateString(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
@@ -180,6 +202,7 @@ it('silently accepts without persisting when the honeypot field is filled', func
     $this->post('/agendamento', [
         'name' => 'Bot Teste',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'terms_accepted' => true,
         'website' => 'https://spam.example.com',
         'form_rendered_at' => renderedAtMs(),
@@ -192,6 +215,7 @@ it('silently accepts without persisting when the submission is faster than a hum
     $this->post('/agendamento', [
         'name' => 'Bot Rápido',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(500),
     ])->assertRedirect();
@@ -203,6 +227,7 @@ it('reuses a recent identical submission instead of creating a duplicate', funct
     $payload = [
         'name' => 'Paciente Duplicado',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'preferred_period' => 'Manhã',
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
@@ -222,6 +247,7 @@ it('does not treat the same phone with a different service as a duplicate', func
         'service_id' => $serviceA->id,
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -230,6 +256,7 @@ it('does not treat the same phone with a different service as a duplicate', func
         'service_id' => $serviceB->id,
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -249,6 +276,7 @@ it('creates a new request once the duplicate window has passed', function () {
     $this->post('/agendamento', [
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -261,6 +289,7 @@ it('persists utm and origin parameters', function () {
     $this->post('/agendamento', [
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
         'utm' => [
@@ -288,6 +317,7 @@ it('notifies the organization owner about a new appointment request', function (
     $this->post('/agendamento', [
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -295,7 +325,7 @@ it('notifies the organization owner about a new appointment request', function (
     NotificationFacade::assertSentTo($owner, NewAppointmentRequestNotification::class);
 });
 
-it('stores the optional CPF as digits only, regardless of mask', function () {
+it('stores the CPF as digits only, regardless of mask', function () {
     $this->post('/agendamento', [
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
@@ -328,6 +358,7 @@ it('accepts a professional_id that belongs to the resolved organization', functi
         'professional_id' => $professional->id,
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertSessionHasNoErrors();
@@ -349,11 +380,79 @@ it('rejects a professional_id that belongs to a different organization', functio
         'professional_id' => $otherProfessional->id,
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertSessionHasErrors('professional_id');
 
     expect(AppointmentRequest::query()->count())->toBe(0);
+});
+
+it('rejects a new request for the same professional while a previous one is still awaiting contact', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+    $professional = Professional::factory()->for($organization)->create();
+    $patient = Patient::factory()->for($organization)->create(['document' => '11144477735']);
+    AppointmentRequest::factory()->for($organization)->for($patient)->for($professional)->create([
+        'status' => AppointmentRequestStatus::Pending,
+    ]);
+
+    $this->post('/agendamento', [
+        'professional_id' => $professional->id,
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => '111.444.777-35',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertSessionHasErrors('professional_id');
+
+    expect(AppointmentRequest::query()->count())->toBe(1);
+});
+
+it('allows a new request for a different professional even with a pending one for another professional', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+    $professionalA = Professional::factory()->for($organization)->create();
+    $professionalB = Professional::factory()->for($organization)->create();
+    $patient = Patient::factory()->for($organization)->create(['document' => '11144477735']);
+    AppointmentRequest::factory()->for($organization)->for($patient)->for($professionalA)->create([
+        'status' => AppointmentRequestStatus::Pending,
+    ]);
+
+    $this->post('/agendamento', [
+        'professional_id' => $professionalB->id,
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => '111.444.777-35',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertSessionHasNoErrors();
+
+    expect(AppointmentRequest::query()->count())->toBe(2);
+});
+
+it('allows a new request for the same professional once the previous one is no longer pending', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+    $professional = Professional::factory()->for($organization)->create();
+    $patient = Patient::factory()->for($organization)->create(['document' => '11144477735']);
+    AppointmentRequest::factory()->for($organization)->for($patient)->for($professional)->create([
+        'status' => AppointmentRequestStatus::Contacted,
+    ]);
+
+    $this->post('/agendamento', [
+        'professional_id' => $professional->id,
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => '111.444.777-35',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertSessionHasNoErrors();
+
+    expect(AppointmentRequest::query()->count())->toBe(2);
 });
 
 it('links the request to an existing patient found by CPF, over phone/e-mail', function () {
@@ -379,15 +478,19 @@ it('links the request to an existing patient found by CPF, over phone/e-mail', f
         ->toBe($patient->id);
 });
 
-it('links the request to an existing patient found by phone when no CPF is given', function () {
+it('falls back to phone matching when the CPF given does not match any patient', function () {
     $organization = Organization::factory()->create();
     $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
     Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
-    $patient = Patient::factory()->for($organization)->create(['phone' => '(47) 99999-0000']);
+    $patient = Patient::factory()->for($organization)->create([
+        'document' => '11144477735',
+        'phone' => '(47) 99999-0000',
+    ]);
 
     $this->post('/agendamento', [
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -404,6 +507,7 @@ it('leaves the request unlinked when no matching patient exists', function () {
     $this->post('/agendamento', [
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -426,6 +530,7 @@ it('links the request directly to the logged-in patient portal account, skipping
     $this->actingAs($link->patientUser, 'patient')->post('/agendamento', [
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -455,9 +560,70 @@ it('keeps the appointment request even when notifying the owner fails', function
     $this->post('/agendamento', [
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
 
     expect(AppointmentRequest::query()->where('name', 'Paciente Teste')->exists())->toBeTrue();
+});
+
+it('stores the real unit/service and the exact starts_at converted to UTC when the request came from the availability search', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+    $chosenUnit = Unit::factory()->for($organization)->for($legalEntity, 'legalEntity')->create(['timezone' => 'America/Sao_Paulo']);
+    $service = Service::factory()->for($organization)->create();
+
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+        'unit_id' => $chosenUnit->id,
+        'preferred_service_id' => $service->id,
+        'preferred_starts_at' => '2026-09-15T09:00:00',
+    ])->assertRedirect();
+
+    $request = AppointmentRequest::query()->where('name', 'Paciente Teste')->firstOrFail();
+    expect($request->unit_id)->toBe($chosenUnit->id)
+        ->and($request->preferred_service_id)->toBe($service->id)
+        ->and($request->preferred_starts_at->toDateTimeString())->toBe('2026-09-15 12:00:00');
+});
+
+it('falls back to headquarters when no real unit was chosen, exactly like before this feature', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    $headquarters = Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertRedirect();
+
+    $request = AppointmentRequest::query()->where('name', 'Paciente Teste')->firstOrFail();
+    expect($request->unit_id)->toBe($headquarters->id)
+        ->and($request->preferred_service_id)->toBeNull()
+        ->and($request->preferred_starts_at)->toBeNull();
+});
+
+it('rejects a preferred_service_id from another organization', function () {
+    Organization::factory()->create();
+    $otherOrganization = Organization::factory()->create();
+    $foreignService = Service::factory()->for($otherOrganization)->create();
+
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+        'preferred_service_id' => $foreignService->id,
+    ])->assertSessionHasErrors('preferred_service_id');
+
+    expect(AppointmentRequest::query()->where('name', 'Paciente Teste')->exists())->toBeFalse();
 });

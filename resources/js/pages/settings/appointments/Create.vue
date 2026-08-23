@@ -32,6 +32,8 @@ type Prefill = {
     name: string;
     phone: string;
     notes: string | null;
+    unit_id?: string | null;
+    professional_id?: string | null;
 };
 
 const props = defineProps<{
@@ -53,8 +55,8 @@ defineOptions({
 });
 
 const form = useForm({
-    unit_id: '',
-    professional_id: '',
+    unit_id: props.prefill?.unit_id ?? '',
+    professional_id: props.prefill?.professional_id ?? '',
     patient_id: '',
     service_id: '',
     starts_at: '',
@@ -65,6 +67,22 @@ const form = useForm({
     session_package_id: '',
     recurrence_weeks: undefined as number | undefined,
 });
+
+// Unidade/profissional já conhecidos (a solicitação de origem já os
+// carrega) ficam travados — evita fazer quem está convertendo reescolher o
+// que já está decidido (ver AppointmentController::create()).
+const isUnitLocked = computed(() => !!props.prefill?.unit_id);
+const isProfessionalLocked = computed(() => !!props.prefill?.professional_id);
+const lockedUnitName = computed(
+    () => props.units.find((unit) => unit.id === props.prefill?.unit_id)?.name,
+);
+const lockedProfessionalName = computed(
+    () =>
+        props.professionals.find(
+            (professional) =>
+                professional.id === props.prefill?.professional_id,
+        )?.display_name,
+);
 
 const repeatWeekly = ref(false);
 
@@ -215,7 +233,15 @@ function submit() {
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="grid gap-2">
                     <Label for="appointment-unit">Unidade</Label>
+                    <p
+                        v-if="isUnitLocked"
+                        id="appointment-unit"
+                        class="flex h-9 items-center rounded-md border border-input bg-muted px-3 text-sm"
+                    >
+                        {{ lockedUnitName }}
+                    </p>
                     <select
+                        v-else
                         id="appointment-unit"
                         v-model="form.unit_id"
                         class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -233,7 +259,15 @@ function submit() {
                 </div>
                 <div class="grid gap-2">
                     <Label for="appointment-professional">Profissional</Label>
+                    <p
+                        v-if="isProfessionalLocked"
+                        id="appointment-professional"
+                        class="flex h-9 items-center rounded-md border border-input bg-muted px-3 text-sm"
+                    >
+                        {{ lockedProfessionalName }}
+                    </p>
                     <select
+                        v-else
                         id="appointment-professional"
                         v-model="form.professional_id"
                         class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"

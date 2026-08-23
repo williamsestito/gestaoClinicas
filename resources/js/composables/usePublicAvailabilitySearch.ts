@@ -320,6 +320,28 @@ export function usePublicAvailabilitySearch() {
         void loadDates();
     }
 
+    /**
+     * Volta ao estado inicial (só `units` continua carregado — a lista de
+     * unidades não muda por causa de um envio de solicitação, recarregar é
+     * desperdício). Usado depois que a solicitação manual é enviada com
+     * sucesso: sem isso, unidade/especialidade/serviço/profissional/data
+     * escolhidos aqui ficavam visíveis mesmo com o formulário abaixo já
+     * limpo, incoerente com a mensagem de sucesso.
+     */
+    function reset() {
+        selectedUnitId.value = null;
+        selectedSpecialtyId.value = null;
+        selectedServiceId.value = null;
+        selectedProfessionalId.value = null;
+        selectedDate.value = null;
+        specialties.value = [];
+        services.value = [];
+        professionals.value = [];
+        dates.value = [];
+        times.value = [];
+        error.value = null;
+    }
+
     const isAnyProfessional = computed(
         () => selectedProfessionalId.value === ANY_PROFESSIONAL,
     );
@@ -348,5 +370,6 @@ export function usePublicAvailabilitySearch() {
         selectProfessional,
         selectDate,
         changeMonth,
+        reset,
     };
 }

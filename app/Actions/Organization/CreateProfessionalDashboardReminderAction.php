@@ -24,6 +24,7 @@ class CreateProfessionalDashboardReminderAction
             'professional_id' => $professional->id,
             'body' => $attributes['body'],
             'color' => $attributes['color'],
+            'alarm_at' => $attributes['alarm_at'] ?? null,
         ]);
     }
 }

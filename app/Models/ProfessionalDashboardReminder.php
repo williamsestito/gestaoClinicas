@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string $professional_id
  * @property string $body
  * @property DashboardReminderColor $color
+ * @property Carbon|null $alarm_at
  * @property Carbon $created_at
  */
 class ProfessionalDashboardReminder extends Model
@@ -34,12 +35,14 @@ class ProfessionalDashboardReminder extends Model
         'professional_id',
         'body',
         'color',
+        'alarm_at',
     ];
 
     protected function casts(): array
     {
         return [
             'color' => DashboardReminderColor::class,
+            'alarm_at' => 'datetime',
         ];
     }
 

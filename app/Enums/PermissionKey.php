@@ -174,7 +174,7 @@ enum PermissionKey: string
             self::AppointmentsView => 'Visualizar agendamentos',
             self::AppointmentsManage => 'Gerenciar agendamentos',
             self::AppointmentsViewOwn => 'Visualizar os próprios atendimentos',
-            self::AppointmentsManageOwn => 'Gerenciar os próprios atendimentos (check-in, início, conclusão)',
+            self::AppointmentsManageOwn => 'Gerenciar os próprios atendimentos (confirmar, check-in, início, conclusão, reagendar, cancelar, converter pré-agendamento)',
 
             self::ProfessionalsView => 'Visualizar profissionais',
             self::ProfessionalsManage => 'Gerenciar profissionais',

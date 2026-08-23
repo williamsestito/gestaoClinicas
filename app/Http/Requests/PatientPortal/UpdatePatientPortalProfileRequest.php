@@ -51,7 +51,13 @@ class UpdatePatientPortalProfileRequest extends FormRequest
             'preferred_name' => ['nullable', 'string', 'max:255'],
             'document' => [
                 'nullable', 'string', new CpfCnpjRule(LegalEntityType::Individual),
-                Rule::unique('patients', 'document')->ignore(is_string($patientId) ? $patientId : null),
+                // whereNull('deleted_at'): espelha o índice único parcial do
+                // banco (patients_unique_active_document, ver migration) —
+                // sem isso, um paciente arquivado com o mesmo CPF bloqueava
+                // até o próprio dono do CPF de salvar o cadastro ativo dele.
+                Rule::unique('patients', 'document')
+                    ->ignore(is_string($patientId) ? $patientId : null)
+                    ->whereNull('deleted_at'),
             ],
             'phone' => ['nullable', 'string', 'max:20'],
             'whatsapp' => ['nullable', 'string', 'max:20'],

@@ -8,6 +8,7 @@ use App\Actions\Public\CreateAppointmentRequestAction;
 use App\Http\Requests\StoreAppointmentRequestRequest;
 use App\Models\Organization;
 use App\Models\PatientUser;
+use App\Models\Unit;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 
@@ -33,12 +34,25 @@ class PublicAppointmentRequestController extends Controller
         }
 
         $organization = Organization::query()->first();
-        $headquarters = $organization?->headquarters()->first();
+
+        // Prioriza a unidade real escolhida na busca de disponibilidade
+        // (ver LandingAvailabilitySearch.vue) sobre a matriz — só cai na
+        // matriz quando o lead nunca passou por um horário específico,
+        // mesmo comportamento de antes desta etapa.
+        $unitId = (string) $request->validated('unit_id');
+        $unit = $unitId !== '' && $organization
+            ? Unit::query()->where('organization_id', $organization->id)->find($unitId)
+            : null;
+
+        if ($unit === null) {
+            $headquarters = $organization?->headquarters()->first();
+            $unit = $headquarters instanceof Unit ? $headquarters : null;
+        }
 
         /** @var PatientUser|null $patientUser */
         $patientUser = $request->user('patient');
 
-        $this->action->handle($request->validated(), $organization, $headquarters, $patientUser);
+        $this->action->handle($request->validated(), $organization, $unit, $patientUser);
 
         return $this->successResponse();
     }

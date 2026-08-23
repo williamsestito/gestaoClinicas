@@ -320,6 +320,44 @@ describe('usePublicAvailabilitySearch', () => {
         expect(search.isLoading('dates')).toBe(false);
     });
 
+    it('reset clears every selection and list, keeping units untouched', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse([])));
+
+        const search = usePublicAvailabilitySearch();
+        search.units.value = [
+            {
+                id: 'unit-1',
+                name: 'Unidade Centro',
+                neighborhood: null,
+                city: 'São Paulo',
+                state: 'SP',
+            },
+        ];
+        search.selectedUnitId.value = 'unit-1';
+        search.selectedSpecialtyId.value = 'spec-1';
+        search.selectedServiceId.value = 'svc-1';
+        search.selectedProfessionalId.value = 'prof-1';
+        search.selectedDate.value = '2026-08-10';
+        search.error.value =
+            'Não foi possível carregar os horários. Tente novamente.';
+
+        search.reset();
+
+        expect(search.selectedUnitId.value).toBeNull();
+        expect(search.selectedSpecialtyId.value).toBeNull();
+        expect(search.selectedServiceId.value).toBeNull();
+        expect(search.selectedProfessionalId.value).toBeNull();
+        expect(search.selectedDate.value).toBeNull();
+        expect(search.services.value).toEqual([]);
+        expect(search.professionals.value).toEqual([]);
+        expect(search.dates.value).toEqual([]);
+        expect(search.times.value).toEqual([]);
+        expect(search.error.value).toBeNull();
+        // Recarregar a lista de unidades depois de um envio bem-sucedido
+        // seria desperdício — ela não muda por causa disso.
+        expect(search.units.value).toHaveLength(1);
+    });
+
     it('is not a singleton — each call returns independent state', () => {
         const first = usePublicAvailabilitySearch();
         const second = usePublicAvailabilitySearch();

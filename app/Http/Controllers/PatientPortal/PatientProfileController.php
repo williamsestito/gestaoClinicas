@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\PatientPortal;
 
+use App\Actions\Organization\DestroyPatientPhotoAction;
+use App\Actions\Organization\UpdatePatientPhotoAction;
 use App\Actions\PatientPortal\UpdatePatientPortalProfileAction;
 use App\Data\Organization\AddressData;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PatientPortal\UpdatePatientPortalPhotoRequest;
 use App\Http\Requests\PatientPortal\UpdatePatientPortalProfileRequest;
 use App\Models\PatientUser;
 use App\Support\Documents\BrazilianState;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Edição do próprio cadastro (ou de um dependente) pelo portal. Nunca usa
@@ -41,6 +46,7 @@ class PatientProfileController extends Controller
                 'phone' => $found->phone,
                 'whatsapp' => $found->whatsapp,
                 'email' => $found->email,
+                'photo_url' => $found->photo_path ? route('patient-portal.patients.photo.show', $found) : null,
             ],
             'address' => $found->address ? [
                 'postal_code' => $found->address->postal_code,
@@ -76,6 +82,56 @@ class PatientProfileController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Dados atualizados com sucesso.']);
 
         return to_route('patient-portal.dashboard');
+    }
+
+    public function updatePhoto(
+        UpdatePatientPortalPhotoRequest $request,
+        string $patient,
+        UpdatePatientPhotoAction $action,
+    ): RedirectResponse {
+        /** @var PatientUser $patientUser */
+        $patientUser = $request->user('patient');
+
+        $found = $patientUser->patients()->findOrFail($patient);
+
+        $action->handle($found, $request->file('photo'));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Foto atualizada com sucesso.']);
+
+        return back();
+    }
+
+    public function destroyPhoto(Request $request, string $patient, DestroyPatientPhotoAction $action): RedirectResponse
+    {
+        /** @var PatientUser $patientUser */
+        $patientUser = $request->user('patient');
+
+        $found = $patientUser->patients()->findOrFail($patient);
+
+        $action->handle($found);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Foto removida com sucesso.']);
+
+        return back();
+    }
+
+    /**
+     * Serve a foto do disco privado `local` — nunca um link público direto
+     * (mesmo racional de PatientController::showPhoto() no admin, só que
+     * escopado pelo vínculo da conta do portal em vez de uma Policy).
+     */
+    public function showPhoto(Request $request, string $patient): StreamedResponse
+    {
+        /** @var PatientUser $patientUser */
+        $patientUser = $request->user('patient');
+
+        $found = $patientUser->patients()->findOrFail($patient);
+
+        if (! $found->photo_path || ! Storage::disk('local')->exists($found->photo_path)) {
+            abort(404);
+        }
+
+        return Storage::disk('local')->response($found->photo_path);
     }
 
     /** @param array<string, mixed>|null $address */

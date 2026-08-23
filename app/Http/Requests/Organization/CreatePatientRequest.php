@@ -58,7 +58,13 @@ class CreatePatientRequest extends FormRequest
             'preferred_name' => ['nullable', 'string', 'max:255'],
             'document' => [
                 'nullable', 'string', new CpfCnpjRule(LegalEntityType::Individual),
-                Rule::unique('patients', 'document')->where('organization_id', $organizationId),
+                // whereNull('deleted_at'): espelha o índice único parcial do
+                // banco (patients_unique_active_document, ver migration) —
+                // sem isso, um CPF de um paciente arquivado nunca poderia
+                // ser reutilizado por um cadastro novo.
+                Rule::unique('patients', 'document')
+                    ->where('organization_id', $organizationId)
+                    ->whereNull('deleted_at'),
             ],
             'birth_date' => ['required', 'date', 'before:today'],
             'phone' => ['nullable', 'string', 'max:20'],

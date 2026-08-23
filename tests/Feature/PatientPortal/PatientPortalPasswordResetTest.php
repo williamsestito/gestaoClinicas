@@ -40,12 +40,12 @@ it('resets the password with a valid token and lets the user log in with the new
             'email' => $patientUser->email,
             'password' => 'new-password',
             'password_confirmation' => 'new-password',
-        ])->assertRedirect('/portal/login');
+        ])->assertRedirect('/login');
 
         return true;
     });
 
-    $this->post('/portal/login', [
+    $this->post('/login', [
         'email' => $patientUser->email,
         'password' => 'new-password',
     ])->assertRedirect('/portal');

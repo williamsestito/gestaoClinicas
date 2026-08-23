@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
+import { Pencil } from '@lucide/vue';
+import { ref } from 'vue';
 import { store } from '@/actions/App/Http/Controllers/PatientPortal/RegisteredPatientUserController';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import PhoneInput from '@/components/PhoneInput.vue';
 import TextLink from '@/components/TextLink.vue';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { initials } from '@/lib/initials';
 import { maskCpf } from '@/lib/masks';
-import patientPortal from '@/routes/patient-portal';
+import { login } from '@/routes';
 
 defineOptions({
     layout: {
@@ -19,19 +23,28 @@ defineOptions({
     },
 });
 
-defineProps<{
+const props = defineProps<{
     organizationConfigured: boolean;
+    // Dados já digitados no formulário público de agendamento (vindos do
+    // popup de confirmação) — evita redigitar o que já foi informado.
+    prefill: {
+        name: string | null;
+        phone: string | null;
+        email: string | null;
+        document: string | null;
+    };
 }>();
 
 const form = useForm({
-    name: '',
-    email: '',
+    name: props.prefill.name ?? '',
+    email: props.prefill.email ?? '',
     password: '',
     password_confirmation: '',
     registering_for: 'self' as 'self' | 'dependent',
     birth_date: '',
-    document: '',
-    phone: '',
+    document: props.prefill.document ? maskCpf(props.prefill.document) : '',
+    phone: props.prefill.phone ?? '',
+    photo: null as File | null,
     dependent_name: '',
     dependent_birth_date: '',
     dependent_document: '',
@@ -42,8 +55,26 @@ const form = useForm({
     form_rendered_at: Date.now(),
 });
 
+const photoInput = ref<HTMLInputElement | null>(null);
+const photoPreviewUrl = ref<string | null>(null);
+
+function pickPhoto() {
+    photoInput.value?.click();
+}
+
+function onPhotoChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+
+    if (photoPreviewUrl.value) {
+        URL.revokeObjectURL(photoPreviewUrl.value);
+    }
+
+    form.photo = file;
+    photoPreviewUrl.value = file ? URL.createObjectURL(file) : null;
+}
+
 function submit() {
-    form.post(store().url);
+    form.post(store().url, { forceFormData: true });
 }
 </script>
 
@@ -144,6 +175,39 @@ function submit() {
             </div>
 
             <template v-if="form.registering_for === 'self'">
+                <div class="flex flex-col items-center gap-2">
+                    <div class="relative">
+                        <Avatar class="size-20 border border-border">
+                            <AvatarImage
+                                v-if="photoPreviewUrl"
+                                :src="photoPreviewUrl"
+                                alt="Pré-visualização da foto"
+                            />
+                            <AvatarFallback class="text-lg">
+                                {{ form.name ? initials(form.name) : '?' }}
+                            </AvatarFallback>
+                        </Avatar>
+                        <button
+                            type="button"
+                            class="absolute -right-1 -bottom-1 flex size-7 items-center justify-center rounded-full border border-border bg-background shadow-sm hover:bg-accent"
+                            aria-label="Adicionar foto"
+                            @click="pickPhoto"
+                        >
+                            <Pencil class="size-3.5" />
+                        </button>
+                        <input
+                            id="photo"
+                            ref="photoInput"
+                            type="file"
+                            accept="image/*"
+                            class="hidden"
+                            @change="onPhotoChange"
+                        />
+                    </div>
+                    <p class="text-xs text-muted-foreground">Foto (opcional)</p>
+                    <InputError :message="form.errors.photo" />
+                </div>
+
                 <div class="grid gap-2">
                     <Label for="birth_date">Data de nascimento</Label>
                     <Input
@@ -241,7 +305,7 @@ function submit() {
 
         <div class="text-center text-sm text-muted-foreground">
             Já tem uma conta?
-            <TextLink :href="patientPortal.login()">Entrar</TextLink>
+            <TextLink :href="login()">Entrar</TextLink>
         </div>
     </form>
 </template>

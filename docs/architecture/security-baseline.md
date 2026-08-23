@@ -91,8 +91,16 @@ quando esses módulos forem implementados.
   - `settings/password` (troca de senha) — 6/min
   - `context/organization`, `context/unit` (troca de contexto ativo) —
     20/min (adicionado nesta fase)
-  - `agendamento` (solicitação pública) — 5/min
-  - `cep/{postalCode}` (lookup de CEP) — 30/min
+  - `agendamento` (solicitação pública) — 10/min (era 5/min; aumentado em
+    2026-08-22 — o mesmo IP pode representar mais de uma pessoa em fila,
+    ex.: Wi-Fi compartilhado da própria clínica)
+  - `cep/{postalCode}` (lookup de CEP) — 30/min. Rota em `routes/web.php`
+    (não em `clinic.php`/`patient-portal.php`) com `auth:web,patient` —
+    staff e portal do paciente reaproveitam o mesmo endpoint (sem contexto
+    de organização/unidade/paciente, é só uma consulta externa cacheada).
+    Corrigido em 2026-08-22: estava só em `clinic.php`, inacessível pelo
+    guard `patient`, quebrando o preenchimento automático de endereço na
+    edição de dados do portal.
 
 ## Nginx
 

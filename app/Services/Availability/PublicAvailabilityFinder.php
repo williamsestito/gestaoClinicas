@@ -83,12 +83,20 @@ final class PublicAvailabilityFinder
             ->values();
     }
 
-    /** @return Collection<int, array<string, mixed>> */
-    public function eligibleServices(Organization $organization, string $unitId, ?string $specialtyId): Collection
+    /**
+     * `$includeNonPublic` existe só para o portal do paciente (ver
+     * App\Http\Controllers\PatientPortal\PatientAvailabilityController):
+     * um paciente autenticado pode agendar qualquer serviço ativo da
+     * própria organização, não só os marcados para vitrine pública do
+     * site. A busca pública (padrão, `false`) nunca deve ver isso.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function eligibleServices(Organization $organization, string $unitId, ?string $specialtyId, bool $includeNonPublic = false): Collection
     {
         $services = $organization->services()
             ->where('status', RecordStatus::Active)
-            ->where('is_public', true)
+            ->when(! $includeNonPublic, fn (Builder $query) => $query->where('is_public', true))
             ->with(['unitLinks', 'specialtyLinks'])
             ->orderBy('name')
             ->get();

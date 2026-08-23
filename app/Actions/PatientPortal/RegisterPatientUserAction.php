@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\PatientPortal;
 
+use App\Actions\Organization\UpdatePatientPhotoAction;
 use App\Enums\AuditAction;
 use App\Enums\PatientUserLinkRole;
 use App\Enums\RecordStatus;
@@ -11,6 +12,7 @@ use App\Models\Organization;
 use App\Models\PatientUser;
 use App\Support\Auditing\AuditLogger;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -30,6 +32,7 @@ class RegisterPatientUserAction
     public function __construct(
         private readonly AuditLogger $auditLogger,
         private readonly AddDependentPatientAction $addDependentPatientAction,
+        private readonly UpdatePatientPhotoAction $updatePatientPhotoAction,
     ) {}
 
     /**
@@ -43,8 +46,9 @@ class RegisterPatientUserAction
         string $registeringFor,
         array $selfAttributes,
         array $dependentAttributes,
+        ?UploadedFile $photo = null,
     ): PatientUser {
-        return DB::transaction(function () use ($organization, $accountAttributes, $registeringFor, $selfAttributes, $dependentAttributes) {
+        return DB::transaction(function () use ($organization, $accountAttributes, $registeringFor, $selfAttributes, $dependentAttributes, $photo) {
             $patientUser = $organization->patientUsers()->create($accountAttributes);
 
             $this->auditLogger->log(
@@ -77,6 +81,10 @@ class RegisterPatientUserAction
                 throw ValidationException::withMessages([
                     'document' => 'Não foi possível concluir o cadastro com este documento. Confirme os dados ou entre em contato com a clínica.',
                 ]);
+            }
+
+            if ($photo !== null) {
+                $this->updatePatientPhotoAction->handle($patient, $photo);
             }
 
             $patient->portalLink()->create([

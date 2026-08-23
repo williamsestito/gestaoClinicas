@@ -16,6 +16,7 @@ use App\Support\Auditing\AuditLogger;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -40,8 +41,23 @@ class MyAppointmentRequestsController extends Controller
             return Inertia::render('settings/my-appointment-requests/Index', ['requests' => null]);
         }
 
+        // Reflete se o próprio profissional pode converter um pré-agendamento
+        // dele num Appointment real (ver AppointmentPolicy::createFromOwnRequest()
+        // e AppointmentController::create()) — mesmo padrão de
+        // `can_create_appointments` em AppointmentRequestController::index().
+        $canCreateAppointments = Gate::allows('createFromOwnRequest', new AppointmentRequest([
+            'organization_id' => $organization->id,
+            'professional_id' => $professional->id,
+        ]));
+
         $requests = AppointmentRequest::query()
-            ->with(['service:id,name', 'appointment:id,status'])
+            ->with([
+                'service:id,name',
+                'appointment:id,status',
+                'unit:id,name',
+                'preferredService:id,name',
+                'patient:id,name,preferred_name',
+            ])
             ->where('organization_id', $organization->id)
             ->where('professional_id', $professional->id)
             ->latest()
@@ -67,10 +83,28 @@ class MyAppointmentRequestsController extends Controller
                 'appointment_status' => $request->appointment?->status->value,
                 'appointment_status_label' => $request->appointment?->status->label(),
                 'created_at' => $request->created_at?->toIso8601String(),
+                // Estruturados (unidade/serviço reais + horário exato) — só
+                // preenchidos quando o lead veio de um horário específico
+                // escolhido na busca de disponibilidade (ver
+                // LandingAvailabilitySearch.vue). Quando os três (mais o
+                // profissional, sempre conhecido nesta tela) estão
+                // presentes, "Agendar" vira um popup de confirmação em vez
+                // de abrir a tela de conversão manual.
+                'unit_id' => $request->unit_id,
+                'unit_name' => $request->unit?->name,
+                'preferred_service_id' => $request->preferred_service_id,
+                'preferred_service_name' => $request->preferredService?->name,
+                'preferred_starts_at' => $request->preferred_starts_at?->toIso8601String(),
+                'patient_id' => $request->patient_id,
+                'patient_name' => $request->patient
+                    ? ($request->patient->preferred_name ?: $request->patient->name)
+                    : null,
             ]);
 
         return Inertia::render('settings/my-appointment-requests/Index', [
             'requests' => $requests,
+            'canCreateAppointments' => $canCreateAppointments,
+            'professionalId' => $professional->id,
         ]);
     }
 

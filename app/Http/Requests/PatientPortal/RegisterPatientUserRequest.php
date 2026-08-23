@@ -7,6 +7,7 @@ namespace App\Http\Requests\PatientPortal;
 use App\Concerns\PasswordValidationRules;
 use App\Enums\LegalEntityType;
 use App\Rules\CpfCnpjRule;
+use App\Rules\ValidImageContentRule;
 use App\Support\Documents\Document;
 use App\Support\Patients\MinorGuardianGuard;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -59,6 +60,10 @@ class RegisterPatientUserRequest extends FormRequest
             'birth_date' => ['required_if:registering_for,self', 'nullable', 'date', 'before:today'],
             'document' => ['nullable', 'string', new CpfCnpjRule(LegalEntityType::Individual)],
             'phone' => ['nullable', 'string', 'max:20'],
+            // Só se aplica a "self" — o dependente criado aqui não tem
+            // sessão própria para fazer upload depois; deixado sem foto
+            // nesta etapa, adicionável mais tarde pelo próprio portal.
+            'photo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048', new ValidImageContentRule],
 
             'dependent_name' => ['required_if:registering_for,dependent', 'nullable', 'string', 'min:2', 'max:255'],
             'dependent_birth_date' => ['required_if:registering_for,dependent', 'nullable', 'date', 'before:today'],

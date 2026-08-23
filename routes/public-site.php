@@ -24,9 +24,11 @@ Route::get('/', [PublicSiteController::class, 'home'])->name('home');
 Route::get('galeria', [PublicGalleryController::class, 'index'])->name('gallery.index');
 
 // Formulario de solicitacao de agendamento (lead) — throttle curto evita
-// envios duplicados/spam sem exigir autenticacao.
+// envios duplicados/spam sem exigir autenticacao. 10/min (não 5) porque o
+// mesmo IP pode representar mais de uma pessoa em fila (ex.: recepção/
+// Wi-Fi compartilhado da própria clínica).
 Route::post('agendamento', [PublicAppointmentRequestController::class, 'store'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:10,1')
     ->name('appointment-requests.store');
 
 // Busca pública de disponibilidade — somente leitura, sem autenticação,

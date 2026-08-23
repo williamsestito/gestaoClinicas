@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $organization_id
  * @property string|null $unit_id
  * @property int|null $service_id
+ * @property string|null $preferred_service_id serviço operacional real (ULID) — nunca o mesmo espaço de id de $service_id (SiteService, catálogo público)
  * @property string|null $professional_id
  * @property string|null $patient_id
  * @property string|null $appointment_id
@@ -31,6 +32,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $document dígitos apenas, sem máscara (ver App\Support\Documents\Document)
  * @property string|null $preferred_period
  * @property Carbon|null $preferred_date
+ * @property Carbon|null $preferred_starts_at horário exato escolhido na busca de disponibilidade da landing (UTC), quando existir — ver LandingAvailabilitySearch.vue
  * @property string|null $notes
  * @property string|null $internal_notes
  * @property array<string, string>|null $utm_data
@@ -46,6 +48,7 @@ class AppointmentRequest extends Model
         'organization_id',
         'unit_id',
         'service_id',
+        'preferred_service_id',
         'professional_id',
         'patient_id',
         'appointment_id',
@@ -55,6 +58,7 @@ class AppointmentRequest extends Model
         'document',
         'preferred_period',
         'preferred_date',
+        'preferred_starts_at',
         'notes',
         'internal_notes',
         'utm_data',
@@ -68,6 +72,7 @@ class AppointmentRequest extends Model
             'status' => AppointmentRequestStatus::class,
             'terms_accepted_at' => 'datetime',
             'preferred_date' => 'date',
+            'preferred_starts_at' => 'datetime',
             'utm_data' => 'array',
         ];
     }
@@ -88,6 +93,12 @@ class AppointmentRequest extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(SiteService::class, 'service_id');
+    }
+
+    /** @return BelongsTo<Service, $this> */
+    public function preferredService(): BelongsTo
+    {
+        return $this->belongsTo(Service::class, 'preferred_service_id');
     }
 
     /** @return BelongsTo<Appointment, $this> */

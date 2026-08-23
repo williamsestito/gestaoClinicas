@@ -109,6 +109,12 @@ class Patient extends Model
         return $this->hasMany(Appointment::class);
     }
 
+    /** @return HasMany<AppointmentRequest, $this> */
+    public function appointmentRequests(): HasMany
+    {
+        return $this->hasMany(AppointmentRequest::class);
+    }
+
     /** @return HasMany<SessionPackage, $this> */
     public function sessionPackages(): HasMany
     {

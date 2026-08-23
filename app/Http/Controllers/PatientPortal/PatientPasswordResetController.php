@@ -73,6 +73,6 @@ class PatientPasswordResetController extends Controller
             ]);
         }
 
-        return to_route('patient-portal.login')->with('status', 'Senha redefinida com sucesso. Faça login com a nova senha.');
+        return to_route('login')->with('status', 'Senha redefinida com sucesso. Faça login com a nova senha.');
     }
 }

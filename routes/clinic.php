@@ -43,7 +43,6 @@ use App\Http\Controllers\Organization\UnitContextController;
 use App\Http\Controllers\Organization\UnitController;
 use App\Http\Controllers\Organization\UserManagementController;
 use App\Http\Controllers\Organization\WaitlistController;
-use App\Http\Controllers\PostalCodeLookupController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -363,6 +362,8 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
             ->name('dashboard.reminders.store');
         Route::delete('dashboard/lembretes/{reminder}', [DashboardReminderController::class, 'destroy'])
             ->name('dashboard.reminders.destroy');
+        Route::patch('dashboard/lembretes/{reminder}/silenciar-alarme', [DashboardReminderController::class, 'dismissAlarm'])
+            ->name('dashboard.reminders.dismiss-alarm');
 
         Route::get('settings/professionals', [ProfessionalController::class, 'index'])
             ->name('settings.professionals.index');
@@ -614,12 +615,5 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
 
         Route::get('settings/audit', [AuditLogController::class, 'index'])
             ->name('settings.audit.index');
-
-        // Endpoint interno (JSON) usado pelo formulário de endereço para
-        // preencher rua/bairro/cidade/UF a partir do CEP. Não é uma API pública.
-        Route::get('cep/{postalCode}', PostalCodeLookupController::class)
-            ->where('postalCode', '[0-9\-]{8,9}')
-            ->middleware('throttle:30,1')
-            ->name('postal-code.lookup');
     });
 });

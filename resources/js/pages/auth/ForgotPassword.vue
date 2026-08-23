@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
-import { directConfirmEmail, directReset, email } from '@/routes/password';
+import { send as sendPasswordResetLink } from '@/routes/forgot-password';
+import { directConfirmEmail, directReset } from '@/routes/password';
 
 defineOptions({
     layout: {
@@ -147,9 +148,14 @@ const inputEmail = ref(props.confirmedEmail ?? '');
         </div>
     </div>
 
-    <!-- Fluxo padrão (produção): link de redefinição por e-mail -->
+    <!-- Fluxo padrão (produção): link de redefinição por e-mail — envia
+         para App\Http\Controllers\Auth\SendPasswordResetLinkController, que
+         reconhece conta de staff ou de paciente pelo e-mail. -->
     <div v-else class="space-y-6">
-        <Form v-bind="email.form()" v-slot="{ errors, processing }">
+        <Form
+            v-bind="sendPasswordResetLink.form()"
+            v-slot="{ errors, processing }"
+        >
             <div class="grid gap-2">
                 <Label for="email">E-mail</Label>
                 <Input

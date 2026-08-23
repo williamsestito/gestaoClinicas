@@ -11,8 +11,11 @@ use App\Models\Appointment;
 use App\Models\AppointmentRequest;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\Patient;
 use App\Models\Professional;
 use App\Models\Role;
+use App\Models\Service;
+use App\Models\Unit;
 use App\Models\User;
 
 /** @return array{0: User, 1: Organization, 2: Professional} */
@@ -44,6 +47,42 @@ it('lists only appointment requests linked to the logged-in professional', funct
         ->assertInertia(fn ($page) => $page
             ->where('requests.total', 1)
             ->where('requests.data.0.name', 'Meu Lead'));
+});
+
+it('exposes the structured unit/service/exact time and matched patient when the lead carries them', function () {
+    [$user, $organization, $professional] = myAppointmentRequestsSetup();
+    $unit = Unit::factory()->for($organization)->create(['name' => 'Unidade Norte']);
+    $service = Service::factory()->for($organization)->create(['name' => 'Consulta']);
+    $patient = Patient::factory()->for($organization)->create(['name' => 'Ana Souza']);
+    AppointmentRequest::factory()->for($organization)->for($professional)->create([
+        'unit_id' => $unit->id,
+        'preferred_service_id' => $service->id,
+        'preferred_starts_at' => '2026-09-15 12:00:00',
+        'patient_id' => $patient->id,
+    ]);
+
+    $response = $this->actingAs($user)->get('/settings/meus-pre-agendamentos');
+
+    $response->assertOk()->assertInertia(fn ($page) => $page
+        ->where('requests.data.0.unit_id', $unit->id)
+        ->where('requests.data.0.unit_name', 'Unidade Norte')
+        ->where('requests.data.0.preferred_service_id', $service->id)
+        ->where('requests.data.0.preferred_service_name', 'Consulta')
+        ->where('requests.data.0.patient_id', $patient->id)
+        ->where('requests.data.0.patient_name', 'Ana Souza')
+        ->where('requests.data.0.preferred_starts_at', '2026-09-15T12:00:00+00:00'));
+});
+
+it('leaves the structured fields null for a lead that never had a specific slot chosen', function () {
+    [$user, $organization, $professional] = myAppointmentRequestsSetup();
+    AppointmentRequest::factory()->for($organization)->for($professional)->create();
+
+    $response = $this->actingAs($user)->get('/settings/meus-pre-agendamentos');
+
+    $response->assertOk()->assertInertia(fn ($page) => $page
+        ->where('requests.data.0.preferred_service_id', null)
+        ->where('requests.data.0.preferred_starts_at', null)
+        ->where('requests.data.0.patient_id', null));
 });
 
 it('shows the status of the linked real appointment, kept live from the same record', function () {

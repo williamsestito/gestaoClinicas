@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { reactive } from 'vue';
 import Index from './Index.vue';
 
 const { routerMock } = vi.hoisted(() => ({
@@ -9,10 +10,39 @@ const { routerMock } = vi.hoisted(() => ({
     },
 }));
 
+const instantFormState = reactive({
+    patient_id: '',
+    unit_id: '',
+    professional_id: '',
+    service_id: '',
+    starts_at: '',
+    appointment_request_id: '',
+    notes: '',
+    errors: {} as Record<string, string>,
+    processing: false,
+    post: vi.fn(),
+    clearErrors: vi.fn(),
+    reset: vi.fn(),
+});
+
 vi.mock('@inertiajs/vue3', () => ({
     Head: { template: '<div />' },
     Link: { template: '<a :href="href"><slot /></a>', props: ['href'] },
     router: routerMock,
+    useForm: (initial: Record<string, unknown>) => {
+        Object.assign(instantFormState, initial);
+
+        return instantFormState;
+    },
+}));
+
+vi.mock('@/components/appointments/PatientSearchSelect.vue', () => ({
+    default: {
+        template:
+            '<input data-testid="patient-search-select" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+        props: ['modelValue', 'error'],
+        emits: ['update:modelValue'],
+    },
 }));
 
 type Row = {
@@ -30,6 +60,13 @@ type Row = {
     appointment_status: string | null;
     appointment_status_label: string | null;
     created_at: string | null;
+    unit_id: string | null;
+    unit_name: string | null;
+    preferred_service_id: string | null;
+    preferred_service_name: string | null;
+    preferred_starts_at: string | null;
+    patient_id: string | null;
+    patient_name: string | null;
 };
 
 function makeRequest(overrides: Partial<Row> = {}): Row {
@@ -48,11 +85,47 @@ function makeRequest(overrides: Partial<Row> = {}): Row {
         appointment_status: null,
         appointment_status_label: null,
         created_at: '2026-07-20T10:00:00Z',
+        unit_id: null,
+        unit_name: null,
+        preferred_service_id: null,
+        preferred_service_name: null,
+        preferred_starts_at: null,
+        patient_id: null,
+        patient_name: null,
         ...overrides,
     };
 }
 
-function mountIndex(requestsData: Row[] | null = [makeRequest()]) {
+function makeInstantSchedulableRequest(overrides: Partial<Row> = {}): Row {
+    return makeRequest({
+        unit_id: 'unit-1',
+        unit_name: 'Unidade Norte',
+        preferred_service_id: 'service-1',
+        preferred_service_name: 'Consulta',
+        preferred_starts_at: '2026-09-15T12:00:00+00:00',
+        patient_id: 'patient-1',
+        patient_name: 'Ana Souza',
+        ...overrides,
+    });
+}
+
+function resetInstantFormState() {
+    instantFormState.patient_id = '';
+    instantFormState.unit_id = '';
+    instantFormState.professional_id = '';
+    instantFormState.service_id = '';
+    instantFormState.starts_at = '';
+    instantFormState.appointment_request_id = '';
+    instantFormState.notes = '';
+    instantFormState.errors = {};
+    instantFormState.processing = false;
+}
+
+function mountIndex(
+    requestsData: Row[] | null = [makeRequest()],
+    canCreateAppointments = true,
+    professionalId = 'prof-1',
+) {
     return mount(Index, {
         props: {
             requests:
@@ -63,11 +136,17 @@ function mountIndex(requestsData: Row[] | null = [makeRequest()]) {
                           links: [],
                           total: requestsData.length,
                       },
+            canCreateAppointments,
+            professionalId,
         },
     });
 }
 
 describe('settings/my-appointment-requests/Index', () => {
+    beforeEach(() => {
+        resetInstantFormState();
+    });
+
     it('shows an empty state for a user without a linked professional', () => {
         const wrapper = mountIndex(null);
 
@@ -90,10 +169,50 @@ describe('settings/my-appointment-requests/Index', () => {
         expect(wrapper.text()).toContain('Limpeza de pele');
     });
 
-    it('never shows a convert-to-appointment action — self-service scheduling is out of scope', () => {
+    it('shows an "Agendar" link to convert a pending request into a real appointment', () => {
+        const wrapper = mountIndex([makeRequest({ status: 'pending' })]);
+
+        const link = wrapper.findAll('a').find((a) => a.text() === 'Agendar');
+        expect(link?.exists()).toBe(true);
+        expect(link?.attributes('href')).toContain(
+            'appointment_request_id=01ABC',
+        );
+    });
+
+    it('hides "Agendar" when the professional cannot create appointments', () => {
+        const wrapper = mountIndex([makeRequest({ status: 'pending' })], false);
+
+        expect(
+            wrapper.findAll('a').find((a) => a.text() === 'Agendar'),
+        ).toBeUndefined();
+    });
+
+    it('hides "Agendar" once the request has already been converted', () => {
+        const wrapper = mountIndex([
+            makeRequest({
+                status: 'pending',
+                appointment_status: 'confirmed',
+                appointment_status_label: 'Confirmado',
+            }),
+        ]);
+
+        expect(
+            wrapper.findAll('a').find((a) => a.text() === 'Agendar'),
+        ).toBeUndefined();
+    });
+
+    it('hides "Agendar" for an already-cancelled request', () => {
+        const wrapper = mountIndex([makeRequest({ status: 'cancelled' })]);
+
+        expect(
+            wrapper.findAll('a').find((a) => a.text() === 'Agendar'),
+        ).toBeUndefined();
+    });
+
+    it('never offers "Agendado" as a selectable status — it only exists via real conversion', () => {
         const wrapper = mountIndex();
 
-        expect(wrapper.text()).not.toContain('Converter em agendamento');
+        expect(wrapper.text()).not.toContain('Agendado');
     });
 
     it('shows the linked real appointment status when the lead has been converted', () => {
@@ -143,6 +262,83 @@ describe('settings/my-appointment-requests/Index', () => {
             expect.stringContaining('/notes'),
             { internal_notes: 'Liguei e confirmei.' },
             expect.objectContaining({ preserveScroll: true }),
+        );
+    });
+
+    it('shows "Agendar" as a popup trigger (button, not a link) when the lead already carries unit/service/exact time', () => {
+        const wrapper = mountIndex([makeInstantSchedulableRequest()]);
+
+        expect(
+            wrapper.findAll('a').find((a) => a.text() === 'Agendar'),
+        ).toBeUndefined();
+        expect(
+            wrapper.findAll('button').find((b) => b.text() === 'Agendar'),
+        ).toBeDefined();
+    });
+
+    it('still falls back to the Etapa 3.7 conversion link when the lead lacks the structured fields', () => {
+        const wrapper = mountIndex([makeRequest({ status: 'pending' })]);
+
+        const link = wrapper.findAll('a').find((a) => a.text() === 'Agendar');
+        expect(link?.exists()).toBe(true);
+        expect(link?.attributes('href')).toContain(
+            'appointment_request_id=01ABC',
+        );
+    });
+
+    it('opens the confirmation popup pre-filled with the pré-agendamento data and posts to the existing appointments endpoint', async () => {
+        const wrapper = mountIndex([makeInstantSchedulableRequest()]);
+
+        await wrapper
+            .findAll('button')
+            .find((b) => b.text() === 'Agendar')
+            ?.trigger('click');
+
+        expect(document.body.textContent).toContain('Consulta');
+        expect(document.body.textContent).toContain('Unidade Norte');
+        expect(document.body.textContent).toContain('Ana Souza');
+        expect(instantFormState.patient_id).toBe('patient-1');
+        expect(instantFormState.unit_id).toBe('unit-1');
+        expect(instantFormState.professional_id).toBe('prof-1');
+        expect(instantFormState.service_id).toBe('service-1');
+        expect(instantFormState.starts_at).toBe('2026-09-15T12:00:00+00:00');
+        expect(instantFormState.appointment_request_id).toBe('01ABC');
+
+        const confirmButton = Array.from(
+            document.body.querySelectorAll('button'),
+        ).find((button) =>
+            button.textContent?.includes('Confirmar agendamento'),
+        );
+        await confirmButton?.dispatchEvent(
+            new Event('click', { bubbles: true }),
+        );
+
+        expect(instantFormState.post).toHaveBeenCalledWith(
+            '/settings/appointments',
+            expect.objectContaining({ preserveScroll: true }),
+        );
+    });
+
+    it('lets the professional search a patient in the popup when the lead was never matched to one', async () => {
+        const wrapper = mountIndex([
+            makeInstantSchedulableRequest({
+                patient_id: null,
+                patient_name: null,
+            }),
+        ]);
+
+        await wrapper
+            .findAll('button')
+            .find((b) => b.text() === 'Agendar')
+            ?.trigger('click');
+
+        const patientSearchInput = document.body.querySelector(
+            '[data-testid="patient-search-select"]',
+        );
+        expect(patientSearchInput).not.toBeNull();
+
+        await patientSearchInput?.dispatchEvent(
+            new Event('input', { bubbles: true }),
         );
     });
 });

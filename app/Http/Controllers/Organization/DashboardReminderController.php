@@ -6,9 +6,11 @@ namespace App\Http\Controllers\Organization;
 
 use App\Actions\Organization\CreateProfessionalDashboardReminderAction;
 use App\Actions\Organization\DeleteProfessionalDashboardReminderAction;
+use App\Actions\Organization\DismissProfessionalDashboardReminderAlarmAction;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Organization\DestroyDashboardReminderRequest;
+use App\Http\Requests\Organization\DismissDashboardReminderAlarmRequest;
 use App\Http\Requests\Organization\StoreDashboardReminderRequest;
 use App\Models\Professional;
 use App\Models\ProfessionalDashboardReminder;
@@ -42,6 +44,16 @@ class DashboardReminderController extends Controller
         DestroyDashboardReminderRequest $request,
         ProfessionalDashboardReminder $reminder,
         DeleteProfessionalDashboardReminderAction $action,
+    ): RedirectResponse {
+        $action->handle($reminder);
+
+        return back();
+    }
+
+    public function dismissAlarm(
+        DismissDashboardReminderAlarmRequest $request,
+        ProfessionalDashboardReminder $reminder,
+        DismissProfessionalDashboardReminderAlarmAction $action,
     ): RedirectResponse {
         $action->handle($reminder);
 

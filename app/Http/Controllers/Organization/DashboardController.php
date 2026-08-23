@@ -151,6 +151,7 @@ class DashboardController extends Controller
                 'id' => $reminder->id,
                 'body' => $reminder->body,
                 'color' => $reminder->color->value,
+                'alarm_at' => $reminder->alarm_at?->toIso8601String(),
                 'created_at' => $reminder->created_at->toIso8601String(),
             ])->values(),
         ];

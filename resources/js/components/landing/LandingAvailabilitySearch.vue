@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { CalendarDays, Clock3, Loader2 } from '@lucide/vue';
-import { computed, onMounted } from 'vue';
+import { onMounted } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -9,6 +9,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useAvailabilityCalendarGrid } from '@/composables/useAvailabilityCalendarGrid';
 import { useLandingScheduling } from '@/composables/useLandingScheduling';
 import { usePublicAvailabilitySearch } from '@/composables/usePublicAvailabilitySearch';
 
@@ -36,7 +37,15 @@ const {
     selectProfessional,
     selectDate,
     changeMonth,
+    reset,
 } = usePublicAvailabilitySearch();
+
+// Exposto para LandingSchedulingSection limpar esta busca (unidade/
+// especialidade/serviço/profissional/data) depois que a solicitação
+// manual é enviada com sucesso — este componente fica montado o tempo
+// todo (só a seção abaixo alterna entre formulário e mensagem de
+// sucesso), então sem isso a seleção anterior continuava visível.
+defineExpose({ reset });
 
 // Nota: o serviço aqui é o cadastro operacional (ULID), enquanto o
 // formulário manual de solicitação referencia o serviço promocional
@@ -56,55 +65,26 @@ const {
     selectedProfessionalName,
     preferredDate,
     preferredPeriod,
+    preferredUnitId,
+    preferredServiceId,
+    preferredStartsAt,
 } = useLandingScheduling();
 
 onMounted(() => {
     void loadUnits();
 });
 
-const monthLabel = computed(() => {
-    const [year, month] = currentMonth.value.split('-').map(Number);
-
-    return new Intl.DateTimeFormat('pt-BR', {
-        month: 'long',
-        year: 'numeric',
-    }).format(new Date(year, month - 1, 1));
-});
-
-const calendarCells = computed(() => {
-    const [year, month] = currentMonth.value.split('-').map(Number);
-    const firstDay = new Date(year, month - 1, 1);
-    const leadingBlanks = firstDay.getDay();
-    const byDate = new Map(
-        dates.value.map((day) => [day.date, day.is_available]),
-    );
-
-    type Cell = { date: string; day: number; isAvailable: boolean } | null;
-
-    const blanks: Cell[] = Array.from({ length: leadingBlanks }, () => null);
-    const days: Cell[] = dates.value.map((day) => ({
-        date: day.date,
-        day: Number(day.date.slice(8, 10)),
-        isAvailable: byDate.get(day.date) ?? false,
-    }));
-
-    return blanks.concat(days);
-});
+const { monthLabel, calendarCells, shiftMonth } = useAvailabilityCalendarGrid(
+    dates,
+    currentMonth,
+);
 
 function goToPreviousMonth() {
-    const [year, month] = currentMonth.value.split('-').map(Number);
-    const previous = new Date(year, month - 2, 1);
-    changeMonth(
-        `${previous.getFullYear()}-${String(previous.getMonth() + 1).padStart(2, '0')}`,
-    );
+    changeMonth(shiftMonth(-1));
 }
 
 function goToNextMonth() {
-    const [year, month] = currentMonth.value.split('-').map(Number);
-    const next = new Date(year, month, 1);
-    changeMonth(
-        `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`,
-    );
+    changeMonth(shiftMonth(1));
 }
 
 function formatSelectedDate(): string {
@@ -145,6 +125,14 @@ function chooseTimeForScheduling(slot: {
     selectedProfessionalName.value = `${slot.professional_name} — ${serviceName}, ${dateLabel} às ${slot.time}`;
     preferredDate.value = selectedDate.value;
     preferredPeriod.value = periodForTime(slot.time);
+    // Estruturado (unidade/serviço reais + horário exato) — permite ao
+    // pré-agendamento pular a tela de conversão manual (ver "Meus
+    // pré-agendamentos"). `preferredServiceId` é o mesmo espaço de id de
+    // `selectedServiceId` acima (cadastro operacional), nunca o
+    // `SiteService` do formulário manual.
+    preferredUnitId.value = selectedUnitId.value;
+    preferredServiceId.value = selectedServiceId.value;
+    preferredStartsAt.value = `${selectedDate.value}T${slot.time}:00`;
 
     // Vai direto para os dados pessoais (nome/telefone), não para o topo
     // da seção inteira — a pessoa já escolheu unidade/especialidade/

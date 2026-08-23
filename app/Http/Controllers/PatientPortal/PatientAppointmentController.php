@@ -7,13 +7,14 @@ namespace App\Http\Controllers\PatientPortal;
 use App\Actions\PatientPortal\AcceptProposedAppointmentTimeAction;
 use App\Actions\PatientPortal\BookAppointmentAction;
 use App\Actions\PatientPortal\CancelPatientAppointmentAction;
+use App\Actions\PatientPortal\CancelPatientAppointmentRequestAction;
 use App\Actions\PatientPortal\ReschedulePatientAppointmentAction;
-use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PatientPortal\BookAppointmentRequest;
 use App\Http\Requests\PatientPortal\CancelPatientAppointmentRequest;
 use App\Http\Requests\PatientPortal\ReschedulePatientAppointmentRequest;
 use App\Models\Appointment;
+use App\Models\AppointmentRequest;
 use App\Models\Organization;
 use App\Models\PatientUser;
 use App\Models\Professional;
@@ -61,10 +62,57 @@ class PatientAppointmentController extends Controller
                 'unit_name' => $appointment->unit->name,
             ]);
 
+        // Só solicitações ainda não convertidas em agendamento real
+        // (`appointment_id` nulo) — uma vez convertida, ela já aparece
+        // acima, na lista de `appointments`, e mostrar as duas seria
+        // duplicar a mesma solicitação sob duas aparências diferentes.
+        $pendingRequests = $found->appointmentRequests()
+            ->whereNull('appointment_id')
+            ->with(['professional:id,display_name', 'service:id,name'])
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn (AppointmentRequest $request) => [
+                'id' => $request->id,
+                'created_at' => $request->created_at->toIso8601String(),
+                'status' => $request->status->value,
+                'status_label' => $request->status->label(),
+                'professional_name' => $request->professional?->display_name,
+                'service_name' => $request->service?->name,
+                'preferred_date' => $request->preferred_date?->toDateString(),
+                'preferred_period' => $request->preferred_period,
+                'notes' => $request->notes,
+            ]);
+
         return Inertia::render('patient-portal/appointments/Index', [
             'patient' => ['id' => $found->id, 'name' => $found->preferred_name ?: $found->name],
             'appointments' => $appointments,
+            'pendingRequests' => $pendingRequests,
         ]);
+    }
+
+    /**
+     * Nunca resolve um pré-agendamento já convertido (`appointment_id`
+     * preenchido) — mesmo padrão de escopo de `index()`, para que cancelar
+     * aqui nunca alcance um `Appointment` de verdade por engano.
+     */
+    public function cancelRequest(
+        Request $request,
+        string $patient,
+        string $appointmentRequest,
+        CancelPatientAppointmentRequestAction $action,
+    ): RedirectResponse {
+        /** @var PatientUser $patientUser */
+        $patientUser = $request->user('patient');
+        $found = $patientUser->patients()->findOrFail($patient)
+            ->appointmentRequests()
+            ->whereNull('appointment_id')
+            ->findOrFail($appointmentRequest);
+
+        $action->handle($found, $patientUser);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Pré-agendamento cancelado.']);
+
+        return to_route('patient-portal.appointments.index', ['patient' => $patient]);
     }
 
     public function create(Request $request, string $patient): Response
@@ -73,13 +121,8 @@ class PatientAppointmentController extends Controller
         $patientUser = $request->user('patient');
         $found = $patientUser->patients()->findOrFail($patient);
 
-        $organization = Organization::query()->findOrFail($patientUser->organization_id);
-
         return Inertia::render('patient-portal/appointments/Create', [
             'patient' => ['id' => $found->id, 'name' => $found->preferred_name ?: $found->name],
-            'units' => $organization->units()->where('status', RecordStatus::Active)->orderBy('name')->get(['id', 'name']),
-            'professionals' => $organization->professionals()->where('status', RecordStatus::Active)->orderBy('display_name')->get(['id', 'display_name']),
-            'services' => $organization->services()->where('status', RecordStatus::Active)->orderBy('name')->get(['id', 'name']),
         ]);
     }
 

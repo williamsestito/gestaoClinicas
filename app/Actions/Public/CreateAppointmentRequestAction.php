@@ -17,6 +17,8 @@ use App\Models\Unit;
 use App\Notifications\NewAppointmentRequestNotification;
 use App\Support\Auditing\AuditLogger;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
@@ -45,10 +47,13 @@ class CreateAppointmentRequestAction
 
         $patientId = $this->resolvePatientId($data, $organization, $patientUser);
 
+        $this->guardAgainstPendingDuplicateProfessional($patientId, $data['professional_id'] ?? null, $organization);
+
         $appointmentRequest = AppointmentRequest::query()->create([
             'organization_id' => $organization?->id,
             'unit_id' => $unit?->id,
             'service_id' => $data['service_id'] ?? null,
+            'preferred_service_id' => $data['preferred_service_id'] ?? null,
             'professional_id' => $data['professional_id'] ?? null,
             'patient_id' => $patientId,
             'name' => $data['name'],
@@ -57,6 +62,7 @@ class CreateAppointmentRequestAction
             'document' => $data['document'] ?? null,
             'preferred_period' => $data['preferred_period'] ?? null,
             'preferred_date' => $data['preferred_date'] ?? null,
+            'preferred_starts_at' => $this->resolvePreferredStartsAt($data, $unit),
             'notes' => $data['notes'] ?? null,
             'utm_data' => array_filter($data['utm'] ?? []) ?: null,
             'status' => AppointmentRequestStatus::Pending,
@@ -81,6 +87,27 @@ class CreateAppointmentRequestAction
         $this->notifyOwners($appointmentRequest, $organization);
 
         return $appointmentRequest;
+    }
+
+    /**
+     * O horário exato escolhido na busca de disponibilidade
+     * (`preferred_starts_at`) chega como hora civil local (mesmo valor
+     * devolvido por `PublicAvailabilityFinder::availableTimes()`), nunca
+     * já em UTC — mesma disciplina de fuso de
+     * `AppointmentController::store()`. Sem unidade resolvida (lead
+     * anônimo antes de qualquer organização existir), não há fuso para
+     * converter, então o horário exato é descartado — só os campos
+     * aproximados (`preferred_date`/`preferred_period`) sobrevivem.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function resolvePreferredStartsAt(array $data, ?Unit $unit): ?Carbon
+    {
+        if (empty($data['preferred_starts_at']) || $unit === null) {
+            return null;
+        }
+
+        return Carbon::parse($data['preferred_starts_at'], $unit->timezone)->utc();
     }
 
     /**
@@ -174,6 +201,37 @@ class CreateAppointmentRequestAction
             ->where('organization_id', $organization->id)
             ->where('email', $data['email'])
             ->first();
+    }
+
+    /**
+     * Só bloqueia quando o paciente já é reconhecido (por CPF/telefone/
+     * e-mail ou conta logada) E já tem uma solicitação Pending com o MESMO
+     * profissional — evita a pessoa (ou um clique duplo/F5 fora da janela
+     * curta de findRecentDuplicate()) empilhar vários pré-agendamentos
+     * idênticos aguardando contato, sem impedir uma nova solicitação para
+     * um profissional diferente, ou depois que a anterior mudar de status
+     * (contatada/agendada/cancelada).
+     */
+    private function guardAgainstPendingDuplicateProfessional(?string $patientId, ?string $professionalId, ?Organization $organization): void
+    {
+        if ($patientId === null || $professionalId === null) {
+            return;
+        }
+
+        $hasPending = AppointmentRequest::query()
+            ->where('organization_id', $organization?->id)
+            ->where('patient_id', $patientId)
+            ->where('professional_id', $professionalId)
+            ->where('status', AppointmentRequestStatus::Pending)
+            ->exists();
+
+        if (! $hasPending) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'professional_id' => 'Você já tem uma solicitação aguardando contato com este profissional. Aguarde o retorno da clínica ou cancele a solicitação atual antes de enviar uma nova.',
+        ]);
     }
 
     private function notifyOwners(AppointmentRequest $appointmentRequest, ?Organization $organization): void

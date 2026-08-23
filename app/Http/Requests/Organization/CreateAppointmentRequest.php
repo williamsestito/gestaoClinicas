@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Organization;
 
 use App\Models\Appointment;
+use App\Models\AppointmentRequest as AppointmentRequestModel;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -12,11 +13,45 @@ use Illuminate\Validation\Rule;
 
 class CreateAppointmentRequest extends FormRequest
 {
+    /**
+     * Quem tem `appointments.manage` sempre autoriza. Um profissional sem
+     * essa permissão só autoriza convertendo o PRÓPRIO pré-agendamento (ver
+     * AppointmentPolicy::createFromOwnRequest()) — o controller ainda trava
+     * separadamente que o `professional_id` enviado bate com o do vínculo
+     * (ver AppointmentController::store()), já que esta checagem sozinha não
+     * valida os demais campos do formulário.
+     */
     public function authorize(): bool
     {
         $organization = app(TenantContext::class)->organization();
 
-        return $organization !== null && $this->user()?->can('create', [Appointment::class, $organization]) === true;
+        if ($organization === null) {
+            \Log::debug('DEBUG authorize: no organization in TenantContext');
+
+            return false;
+        }
+
+        if ($this->user()?->can('create', [Appointment::class, $organization]) === true) {
+            return true;
+        }
+
+        $sourceRequestId = $this->string('appointment_request_id')->value() ?: null;
+        $sourceRequest = $sourceRequestId
+            ? AppointmentRequestModel::query()->where('organization_id', $organization->id)->find($sourceRequestId)
+            : null;
+
+        \Log::debug('DEBUG authorize', [
+            'organization_id' => $organization->id,
+            'sourceRequestId' => $sourceRequestId,
+            'sourceRequestFound' => $sourceRequest !== null,
+            'sourceRequest_org' => $sourceRequest?->organization_id,
+            'sourceRequest_prof' => $sourceRequest?->professional_id,
+            'can_createFromOwnRequest' => $sourceRequest ? $this->user()?->can('createFromOwnRequest', $sourceRequest) : null,
+            'user_id' => $this->user()?->id,
+            'all_input' => $this->all(),
+        ]);
+
+        return $sourceRequest !== null && $this->user()?->can('createFromOwnRequest', $sourceRequest) === true;
     }
 
     /**

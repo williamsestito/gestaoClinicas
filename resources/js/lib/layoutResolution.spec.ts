@@ -70,8 +70,7 @@ describe('resolveLayoutKind', () => {
         expect(resolveLayoutKind('Gallery')).toBe('app');
     });
 
-    it('uses the auth layout for patient-portal guest pages (login/register/password)', () => {
-        expect(resolveLayoutKind('patient-portal/Login')).toBe('auth');
+    it('uses the auth layout for patient-portal guest pages (register/password) — login itself lives at the general /login', () => {
         expect(resolveLayoutKind('patient-portal/Register')).toBe('auth');
         expect(resolveLayoutKind('patient-portal/ForgotPassword')).toBe('auth');
         expect(resolveLayoutKind('patient-portal/ResetPassword')).toBe('auth');

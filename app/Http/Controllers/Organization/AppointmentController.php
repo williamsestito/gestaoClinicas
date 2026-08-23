@@ -85,12 +85,18 @@ class AppointmentController extends Controller
     public function create(Request $request, TenantContext $tenant): Response
     {
         $organization = $tenant->organization();
-        $this->authorize('create', [Appointment::class, $organization]);
 
         $appointmentRequestId = $request->string('appointment_request_id')->value() ?: null;
         $sourceRequest = $appointmentRequestId
             ? AppointmentRequest::query()->where('organization_id', $organization->id)->findOrFail($appointmentRequestId)
             : null;
+
+        // Quem tem `appointments.manage` sempre passa por `create()`; um
+        // profissional só chega aqui convertendo o PRÓPRIO pré-agendamento
+        // (ver AppointmentPolicy::createFromOwnRequest()).
+        if ($sourceRequest === null || ! $request->user()->can('createFromOwnRequest', $sourceRequest)) {
+            $this->authorize('create', [Appointment::class, $organization]);
+        }
 
         $waitlistEntryId = $request->string('waitlist_entry_id')->value() ?: null;
         $sourceWaitlistEntry = $waitlistEntryId
@@ -104,6 +110,16 @@ class AppointmentController extends Controller
                 'name' => $sourceRequest->name,
                 'phone' => $sourceRequest->phone,
                 'notes' => $sourceRequest->notes,
+                // Unidade e profissional já são conhecidos quando a
+                // solicitação já os carrega — trava esses dois campos no
+                // formulário (Create.vue) em vez de fazer quem está
+                // convertendo reescolher o que já está decidido. Serviço e
+                // horário exatos nunca vêm daqui: o serviço da solicitação é
+                // o catálogo público (SiteService), espaço de id diferente
+                // do serviço operacional exigido aqui, e só existe uma data/
+                // período aproximados, nunca um horário exato.
+                'unit_id' => $sourceRequest->unit_id,
+                'professional_id' => $sourceRequest->professional_id,
             ];
         } elseif ($sourceWaitlistEntry) {
             $prefill = [
@@ -141,6 +157,18 @@ class AppointmentController extends Controller
         $sourceRequest = $sourceRequestId
             ? AppointmentRequest::query()->where('organization_id', $organization->id)->findOrFail((string) $sourceRequestId)
             : null;
+
+        // CreateAppointmentRequest::authorize() já aceitou este envio por um
+        // dos dois caminhos: `appointments.manage` (qualquer profissional) ou
+        // "converter o próprio pré-agendamento" (createFromOwnRequest). Neste
+        // segundo caso, travar aqui que o `professional_id` enviado é
+        // realmente o do próprio vínculo — sem isso, um profissional
+        // autorizado só pela conversão própria poderia trocar o
+        // `professional_id` do formulário e criar o agendamento na agenda de
+        // outro profissional.
+        if ($sourceRequest !== null && ! $request->user()->can('create', [Appointment::class, $organization])) {
+            abort_unless($sourceRequest->professional_id === $professional->id, 403);
+        }
 
         $sessionPackageId = $request->validated('session_package_id');
         $sessionPackage = $sessionPackageId
@@ -237,10 +265,22 @@ class AppointmentController extends Controller
     public function availableSlots(Request $request, TenantContext $tenant, StaffAppointmentSlotFinder $finder): JsonResponse
     {
         $organization = $tenant->organization();
-        $this->authorize('create', [Appointment::class, $organization]);
+
+        $professional = Professional::query()->where('organization_id', $organization->id)->findOrFail($request->string('professional_id')->value());
+
+        // Mesmo racional de create()/store(): quem tem `appointments.manage`
+        // sempre autoriza; um profissional sem essa permissão só consulta a
+        // própria disponibilidade (convertendo o próprio pré-agendamento). A
+        // instância abaixo nunca é salva — só carrega os dois campos que
+        // AppointmentPolicy::createFromOwnRequest() lê.
+        if (! $request->user()->can('create', [Appointment::class, $organization])) {
+            $this->authorize('createFromOwnRequest', new AppointmentRequest([
+                'organization_id' => $organization->id,
+                'professional_id' => $professional->id,
+            ]));
+        }
 
         $unit = Unit::query()->where('organization_id', $organization->id)->findOrFail($request->string('unit_id')->value());
-        $professional = Professional::query()->where('organization_id', $organization->id)->findOrFail($request->string('professional_id')->value());
         $service = Service::query()->where('organization_id', $organization->id)->findOrFail($request->string('service_id')->value());
         $date = Carbon::parse($request->string('date')->value());
 

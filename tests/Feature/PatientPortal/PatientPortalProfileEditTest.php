@@ -78,3 +78,30 @@ it('rejects a document colliding with another patient without confirming the col
     $response->assertSessionHasErrors('document');
     expect(session('errors')->get('document')[0])->not->toContain('Já existe um paciente');
 });
+
+it('allows saving a document that already belonged to an archived (soft-deleted) patient', function () {
+    $setup = patientPortalProfileSetup();
+    $archived = Patient::factory()->for($setup['organization'])->create(['document' => '52998224725']);
+    $archived->delete();
+
+    $this->actingAs($setup['patientUser'], 'patient')->put("/portal/pacientes/{$setup['patient']->id}", [
+        'name' => $setup['patient']->name,
+        'document' => '529.982.247-25',
+    ])->assertSessionHasNoErrors();
+
+    expect($setup['patient']->fresh()->document)->toBe('52998224725');
+});
+
+it('allows re-saving the patient\'s own unchanged document even when an unrelated archived patient shares it', function () {
+    $setup = patientPortalProfileSetup();
+    $archived = Patient::factory()->for($setup['organization'])->create(['document' => '52998224725']);
+    $archived->delete();
+    // Só depois do arquivamento: os dois nunca podem estar ativos com o
+    // mesmo documento ao mesmo tempo (índice único parcial do banco).
+    $setup['patient']->update(['document' => '52998224725']);
+
+    $this->actingAs($setup['patientUser'], 'patient')->put("/portal/pacientes/{$setup['patient']->id}", [
+        'name' => $setup['patient']->name,
+        'document' => '529.982.247-25',
+    ])->assertSessionHasNoErrors();
+});

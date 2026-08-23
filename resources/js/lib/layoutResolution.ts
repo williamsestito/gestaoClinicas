@@ -46,7 +46,6 @@ export const PLAIN_APP_SETTINGS_PAGES = [
  * pelo guard "patient") usam um layout próprio, sem sidebar/tenant switcher.
  */
 export const PATIENT_PORTAL_GUEST_PAGES = [
-    'patient-portal/Login',
     'patient-portal/Register',
     'patient-portal/ForgotPassword',
     'patient-portal/ResetPassword',

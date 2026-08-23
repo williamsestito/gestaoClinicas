@@ -118,24 +118,51 @@ vínculo com o profissional sozinho nunca foi suficiente).
 ### Correspondência com paciente já cadastrado
 
 `AppointmentRequest.patient_id` (ULID, FK para `patients`, `nullOnDelete`) e
-`AppointmentRequest.document` (CPF opcional, dígitos apenas) são resolvidos
-por `App\Actions\Public\CreateAppointmentRequestAction` no momento da
-criação — nunca depois, e nunca cria/altera um `Patient` a partir de um
-lead público:
+`AppointmentRequest.document` (CPF, dígitos apenas — **obrigatório**,
+decisão de negócio revertida em 2026-08-22; era opcional até então) são
+resolvidos por `App\Actions\Public\CreateAppointmentRequestAction` no
+momento da criação — nunca depois, e nunca cria/altera um `Patient` a
+partir de um lead público:
 
 - Quem envia já logado no portal do paciente (`request()->user('patient')`)
   é vinculado diretamente ao próprio paciente da conta (vínculo `self` em
   `PatientUserLink`), sem heurística nenhuma.
 - Anônimo: tenta localizar um `Patient` já cadastrado na organização, na
   ordem CPF → telefone (`phone` ou `whatsapp`) → e-mail — CPF primeiro por
-  ser o identificador mais confiável. Sem correspondência, a solicitação
-  segue sem paciente vinculado (`patient_id = null`), nunca bloqueia o
-  envio.
+  ser o identificador mais confiável. Sem correspondência por nenhum dos
+  três, a solicitação segue sem paciente vinculado (`patient_id = null`),
+  nunca bloqueia o envio (o CPF em si é obrigatório, mas encontrar um
+  `Patient` correspondente não é).
 
 O CPF é o único campo novo verdadeiramente sensível deste formulário
 público; a validação (`App\Rules\CpfCnpjRule`) e a normalização
 (`App\Support\Documents\Document::onlyDigits()`) são as mesmas usadas no
-cadastro administrativo de pacientes, e o campo é sempre opcional.
+cadastro administrativo de pacientes.
+
+### Bloqueio de duplicidade por profissional (Etapa 3.6)
+
+Quando o paciente é reconhecido (por qualquer um dos três critérios acima,
+ou por conta logada) **e** já tem uma `AppointmentRequest` `Pending` com o
+mesmo `professional_id`, uma nova solicitação para esse mesmo profissional
+é rejeitada (`ValidationException` em `professional_id`,
+`guardAgainstPendingDuplicateProfessional()`) até a solicitação anterior
+mudar de status (contatada/agendada) ou ser cancelada — pelo paciente
+(portal, ver `docs/modules/patient-portal.md`) ou pela clínica. Não impede
+uma solicitação para um profissional diferente, nem se `patient_id` não
+foi resolvido (pessoa não reconhecida).
+
+### Confirmação pós-envio
+
+`resources/js/components/landing/LandingSchedulingSection.vue`: além do
+banner inline (`form.recentlySuccessful`, que já existia), o envio bem-
+sucedido abre um `Dialog` de confirmação — garante visibilidade
+independente da posição de rolagem (o banner inline podia ficar fora da
+área visível quando `LandingAvailabilitySearch` encolhia ao resetar,
+deslocando o layout) — com atalhos diretos para `/login` (login
+unificado staff/paciente, ver
+[docs/modules/patient-portal.md](patient-portal.md)) e
+`/portal/registrar`, já que o lead recém-criado não é, por si só, uma
+conta de login no portal (ver seção acima).
 
 ## Interface administrativa
 

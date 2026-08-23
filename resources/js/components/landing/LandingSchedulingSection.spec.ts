@@ -1,8 +1,43 @@
 import { mount } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick, reactive } from 'vue';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, nextTick, reactive, ref } from 'vue';
 import { useLandingScheduling } from '@/composables/useLandingScheduling';
 import LandingSchedulingSection from './LandingSchedulingSection.vue';
+
+// LandingAvailabilitySearch (renderizado de verdade abaixo, não stubado)
+// fica montado o tempo todo — precisa de um mock mínimo desta composable
+// para não disparar fetch() real ao montar (ver
+// LandingAvailabilitySearch.spec.ts para o mock completo/testado à parte).
+const availabilitySearchReset = vi.fn();
+
+vi.mock('@/composables/usePublicAvailabilitySearch', () => ({
+    usePublicAvailabilitySearch: () => ({
+        ANY_PROFESSIONAL: 'any',
+        units: ref([]),
+        specialties: ref([]),
+        services: ref([]),
+        professionals: ref([]),
+        dates: ref([]),
+        times: ref([]),
+        selectedUnitId: ref(null),
+        selectedSpecialtyId: ref(null),
+        selectedServiceId: ref(null),
+        selectedProfessionalId: ref(null),
+        selectedDate: ref(null),
+        currentMonth: ref('2026-08'),
+        isLoading: () => false,
+        error: ref(null),
+        isAnyProfessional: computed(() => false),
+        loadUnits: vi.fn(),
+        selectUnit: vi.fn(),
+        selectSpecialty: vi.fn(),
+        selectService: vi.fn(),
+        selectProfessional: vi.fn(),
+        selectDate: vi.fn(),
+        changeMonth: vi.fn(),
+        reset: availabilitySearchReset,
+    }),
+}));
 
 const { formState, postMock } = vi.hoisted(() => ({
     formState: {
@@ -50,10 +85,16 @@ vi.mock('@inertiajs/vue3', () => ({
 
         return reactive(formState);
     },
+    Link: {
+        props: ['href'],
+        template:
+            '<a :href="typeof href === \'string\' ? href : href?.url"><slot /></a>',
+    },
 }));
 
 beforeEach(() => {
     postMock.mockReset();
+    availabilitySearchReset.mockReset();
     formState.processing = false;
     formState.recentlySuccessful = false;
     formState.service_id = null;
@@ -117,6 +158,77 @@ describe('LandingSchedulingSection', () => {
         expect(wrapper.find('form').exists()).toBe(false);
     });
 
+    it('requires the CPF field', () => {
+        const wrapper = mount(LandingSchedulingSection);
+
+        expect(wrapper.find('#document').attributes('required')).toBeDefined();
+        expect(wrapper.text()).not.toContain('CPF (opcional)');
+    });
+
+    describe('confirmation popup', () => {
+        afterEach(() => {
+            document.body.innerHTML = '';
+        });
+
+        it('opens a popup confirming the submission, with links to the patient portal, once it succeeds', async () => {
+            const wrapper = mount(LandingSchedulingSection, {
+                attachTo: document.body,
+            });
+            await wrapper.find('form').trigger('submit');
+
+            const onSuccess = postMock.mock.calls.at(-1)?.[1]?.onSuccess as
+                (() => void) | undefined;
+            onSuccess?.();
+            await nextTick();
+
+            const text = document.body.textContent ?? '';
+            expect(text).toContain('Pré-agendamento enviado!');
+            expect(text).toContain('Acessar o portal do paciente');
+            expect(text).toContain('Ainda não tenho cadastro no portal');
+
+            const links = Array.from(document.body.querySelectorAll('a')).map(
+                (a) => a.getAttribute('href'),
+            );
+            expect(links).toContain('/login');
+            expect(links).toContain('/portal/registrar');
+        });
+
+        it('carries the already-entered data into the registration link, to avoid retyping it', async () => {
+            const wrapper = mount(LandingSchedulingSection, {
+                attachTo: document.body,
+            });
+            await wrapper.find('#name').setValue('Ana Souza');
+            await wrapper.find('#phone').setValue('47999990000');
+            await wrapper.find('#email').setValue('ana@example.com');
+            await wrapper.find('form').trigger('submit');
+
+            const onSuccess = postMock.mock.calls.at(-1)?.[1]?.onSuccess as
+                (() => void) | undefined;
+            onSuccess?.();
+            await nextTick();
+
+            const registerLink = Array.from(
+                document.body.querySelectorAll('a'),
+            ).find((a) =>
+                a.getAttribute('href')?.includes('/portal/registrar'),
+            );
+
+            expect(registerLink?.getAttribute('href')).toContain(
+                'name=Ana+Souza',
+            );
+            expect(registerLink?.getAttribute('href')).toContain(
+                'email=ana%40example.com',
+            );
+        });
+
+        it('does not show the popup before a successful submission', () => {
+            mount(LandingSchedulingSection, { attachTo: document.body });
+
+            const text = document.body.textContent ?? '';
+            expect(text).not.toContain('Acessar o portal do paciente');
+        });
+    });
+
     it('clears the shared scheduling state once the submission succeeds, leaving the page as if freshly reloaded', async () => {
         const scheduling = useLandingScheduling();
         scheduling.selectedServiceId.value = 1;
@@ -138,6 +250,11 @@ describe('LandingSchedulingSection', () => {
         expect(scheduling.selectedProfessionalName.value).toBeNull();
         expect(scheduling.preferredDate.value).toBeNull();
         expect(scheduling.preferredPeriod.value).toBeNull();
+        // LandingAvailabilitySearch fica montado o tempo todo — sua própria
+        // seleção de unidade/especialidade/serviço/profissional/data não faz
+        // parte do estado compartilhado acima, então precisa do reset()
+        // explícito (bug real: ficava visível mesmo com o formulário limpo).
+        expect(availabilitySearchReset).toHaveBeenCalledOnce();
     });
 
     it('labels the submit button "Criar pré-agendamento" and only validates/submits on that click', () => {

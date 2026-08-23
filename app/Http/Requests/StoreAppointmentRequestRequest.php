@@ -74,13 +74,35 @@ class StoreAppointmentRequestRequest extends FormRequest
                 },
             ],
             'email' => ['nullable', 'email', 'max:255'],
-            // Sem checagem de unicidade aqui de propósito: um lead público
-            // não é um cadastro de paciente, só um indício para localizar um
-            // já existente (ver CreateAppointmentRequestAction) — a mesma
-            // pessoa pode enviar mais de uma solicitação ao longo do tempo.
-            'document' => ['nullable', 'string', new CpfCnpjRule(LegalEntityType::Individual)],
+            // Obrigatório nesta etapa (decisão de negócio) — sem checagem de
+            // unicidade aqui de propósito: um lead público não é um cadastro
+            // de paciente, só um indício para localizar um já existente (ver
+            // CreateAppointmentRequestAction) — a mesma pessoa pode enviar
+            // mais de uma solicitação ao longo do tempo.
+            'document' => ['required', 'string', new CpfCnpjRule(LegalEntityType::Individual)],
             'preferred_period' => ['nullable', Rule::in(self::PREFERRED_PERIODS)],
             'preferred_date' => ['nullable', 'date', 'after_or_equal:today', 'before_or_equal:'.now()->addDays(90)->toDateString()],
+            // Estruturados (unidade/serviço reais + horário exato),
+            // preenchidos só quando o horário veio de um clique na busca de
+            // disponibilidade (LandingAvailabilitySearch.vue) — permitem ao
+            // pré-agendamento pular a tela de conversão manual (ver "Meus
+            // pré-agendamentos"). Mesma instalação single-tenant de
+            // `professional_id` acima.
+            'unit_id' => [
+                'nullable',
+                'string',
+                Rule::exists('units', 'id')
+                    ->where('organization_id', Organization::query()->first()?->id)
+                    ->where('status', 'active'),
+            ],
+            'preferred_service_id' => [
+                'nullable',
+                'string',
+                Rule::exists('services', 'id')
+                    ->where('organization_id', Organization::query()->first()?->id)
+                    ->where('status', 'active'),
+            ],
+            'preferred_starts_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'terms_accepted' => ['required', 'accepted'],
 

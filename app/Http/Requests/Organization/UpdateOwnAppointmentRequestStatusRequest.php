@@ -50,12 +50,18 @@ class UpdateOwnAppointmentRequestStatusRequest extends FormRequest
     }
 
     /**
+     * `Scheduled` nunca é aceito aqui: só existe de verdade quando
+     * App\Actions\Organization\CreateAppointmentAction cria o Appointment e
+     * marca os dois juntos (ver appointment_id) — o profissional converte
+     * um pré-agendamento pelo botão "Agendar" (que passa por essa Action),
+     * nunca soltando o status sozinho neste select.
+     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'status' => ['required', Rule::enum(AppointmentRequestStatus::class)],
+            'status' => ['required', Rule::enum(AppointmentRequestStatus::class)->except(AppointmentRequestStatus::Scheduled)],
         ];
     }
 }

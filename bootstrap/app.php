@@ -65,15 +65,12 @@ return Application::configure(basePath: dirname(__DIR__))
             SecurityHeaders::class,
         ]);
 
-        // Sem isto, o middleware "auth:patient" redirecionaria um visitante
-        // não autenticado para a tela de login de staff ("login") em vez da
-        // tela de login do portal — o redirect padrão do Laravel não é
-        // guard-aware.
-        $middleware->redirectGuestsTo(
-            fn (Request $request) => $request->is('portal*')
-                ? route('patient-portal.login')
-                : route('login'),
-        );
+        // /login reconhece tanto staff quanto paciente pelo e-mail (ver
+        // App\Providers\FortifyServiceProvider::configureActions()) — não
+        // existe mais uma tela de login dedicada ao portal, então todo
+        // visitante não autenticado, de qualquer guard, vai para a mesma
+        // tela.
+        $middleware->redirectGuestsTo(fn () => route('login'));
 
         $middleware->alias([
             'tenant.organization' => ResolveOrganizationContext::class,

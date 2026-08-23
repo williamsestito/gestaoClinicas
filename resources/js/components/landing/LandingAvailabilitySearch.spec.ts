@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, nextTick, ref } from 'vue';
 import type {
     AvailabilityDate,
@@ -18,6 +18,7 @@ const selectService = vi.fn();
 const selectProfessional = vi.fn();
 const selectDate = vi.fn();
 const changeMonth = vi.fn();
+const reset = vi.fn();
 
 const units = ref<AvailabilityUnit[]>([]);
 const specialties = ref<AvailabilitySpecialty[]>([]);
@@ -62,6 +63,7 @@ vi.mock('@/composables/usePublicAvailabilitySearch', () => ({
         selectProfessional,
         selectDate,
         changeMonth,
+        reset,
     }),
 }));
 
@@ -70,6 +72,9 @@ const schedulingProfessionalId = ref<string | null>(null);
 const selectedProfessionalName = ref<string | null>(null);
 const preferredDate = ref<string | null>(null);
 const preferredPeriod = ref<string | null>(null);
+const preferredUnitId = ref<string | null>(null);
+const preferredServiceId = ref<string | null>(null);
+const preferredStartsAt = ref<string | null>(null);
 
 vi.mock('@/composables/useLandingScheduling', () => ({
     useLandingScheduling: () => ({
@@ -78,6 +83,9 @@ vi.mock('@/composables/useLandingScheduling', () => ({
         selectedProfessionalName,
         preferredDate,
         preferredPeriod,
+        preferredUnitId,
+        preferredServiceId,
+        preferredStartsAt,
     }),
 }));
 
@@ -102,6 +110,9 @@ function resetState() {
     selectedProfessionalName.value = null;
     preferredDate.value = null;
     preferredPeriod.value = null;
+    preferredUnitId.value = null;
+    preferredServiceId.value = null;
+    preferredStartsAt.value = null;
     Element.prototype.scrollIntoView = vi.fn();
 }
 
@@ -116,6 +127,15 @@ const defaultUnit: AvailabilityUnit = {
 describe('LandingAvailabilitySearch', () => {
     beforeEach(() => {
         resetState();
+        // Fixa "hoje" antes de todas as datas de exemplo (agosto/2026) —
+        // sem isso, o calendário passa a marcar essas datas como passadas
+        // (ver isPastDate() em @/lib/dates) assim que o calendário real
+        // avançar para depois de agosto/2026.
+        vi.setSystemTime(new Date('2026-01-01T12:00:00Z'));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it('calls loadUnits on mount', () => {
@@ -174,6 +194,30 @@ describe('LandingAvailabilitySearch', () => {
         expect(buttons[0].attributes('disabled')).toBeDefined();
         expect(buttons[2].attributes('aria-label')).toBe('Dia 3, disponível');
         expect(buttons[2].attributes('disabled')).toBeUndefined();
+    });
+
+    it('disables an already-past day even when the backend marks it as available', async () => {
+        // "Hoje" congelado em 2026-01-01 (ver beforeEach) — 2026-08-01 é
+        // sempre futuro para as datas de exemplo, então adiantamos "hoje"
+        // só nesta prova para simular um dia 1 que já passou.
+        vi.setSystemTime(new Date('2026-08-02T12:00:00Z'));
+        units.value = [defaultUnit];
+        selectedUnitId.value = 'unit-1';
+        selectedServiceId.value = 'svc-1';
+        currentMonth.value = '2026-08';
+        dates.value = [
+            { date: '2026-08-01', is_available: true },
+            { date: '2026-08-03', is_available: true },
+        ];
+
+        const wrapper = mount(LandingAvailabilitySearch);
+        await nextTick();
+
+        const buttons = wrapper.findAll('button[aria-label^="Dia"]');
+        expect(buttons[0].attributes('aria-label')).toBe('Dia 1, indisponível');
+        expect(buttons[0].attributes('disabled')).toBeDefined();
+        expect(buttons[1].attributes('aria-label')).toBe('Dia 3, disponível');
+        expect(buttons[1].attributes('disabled')).toBeUndefined();
     });
 
     it('calls selectDate only when clicking an available day, never a disabled one', async () => {
@@ -356,6 +400,12 @@ describe('LandingAvailabilitySearch', () => {
         expect(selectedProfessionalName.value).toContain('09:00');
         expect(preferredDate.value).toBe('2026-08-03');
         expect(preferredPeriod.value).toBe('Manhã');
+        // Estruturados para a conversão em um clique de "Meus pré-agendamentos"
+        // (ver settings/my-appointment-requests/Index.vue) — unidade/serviço
+        // reais e o horário exato, nunca em texto livre.
+        expect(preferredUnitId.value).toBe('unit-1');
+        expect(preferredServiceId.value).toBe('svc-1');
+        expect(preferredStartsAt.value).toBe('2026-08-03T09:00:00');
 
         wrapper.unmount();
     });
@@ -430,5 +480,13 @@ describe('LandingAvailabilitySearch', () => {
         expect(alert.text()).toBe(
             'Não foi possível carregar as unidades. Tente novamente.',
         );
+    });
+
+    it('exposes reset() so LandingSchedulingSection can clear this search after a successful submission', () => {
+        const wrapper = mount(LandingAvailabilitySearch);
+
+        (wrapper.vm as unknown as { reset: () => void }).reset();
+
+        expect(reset).toHaveBeenCalledOnce();
     });
 });

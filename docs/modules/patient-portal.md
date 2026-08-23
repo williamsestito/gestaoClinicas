@@ -17,9 +17,42 @@
 
 Broker de redefinição de senha também é próprio
 (`patient_password_reset_tokens`), nunca compartilha tabela com o staff.
-`bootstrap/app.php` define `redirectGuestsTo()` para mandar visitantes não
-autenticados de `/portal/*` para `patient-portal.login`, não para o
-`login` de staff — o redirect padrão do Laravel não é guard-aware.
+
+## Login unificado em `/login` — sem tela própria
+
+Não existe mais uma tela de login dedicada ao portal (`/portal/login` foi
+removida). O login acontece em `/login` (Fortify), cujo
+`Fortify::authenticateUsing()`
+(`App\Providers\FortifyServiceProvider::configureActions()`) reconhece
+pelo e-mail se a conta é de staff (`users`) ou de paciente
+(`patient_users`) e autentica no guard certo — se for paciente, loga
+direto no guard `patient` e redireciona para `/portal`, sem passar pelo
+pipeline de sessão do Fortify (guard `web`). `bootstrap/app.php` reflete
+isso: `redirectGuestsTo()` manda qualquer visitante não autenticado, de
+qualquer guard, para `route('login')` — não há mais ramificação por path
+`/portal/*`.
+
+Consequência aceita do login unificado: `POST /login` carrega o
+middleware padrão do Fortify `RedirectIfAuthenticated:web`, que redireciona
+para longe do formulário sempre que o guard `web` já está autenticado —
+mesmo que as credenciais enviadas sejam de um paciente. Ou seja, uma
+pessoa já logada como staff não consegue abrir uma segunda sessão de
+paciente no mesmo navegador via `/login` (o caminho inverso — já logado
+como paciente, autenticar também como staff — funciona normalmente, pois
+esse middleware só olha o guard `web`). Isso é o comportamento padrão do
+Laravel para uma tela de login única, não uma limitação introduzida por
+engano.
+
+"Esqueci minha senha" segue o mesmo racional:
+`App\Http\Controllers\Auth\SendPasswordResetLinkController` (rota
+`forgot-password.send`, formulário em `auth/ForgotPassword.vue`) detecta
+pelo e-mail qual broker usar (`users` ou `patient_users`) e sempre devolve
+a mesma mensagem de sucesso, exista ou não a conta — nunca revela em qual
+tabela (ou se em nenhuma) o e-mail está cadastrado. A rota nativa do
+Fortify (`password.email`) continua registrada mas não é mais usada por
+nenhuma tela. `/portal/esqueci-senha` e `/portal/redefinir-senha/{token}`
+(`PatientPortal\PatientPasswordResetController`) continuam existindo
+como estavam — só o ponto de entrada mudou.
 
 ## Uma conta, vários pacientes
 
@@ -256,3 +289,55 @@ Componente novo `resources/js/components/appointments/SlotPicker.vue`
 props/v-model) extraído de `patient-portal/appointments/Create.vue` e
 reaproveitado por `Reschedule.vue` (portal) e `settings/appointments/
 Propose.vue` (staff) — três usos reais, não especulativo.
+
+## Etapa 3.4 — Pré-agendamentos (leads) visíveis no portal
+
+Até aqui, `patient-portal/appointments/Index.vue` só listava
+`Appointment` (agendamento real, sempre criado por staff ou pelo próprio
+booking do portal). Uma `AppointmentRequest` (lead da landing pública ou
+do formulário administrativo, ver `docs/modules/public-integration.md`)
+vinculada ao paciente por `patient_id` nunca aparecia em lugar nenhum do
+portal — a pessoa enviava uma solicitação pelo site e, ao entrar no
+portal, não tinha nenhum indício de que ela existia ou de que status
+tinha.
+
+`Patient::appointmentRequests()` (nova relação `HasMany`) +
+`PatientAppointmentController::index()` agora também retorna
+`pendingRequests`: toda `AppointmentRequest` do paciente com
+`appointment_id` nulo — uma vez convertida em `Appointment` de verdade
+(`appointment_id` preenchido, ver `ConvertAppointmentRequestTest`), ela
+some da lista de pendentes e passa a aparecer normalmente entre os
+`appointments`, nunca as duas ao mesmo tempo. Mostra status
+(`AppointmentRequestStatus` — aguardando contato/contato realizado/
+cancelado; "agendado" nunca aparece aqui pela mesma razão do
+`appointment_id`), serviço/profissional quando informados e a preferência
+de data/período enviada no formulário original. Somente leitura nesta
+etapa — paciente não cancela nem edita um pré-agendamento pelo portal.
+
+## Etapa 3.6 — Foto de perfil, cancelar pré-agendamento e redesenho
+
+**Cancelar pré-agendamento** (fecha o "fora de escopo" da Etapa 3.5):
+`App\Actions\PatientPortal\CancelPatientAppointmentRequestAction`, exposta
+em `PATCH pacientes/{patient}/pre-agendamentos/{appointmentRequest}/
+cancelar`. Nunca resolve uma solicitação já convertida em `Appointment`
+(mesmo `whereNull('appointment_id')` de `index()`) nem uma já cancelada
+(bloqueado com `ValidationException`, mesmo padrão de
+`CancelPatientAppointmentAction`).
+
+**Foto de perfil**: `PatientProfileController::updatePhoto()`/
+`destroyPhoto()`/`showPhoto()` reaproveitam sem alteração as mesmas
+Actions do cadastro administrativo (`UpdatePatientPhotoAction`/
+`DestroyPatientPhotoAction` — disco `local` privado, nunca `public`), só
+trocando a autorização por Policy pelo escopo de conta do portal já usado
+no resto deste módulo.
+
+**Regra de negócio nova**: `CreateAppointmentRequestAction` (ver
+`docs/modules/public-integration.md`) passa a rejeitar uma nova
+solicitação para um profissional com quem o paciente já tem uma
+`AppointmentRequest` `Pending` em aberto — motivado por leads duplicados
+reais observados em teste manual, não um bug de matching.
+
+**Redesenho** (pedido explícito do usuário): `PatientPortalLayout.vue`,
+`Dashboard.vue` e `patients/Edit.vue` ganharam Avatar (com iniciais como
+fallback via `resources/js/lib/initials.ts`), Cards e ícones lucide no
+lugar de blocos de texto soltos.
