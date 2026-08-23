@@ -161,13 +161,29 @@ class AppointmentController extends Controller
         // CreateAppointmentRequest::authorize() já aceitou este envio por um
         // dos dois caminhos: `appointments.manage` (qualquer profissional) ou
         // "converter o próprio pré-agendamento" (createFromOwnRequest). Neste
-        // segundo caso, travar aqui que o `professional_id` enviado é
-        // realmente o do próprio vínculo — sem isso, um profissional
-        // autorizado só pela conversão própria poderia trocar o
-        // `professional_id` do formulário e criar o agendamento na agenda de
-        // outro profissional.
+        // segundo caso, travar aqui dois pontos que a autorização sozinha não
+        // cobre — achado de security-review:
+        // 1. `professional_id` enviado precisa ser realmente o do próprio
+        //    vínculo — sem isso, um profissional autorizado só pela
+        //    conversão própria poderia trocar o `professional_id` do
+        //    formulário e criar o agendamento na agenda de outro
+        //    profissional.
+        // 2. `patient_id` precisa ser o mesmo já vinculado ao pré-agendamento
+        //    de origem OU um paciente cujo `primary_professional_id` já é o
+        //    do próprio profissional (mesma definição de "paciente próprio"
+        //    de PatientPolicy::hasOwnAccess()) — sem isso, `AppointmentsManageOwn`
+        //    (que não inclui `patients.manage`/`patients.view`) permitia
+        //    criar um agendamento real vinculando qualquer paciente da
+        //    organização, não só os do próprio profissional.
+        // `unit_id`/`service_id` já ficam implicitamente restritos ao que o
+        // profissional realmente atende por `ActiveProfessionalServiceLinkResolver`
+        // acima, que rejeita qualquer combinação sem vínculo ativo.
         if ($sourceRequest !== null && ! $request->user()->can('create', [Appointment::class, $organization])) {
             abort_unless($sourceRequest->professional_id === $professional->id, 403);
+            abort_unless(
+                $patient->id === $sourceRequest->patient_id || $patient->primary_professional_id === $professional->id,
+                403,
+            );
         }
 
         $sessionPackageId = $request->validated('session_package_id');

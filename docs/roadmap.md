@@ -626,6 +626,42 @@ completa (1038 casos, mesmas 2 falhas pré-existentes) e Vitest (678
 casos) verdes; `pint`/`composer analyse`/`vue-tsc`/ESLint/Prettier
 limpos.
 
+**Fechamento da etapa — `security-review` sobre o diff completo (autoatendimento
+ampliado + popup + alarme/lembretes), dois achados corrigidos antes de
+fechar**:
+
+- **IDOR real (severidade alta)**: `AppointmentController::store()`
+  autorizava a conversão do próprio pré-agendamento
+  (`createFromOwnRequest`) travando só que o `professional_id` enviado
+  batia com o do vínculo — nunca validava o `patient_id`. Como
+  `SystemRole::Professional` só recebe `AppointmentsManageOwn`/`PatientsViewOwn`
+  por padrão (nunca `appointments.manage`/`patients.manage`), um
+  profissional autorizado só por esse caminho conseguia criar um
+  `Appointment` `Confirmed` real vinculando **qualquer paciente da
+  organização**, não só os próprios — driblando por completo o escopo de
+  `PatientsViewOwn` (mesma definição de "paciente próprio" de
+  `PatientPolicy::hasOwnAccess()`: `patient.primary_professional_id`
+  igual ao vínculo do usuário). `unit_id`/`service_id` já ficavam
+  implicitamente restritos pelo `ActiveProfessionalServiceLinkResolver`
+  (só combinações com vínculo ativo) — só `patient_id` estava aberto.
+  **Corrigido** com um segundo `abort_unless` logo depois do já existente
+  (mesmo bloco, mesma condição de entrada): exige `patient_id` igual ao
+  já vinculado no pré-agendamento de origem **ou** um paciente cujo
+  `primary_professional_id` já é o do próprio profissional — cobre tanto
+  o popup de um clique (paciente já casado via CPF/telefone/e-mail no
+  formulário público) quanto a conversão manual de um paciente já
+  atendido pelo profissional, sem abrir a porta para um paciente
+  qualquer. Novos testes em
+  `ProfessionalAppointmentSelfServiceTest.php` (bloqueia paciente
+  "estranho", permite o já casado no pré-agendamento mesmo sem
+  `primary_professional_id`).
+- **Logging de depuração esquecido (severidade média)**: `\Log::debug()`
+  temporário deixado em `CreateAppointmentRequest::authorize()` durante a
+  investigação de um 403 pontual, gravando `$this->all()` (payload
+  completo, incluindo `notes` e IDs de paciente) em todo envio de
+  agendamento — violava a regra do projeto de nunca logar dado sensível
+  de paciente. Removido.
+
 ## Etapa 4 — Prontuário e documentos
 
 - `MedicalRecord` versionado: rascunho editável, finalização imutável,

@@ -26,8 +26,6 @@ class CreateAppointmentRequest extends FormRequest
         $organization = app(TenantContext::class)->organization();
 
         if ($organization === null) {
-            \Log::debug('DEBUG authorize: no organization in TenantContext');
-
             return false;
         }
 
@@ -39,17 +37,6 @@ class CreateAppointmentRequest extends FormRequest
         $sourceRequest = $sourceRequestId
             ? AppointmentRequestModel::query()->where('organization_id', $organization->id)->find($sourceRequestId)
             : null;
-
-        \Log::debug('DEBUG authorize', [
-            'organization_id' => $organization->id,
-            'sourceRequestId' => $sourceRequestId,
-            'sourceRequestFound' => $sourceRequest !== null,
-            'sourceRequest_org' => $sourceRequest?->organization_id,
-            'sourceRequest_prof' => $sourceRequest?->professional_id,
-            'can_createFromOwnRequest' => $sourceRequest ? $this->user()?->can('createFromOwnRequest', $sourceRequest) : null,
-            'user_id' => $this->user()?->id,
-            'all_input' => $this->all(),
-        ]);
 
         return $sourceRequest !== null && $this->user()?->can('createFromOwnRequest', $sourceRequest) === true;
     }

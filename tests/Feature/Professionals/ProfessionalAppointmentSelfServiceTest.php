@@ -82,7 +82,13 @@ function professionalSelfServiceSetup(): array
         'service_id' => $service->id,
     ]);
 
-    $patient = Patient::factory()->for($organization)->create();
+    // `primary_professional_id` aponta pro próprio profissional — mesma
+    // definição de "paciente próprio" usada por
+    // PatientPolicy::hasOwnAccess()/MyPatientsController, agora também
+    // exigida por AppointmentController::store() quando a autorização veio
+    // só pela conversão do próprio pré-agendamento (ver teste de segurança
+    // abaixo, "blocks binding a patient that isn't the professional's own").
+    $patient = Patient::factory()->for($organization)->create(['primary_professional_id' => $professional->id]);
 
     $membership = OrganizationMembership::factory()->for($organization)->for($professionalUser)->create([
         'status' => OrganizationMembershipStatus::Active,
@@ -199,6 +205,39 @@ it('blocks a professional from tampering professional_id to book under a colleag
     ])->assertForbidden();
 
     expect(Appointment::query()->where('professional_id', $colleague->id)->count())->toBe(0);
+});
+
+it('blocks a professional from binding a patient that is neither their own nor already matched to their source request (security fix)', function () {
+    $setup = professionalSelfServiceSetup();
+    $strangerPatient = Patient::factory()->for($setup['organization'])->create(['primary_professional_id' => null]);
+
+    $this->actingAs($setup['professionalUser'])->post('/settings/appointments', [
+        'unit_id' => $setup['unit']->id,
+        'professional_id' => $setup['professional']->id,
+        'patient_id' => $strangerPatient->id,
+        'service_id' => $setup['service']->id,
+        'starts_at' => professionalSelfServiceMonday()->toDateString().'T09:00:00',
+        'appointment_request_id' => $setup['appointmentRequest']->id,
+    ])->assertForbidden();
+
+    expect(Appointment::query()->where('patient_id', $strangerPatient->id)->count())->toBe(0);
+});
+
+it('lets a professional book a patient already matched on their own source request, even if not their primary_professional_id', function () {
+    $setup = professionalSelfServiceSetup();
+    $matchedPatient = Patient::factory()->for($setup['organization'])->create(['primary_professional_id' => null]);
+    $setup['appointmentRequest']->update(['patient_id' => $matchedPatient->id]);
+
+    $this->actingAs($setup['professionalUser'])->post('/settings/appointments', [
+        'unit_id' => $setup['unit']->id,
+        'professional_id' => $setup['professional']->id,
+        'patient_id' => $matchedPatient->id,
+        'service_id' => $setup['service']->id,
+        'starts_at' => professionalSelfServiceMonday()->toDateString().'T09:00:00',
+        'appointment_request_id' => $setup['appointmentRequest']->id,
+    ])->assertRedirect();
+
+    expect(Appointment::query()->where('patient_id', $matchedPatient->id)->count())->toBe(1);
 });
 
 it('lets a professional reschedule their own appointment', function () {

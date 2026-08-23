@@ -151,6 +151,34 @@ mudar de status (contatada/agendada) ou ser cancelada — pelo paciente
 uma solicitação para um profissional diferente, nem se `patient_id` não
 foi resolvido (pessoa não reconhecida).
 
+### Unidade/serviço reais e horário exato (Etapa 3.7)
+
+Mesmo precedente de `professional_id` (texto livre "é impossível de
+consultar" — ver acima): quando a pessoa escolhe um horário específico na
+busca de disponibilidade (`resources/js/components/landing/LandingAvailabilitySearch.vue::chooseTimeForScheduling()`),
+três campos estruturados adicionais são gravados, todos `null` para quem
+usa só o formulário manual sem escolher um horário:
+
+- `AppointmentRequest.unit_id` (já existia, mas até esta etapa
+  `PublicAppointmentRequestController::store()` sempre gravava a matriz da
+  organização, ignorando a unidade efetivamente escolhida na busca —
+  corrigido para priorizar a unidade real quando enviada, com a matriz
+  como fallback).
+- `AppointmentRequest.preferred_service_id` (ULID do `Service` operacional
+  — **nunca** o mesmo espaço de id de `service_id`, que referencia o
+  catálogo público `site_services`).
+- `AppointmentRequest.preferred_starts_at` (UTC — o horário local escolhido
+  é convertido via `Carbon::parse($valor, $unit->timezone)->utc()` em
+  `App\Actions\Public\CreateAppointmentRequestAction`, mesma disciplina de
+  fuso de `AppointmentController::store()`).
+
+Esses três campos permitem que "Meus pré-agendamentos" (ver
+[professionals.md](professionals.md), seção "Autoatendimento de
+agendamento") ofereça um "Agendar" de um clique em vez do formulário
+completo de conversão — ver `MyAppointmentRequestsController::index()`,
+que os expõe (`unit_name`/`preferred_service_name` já resolvidos, mais
+`patient_name` quando o lead já foi casado com um `Patient`).
+
 ### Confirmação pós-envio
 
 `resources/js/components/landing/LandingSchedulingSection.vue`: além do

@@ -126,6 +126,13 @@ profissional (nunca aceita `professional_id` do frontend, mesmo padrão de
 - **Nunca mostra "Últimas atividades"** (log de auditoria) — decisão
   explícita do usuário: o dashboard do profissional é operacional, não
   administrativo.
+- **Campo de data no card "Agenda"** (Etapa 3.7, `<input type="date">` ao
+  lado de Anterior/Hoje/Próximo): pula direto para qualquer dia/semana/mês
+  desejado, sem precisar andar um de cada vez — usa o mesmo `reload()` que
+  os outros controles, então o backend recalcula o intervalo a partir de
+  `referenceDate` (`DashboardController::periodRange()`) normalmente.
+  Layout (Etapa 3.7): "Agenda" e "Avisos e lembretes" ficam lado a lado
+  (`lg:grid-cols-3`, agenda ocupando 2/3), em vez de empilhados.
 - **Lembretes tipo post-it** (`App\Models\ProfessionalDashboardReminder`,
   recurso novo): conteúdo pessoal do profissional, sem relevância de
   negócio (não é paciente/financeiro/clínico) — por isso é o único
@@ -134,7 +141,58 @@ profissional (nunca aceita `professional_id` do frontend, mesmo padrão de
   CRUD mínimo: criar e excluir (sem edição), autorização via FormRequest
   (`StoreDashboardReminderRequest`/`DestroyDashboardReminderRequest`),
   mesmo padrão de "autoatendimento sem Policy dedicada" já usado em
-  `UpdateOwnAppointmentRequestStatusRequest`.
+  `UpdateOwnAppointmentRequestStatusRequest`. Grade de 2 colunas; clicar
+  num post-it abre um popup (`Dialog`) com o texto completo, com a ação
+  de remover reaproveitada ali dentro — a exclusão pelo X do card
+  continua funcionando igual (Etapa 3.7).
+  - **Alarme** (Etapa 3.7, ex.: "tomar remédio às 12h"): campo opcional
+    `alarm_at` (UTC), convertido a partir do horário local do navegador só
+    no cliente (`Date::toISOString()`) — nunca depende de fuso do
+    servidor para um dado puramente pessoal, e nunca faz parte da
+    validação de conflito de agenda (não tem nenhuma relação com
+    `Appointment`/`AppointmentOverlapGuard`). Conferido só no cliente, a
+    cada 15s enquanto o dashboard estiver aberto (decisão explícita do
+    usuário: sem push/Service Worker nesta fase — não dispara nada com a
+    aba fechada). Ao bater a hora, abre um popup de alarme que só fecha
+    pelo botão "Fechar alarme" (bloqueado contra Esc/clique fora), que
+    silencia via `PATCH /dashboard/lembretes/{reminder}/silenciar-alarme`
+    (`DismissProfessionalDashboardReminderAlarmAction`, mesmo padrão de
+    autorização de `DestroyDashboardReminderRequest`) — só zera
+    `alarm_at`, o post-it em si não é removido.
+
+## Autoatendimento de agendamento (Etapa 3.7)
+
+Além de gerenciar a própria ficha/jornada/ausências, o profissional pode
+agir sobre os próprios atendimentos sem depender de `appointments.manage`
+(permissão ampla de recepção/administração):
+
+- **Converter o próprio pré-agendamento em agendamento real**: em "Meus
+  pré-agendamentos", `App\Policies\AppointmentRequestPolicy::createFromOwnRequest()`
+  autoriza a conversão só quando `AppointmentRequest.professional_id`
+  aponta para um `Professional` ativo do próprio usuário — o Gate do
+  Laravel resolve a policy pela classe do model passado a `can()`, por
+  isso este método vive na policy de `AppointmentRequest`, não na de
+  `Appointment`. `AppointmentController::store()` trava explicitamente
+  que o `professional_id` enviado bate com o do pré-agendamento quando a
+  autorização veio só por esse caminho — sem isso, um profissional
+  poderia trocar `professional_id` no formulário e agendar na agenda de
+  outro colega.
+- **"Agendar" em um clique**, sem reabrir formulário: quando o
+  pré-agendamento já carrega `unit_id` + `preferred_service_id` +
+  `preferred_starts_at` (veio de um horário específico escolhido na busca
+  de disponibilidade da landing — ver
+  [public-integration.md](public-integration.md)), o botão "Agendar" abre
+  um popup de confirmação em vez do formulário completo, postando direto
+  em `POST /settings/appointments` (mesmo endpoint/Action de sempre).
+  Pré-agendamentos sem esses três campos (leads antigos, ou enviados pelo
+  formulário manual sem escolher horário específico) continuam caindo no
+  formulário de conversão, com Unidade/Profissional travados como texto
+  fixo quando já conhecidos.
+- **Reagendar/cancelar o próprio atendimento**:
+  `AppointmentPolicy::reschedule()`/`cancel()` ganharam o mesmo caminho
+  `hasOwnAccess(..., PermissionKey::AppointmentsManageOwn)` já usado por
+  `confirm()`/`manageStatus()` — escopado ao vínculo profissional/
+  atendimento, nunca ao atendimento de um colega.
 
 ## Criação, edição, ativação e exclusão
 
