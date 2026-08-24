@@ -52,6 +52,11 @@ describe('resolveLayoutKind', () => {
         'settings/appointments/Index',
         'settings/my-patients/Index',
         'settings/my-appointment-requests/Index',
+        'settings/products/Index',
+        'settings/products/Create',
+        'settings/sales/Index',
+        'settings/sales/Create',
+        'settings/sales/Show',
     ])(
         'uses the plain app layout for %s — neither the clinic-identity nor the personal account layout',
         (name) => {

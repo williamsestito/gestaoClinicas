@@ -109,6 +109,18 @@ class Organization extends Model
         return $this->hasMany(SharedResource::class);
     }
 
+    /** @return HasMany<Product, $this> */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    /** @return HasMany<Sale, $this> */
+    public function sales(): HasMany
+    {
+        return $this->hasMany(Sale::class);
+    }
+
     /** @return HasMany<Professional, $this> */
     public function professionals(): HasMany
     {

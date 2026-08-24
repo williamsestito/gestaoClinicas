@@ -16,6 +16,7 @@ import {
     index,
     restore,
 } from '@/routes/settings/patients';
+import { create as createSale } from '@/routes/settings/sales';
 
 type PatientRow = {
     id: string;
@@ -197,6 +198,23 @@ function restorePatient(patient: PatientRow) {
                                     >
                                         <Link :href="edit(patient.id).url">
                                             Editar
+                                        </Link>
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="
+                                                createSale({
+                                                    query: {
+                                                        patient_id: patient.id,
+                                                    },
+                                                }).url
+                                            "
+                                        >
+                                            Vender
                                         </Link>
                                     </Button>
                                     <Button

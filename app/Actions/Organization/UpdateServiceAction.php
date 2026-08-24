@@ -18,7 +18,7 @@ class UpdateServiceAction
     public function __construct(private readonly AuditLogger $auditLogger) {}
 
     /**
-     * @param  array{name: string, code: string, description: ?string, default_duration_minutes: int, buffer_before_minutes: int, buffer_after_minutes: int, default_price_cents: ?int, color: ?string, is_public: bool, requires_manual_confirmation: bool, internal_notes: ?string, unit_availability_scope: string, specialty_ids: array<int, string>, unit_ids: array<int, string>}  $attributes
+     * @param  array{name: string, code: string, description: ?string, default_duration_minutes: int, buffer_before_minutes: int, buffer_after_minutes: int, default_price_cents: ?int, cost_cents: ?int, margin_percentage: ?int, max_discount_percentage: ?int, color: ?string, is_public: bool, requires_manual_confirmation: bool, internal_notes: ?string, unit_availability_scope: string, specialty_ids: array<int, string>, unit_ids: array<int, string>}  $attributes
      */
     public function handle(Service $service, array $attributes): Service
     {
@@ -30,6 +30,9 @@ class UpdateServiceAction
             'buffer_before_minutes' => $attributes['buffer_before_minutes'],
             'buffer_after_minutes' => $attributes['buffer_after_minutes'],
             'default_price_cents' => $attributes['default_price_cents'],
+            'cost_cents' => $attributes['cost_cents'],
+            'margin_percentage' => $attributes['margin_percentage'],
+            'max_discount_percentage' => $attributes['max_discount_percentage'],
             'color' => $attributes['color'],
             'is_public' => $attributes['is_public'],
             'requires_manual_confirmation' => $attributes['requires_manual_confirmation'],

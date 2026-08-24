@@ -31,6 +31,9 @@ use Illuminate\Support\Collection;
  * @property int $buffer_before_minutes
  * @property int $buffer_after_minutes
  * @property int|null $default_price_cents
+ * @property int|null $cost_cents
+ * @property int|null $margin_percentage
+ * @property int|null $max_discount_percentage
  * @property RecordStatus $status
  * @property string|null $color
  * @property bool $is_public
@@ -53,6 +56,9 @@ class Service extends Model
         'buffer_before_minutes',
         'buffer_after_minutes',
         'default_price_cents',
+        'cost_cents',
+        'margin_percentage',
+        'max_discount_percentage',
         'status',
         'color',
         'is_public',
@@ -69,6 +75,9 @@ class Service extends Model
             'buffer_before_minutes' => 'integer',
             'buffer_after_minutes' => 'integer',
             'default_price_cents' => 'integer',
+            'cost_cents' => 'integer',
+            'margin_percentage' => 'integer',
+            'max_discount_percentage' => 'integer',
             'is_public' => 'boolean',
             'requires_manual_confirmation' => 'boolean',
             'unit_availability_scope' => ServiceAvailabilityScope::class,

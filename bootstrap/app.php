@@ -9,8 +9,10 @@ use App\Http\Middleware\EnsureNoActiveOrganization;
 use App\Http\Middleware\EnsureOrganizationMembership;
 use App\Http\Middleware\EnsurePatientMembership;
 use App\Http\Middleware\EnsurePatientUserIsActive;
+use App\Http\Middleware\EnsureProductMembership;
 use App\Http\Middleware\EnsureProfessionalMembership;
 use App\Http\Middleware\EnsureResourceMembership;
+use App\Http\Middleware\EnsureSaleMembership;
 use App\Http\Middleware\EnsureServiceMembership;
 use App\Http\Middleware\EnsureSpecialtyMembership;
 use App\Http\Middleware\EnsureUnitMembership;
@@ -89,6 +91,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.appointment-membership' => EnsureAppointmentMembership::class,
             'tenant.professional-membership' => EnsureProfessionalMembership::class,
             'tenant.medical-record-membership' => EnsureMedicalRecordMembership::class,
+            'tenant.product-membership' => EnsureProductMembership::class,
+            'tenant.sale-membership' => EnsureSaleMembership::class,
             'patient.active' => EnsurePatientUserIsActive::class,
             'patient.share-portal-data' => SharePatientPortalData::class,
         ]);

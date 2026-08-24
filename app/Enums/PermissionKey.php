@@ -117,6 +117,14 @@ enum PermissionKey: string
     case ProfessionalOwnTimeBlocksView = 'professional-time-blocks.view-own';
     case ProfessionalOwnTimeBlocksManage = 'professional-time-blocks.manage-own';
 
+    case ProductsView = 'products.view';
+    case ProductsManage = 'products.manage';
+
+    case SalesView = 'sales.view';
+    case SalesManage = 'sales.manage';
+    case SalesManageOwn = 'sales.manage-own';
+    case SalesApproveDiscount = 'sales.approve-discount';
+
     public function label(): string
     {
         return match ($this) {
@@ -211,6 +219,14 @@ enum PermissionKey: string
             self::ProfessionalOwnAvailabilityManage => 'Gerenciar a própria jornada e disponibilidade',
             self::ProfessionalOwnTimeBlocksView => 'Visualizar as próprias ausências e bloqueios',
             self::ProfessionalOwnTimeBlocksManage => 'Gerenciar as próprias ausências e bloqueios',
+
+            self::ProductsView => 'Visualizar produtos',
+            self::ProductsManage => 'Gerenciar produtos',
+
+            self::SalesView => 'Visualizar vendas',
+            self::SalesManage => 'Gerenciar vendas de qualquer paciente',
+            self::SalesManageOwn => 'Gerenciar vendas dos próprios pacientes',
+            self::SalesApproveDiscount => 'Aprovar desconto acima do limite',
         };
     }
 
@@ -239,6 +255,8 @@ enum PermissionKey: string
             str_starts_with($this->value, 'professional-availability.') => 'Jornada e disponibilidade',
             str_starts_with($this->value, 'professional-time-blocks.') => 'Ausências e bloqueios',
             str_starts_with($this->value, 'professionals.') => 'Profissionais',
+            str_starts_with($this->value, 'products.') => 'Produtos',
+            str_starts_with($this->value, 'sales.') => 'Vendas',
             default => 'Geral',
         };
     }

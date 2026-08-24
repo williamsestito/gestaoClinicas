@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property string $organization_id
  * @property string $patient_id
  * @property string|null $service_id
+ * @property string|null $origin_sale_item_id
  * @property int $total_sessions
  * @property Carbon|null $expires_at
  * @property RecordStatus $status
@@ -39,6 +40,7 @@ class SessionPackage extends Model
         'organization_id',
         'patient_id',
         'service_id',
+        'origin_sale_item_id',
         'total_sessions',
         'expires_at',
         'status',
@@ -75,6 +77,17 @@ class SessionPackage extends Model
     public function appointments(): HasMany
     {
         return $this->hasMany(Appointment::class);
+    }
+
+    /**
+     * Preenchido quando o pacote nasceu de uma venda (Etapa 5) — nulo
+     * quando criado manualmente.
+     *
+     * @return BelongsTo<SaleItem, $this>
+     */
+    public function originSaleItem(): BelongsTo
+    {
+        return $this->belongsTo(SaleItem::class, 'origin_sale_item_id');
     }
 
     /** Nunca persistido — sempre recalculado a partir dos agendamentos concluídos. */

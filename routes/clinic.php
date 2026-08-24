@@ -19,6 +19,7 @@ use App\Http\Controllers\Organization\OrganizationSettingsController;
 use App\Http\Controllers\Organization\PatientController;
 use App\Http\Controllers\Organization\PatientEmergencyContactController;
 use App\Http\Controllers\Organization\PatientResponsibleController;
+use App\Http\Controllers\Organization\ProductController;
 use App\Http\Controllers\Organization\ProfessionalController;
 use App\Http\Controllers\Organization\ProfessionalRegistrationController;
 use App\Http\Controllers\Organization\ProfessionalServiceController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\Organization\ProfessionalUnitController;
 use App\Http\Controllers\Organization\ProfessionalWorkingHourController;
 use App\Http\Controllers\Organization\ResourceController;
 use App\Http\Controllers\Organization\RoleController;
+use App\Http\Controllers\Organization\SaleController;
 use App\Http\Controllers\Organization\SeoMarketingController;
 use App\Http\Controllers\Organization\ServiceController;
 use App\Http\Controllers\Organization\SessionPackageController;
@@ -201,6 +203,51 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
                 ->name('settings.services.deactivate');
             Route::delete('settings/services/{service}', [ServiceController::class, 'destroy'])
                 ->name('settings.services.destroy');
+        });
+
+        // Etapa 5 do roadmap (docs/roadmap.md) — Comercial (produtos, serviços,
+        // vendas). Mesmo padrão create/store/restore fora do grupo de
+        // membership, edit/update/status/destroy dentro dele.
+        Route::get('settings/products', [ProductController::class, 'index'])
+            ->name('settings.products.index');
+        Route::get('settings/products/create', [ProductController::class, 'create'])
+            ->name('settings.products.create');
+        Route::post('settings/products', [ProductController::class, 'store'])
+            ->name('settings.products.store');
+        Route::post('settings/products/{product}/restore', [ProductController::class, 'restore'])
+            ->name('settings.products.restore');
+
+        Route::middleware('tenant.product-membership')->group(function () {
+            Route::get('settings/products/{product}/edit', [ProductController::class, 'edit'])
+                ->name('settings.products.edit');
+            Route::put('settings/products/{product}', [ProductController::class, 'update'])
+                ->name('settings.products.update');
+            Route::patch('settings/products/{product}/activate', [ProductController::class, 'activate'])
+                ->name('settings.products.activate');
+            Route::patch('settings/products/{product}/deactivate', [ProductController::class, 'deactivate'])
+                ->name('settings.products.deactivate');
+            Route::delete('settings/products/{product}', [ProductController::class, 'destroy'])
+                ->name('settings.products.destroy');
+        });
+
+        Route::get('settings/sales', [SaleController::class, 'index'])
+            ->name('settings.sales.index');
+        Route::get('settings/sales/create', [SaleController::class, 'create'])
+            ->name('settings.sales.create');
+        Route::post('settings/sales', [SaleController::class, 'store'])
+            ->name('settings.sales.store');
+
+        Route::middleware('tenant.sale-membership')->group(function () {
+            Route::get('settings/sales/{sale}', [SaleController::class, 'show'])
+                ->name('settings.sales.show');
+            Route::put('settings/sales/{sale}', [SaleController::class, 'update'])
+                ->name('settings.sales.update');
+            Route::patch('settings/sales/{sale}/confirmar', [SaleController::class, 'confirm'])
+                ->name('settings.sales.confirm');
+            Route::patch('settings/sales/{sale}/cancelar', [SaleController::class, 'cancel'])
+                ->name('settings.sales.cancel');
+            Route::patch('settings/sales/{sale}/itens/{item}/aprovar-desconto', [SaleController::class, 'approveDiscount'])
+                ->name('settings.sales.items.approve-discount');
         });
 
         // Etapa 3.3 do roadmap (docs/roadmap.md) — recursos compartilhados

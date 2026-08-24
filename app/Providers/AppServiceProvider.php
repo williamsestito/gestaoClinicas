@@ -18,6 +18,7 @@ use App\Models\PatientResponsible;
 use App\Models\PatientUser;
 use App\Models\PatientUserLink;
 use App\Models\Permission;
+use App\Models\Product;
 use App\Models\Professional;
 use App\Models\ProfessionalRegistration;
 use App\Models\ProfessionalService;
@@ -27,6 +28,8 @@ use App\Models\ProfessionalTimeBlock;
 use App\Models\ProfessionalUnit;
 use App\Models\ProfessionalWorkingHour;
 use App\Models\Role;
+use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\Service;
 use App\Models\ServiceSpecialty;
 use App\Models\ServiceUnit;
@@ -161,6 +164,9 @@ class AppServiceProvider extends ServiceProvider
             'medical_record' => MedicalRecord::class,
             'medical_record_addendum' => MedicalRecordAddendum::class,
             'medical_record_file' => MedicalRecordFile::class,
+            'product' => Product::class,
+            'sale' => Sale::class,
+            'sale_item' => SaleItem::class,
         ]);
     }
 

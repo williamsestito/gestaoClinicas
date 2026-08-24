@@ -38,6 +38,15 @@ class EditService extends EditRecord
             'default_price_cents' => $data['default_price'] !== null && $data['default_price'] !== ''
                 ? (int) round(((float) $data['default_price']) * 100)
                 : null,
+            'cost_cents' => ($data['cost'] ?? null) !== null && $data['cost'] !== ''
+                ? (int) round(((float) $data['cost']) * 100)
+                : null,
+            'margin_percentage' => ($data['margin_percentage'] ?? null) !== null && $data['margin_percentage'] !== ''
+                ? (int) $data['margin_percentage']
+                : null,
+            'max_discount_percentage' => ($data['max_discount_percentage'] ?? null) !== null && $data['max_discount_percentage'] !== ''
+                ? (int) $data['max_discount_percentage']
+                : null,
             'color' => $data['color'] !== null ? (string) $data['color'] : null,
             'is_public' => (bool) ($data['is_public'] ?? false),
             'requires_manual_confirmation' => (bool) ($data['requires_manual_confirmation'] ?? false),

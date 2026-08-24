@@ -21,6 +21,9 @@ export type EditableService = {
     buffer_before_minutes: number;
     buffer_after_minutes: number;
     default_price: number | null;
+    cost: number | null;
+    margin_percentage: number | null;
+    max_discount_percentage: number | null;
     color: string | null;
     is_public: boolean;
     requires_manual_confirmation: boolean;
@@ -56,6 +59,12 @@ const form = useForm({
     buffer_after_minutes: props.service?.buffer_after_minutes ?? 0,
     default_price:
         props.service?.default_price ?? (undefined as number | undefined),
+    cost: props.service?.cost ?? (undefined as number | undefined),
+    margin_percentage:
+        props.service?.margin_percentage ?? (undefined as number | undefined),
+    max_discount_percentage:
+        props.service?.max_discount_percentage ??
+        (undefined as number | undefined),
     color: props.service?.color ?? '',
     is_public: props.service?.is_public ?? false,
     requires_manual_confirmation:
@@ -193,18 +202,66 @@ function submit() {
         <Separator />
 
         <div class="grid gap-4">
-            <h3 class="text-sm font-medium">Preço padrão</h3>
+            <h3 class="text-sm font-medium">Preço e desconto</h3>
+            <p class="text-sm text-muted-foreground">
+                Modo simplificado: custo + margem desejada ajudam a calcular o
+                preço, mas o preço praticado é sempre o valor informado abaixo.
+                O desconto máximo é o limite que um desconto pode ultrapassar
+                sem exigir aprovação numa venda.
+            </p>
+            <div class="grid gap-4 sm:grid-cols-3">
+                <div class="grid gap-2">
+                    <Label for="service-cost">Custo estimado (opcional)</Label>
+                    <Input
+                        id="service-cost"
+                        v-model.number="form.cost"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0,00"
+                    />
+                    <InputError :message="form.errors.cost" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="service-margin">Margem desejada (%)</Label>
+                    <Input
+                        id="service-margin"
+                        v-model.number="form.margin_percentage"
+                        type="number"
+                        min="0"
+                        max="1000"
+                        placeholder="0"
+                    />
+                    <InputError :message="form.errors.margin_percentage" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="service-price"
+                        >Preço praticado (opcional)</Label
+                    >
+                    <Input
+                        id="service-price"
+                        v-model.number="form.default_price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0,00"
+                    />
+                    <InputError :message="form.errors.default_price" />
+                </div>
+            </div>
             <div class="grid gap-2 sm:max-w-xs">
-                <Label for="service-price">Valor em reais (opcional)</Label>
+                <Label for="service-max-discount"
+                    >Desconto máximo sem aprovação (%)</Label
+                >
                 <Input
-                    id="service-price"
-                    v-model.number="form.default_price"
+                    id="service-max-discount"
+                    v-model.number="form.max_discount_percentage"
                     type="number"
                     min="0"
-                    step="0.01"
-                    placeholder="0,00"
+                    max="100"
+                    placeholder="0"
                 />
-                <InputError :message="form.errors.default_price" />
+                <InputError :message="form.errors.max_discount_percentage" />
             </div>
         </div>
 

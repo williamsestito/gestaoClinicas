@@ -33,6 +33,8 @@ export const PLAIN_APP_SETTINGS_PAGES = [
     'settings/resources/',
     'settings/patients/',
     'settings/appointments/',
+    'settings/products/',
+    'settings/sales/',
     // Tabela (não formulário simples como settings/my-schedule/) — precisa
     // do mesmo teto largo de settings/patients/, não do max-w-2xl pessoal.
     'settings/my-patients/',

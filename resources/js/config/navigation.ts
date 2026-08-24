@@ -14,8 +14,10 @@ import {
     Inbox,
     LayoutGrid,
     MapPin,
+    Package,
     Search,
     ShieldCheck,
+    ShoppingCart,
     Stethoscope,
     UserRound,
     Users,
@@ -34,9 +36,11 @@ import {
 } from '@/routes/settings/my-schedule';
 import { edit as editOrganization } from '@/routes/settings/organization';
 import { index as indexPatients } from '@/routes/settings/patients';
+import { index as indexProducts } from '@/routes/settings/products';
 import { index as indexProfessionals } from '@/routes/settings/professionals';
 import { index as indexResources } from '@/routes/settings/resources';
 import { index as indexRoles } from '@/routes/settings/roles';
+import { index as indexSales } from '@/routes/settings/sales';
 import { edit as editSeo } from '@/routes/settings/seo';
 import { index as indexServices } from '@/routes/settings/services';
 import { edit as editSite } from '@/routes/settings/site';
@@ -178,6 +182,23 @@ export function buildNavGroups(permissions: string[]): NavGroup[] {
                     href: indexResources(),
                     icon: DoorOpen,
                     permission: 'resources.view',
+                },
+            ],
+        },
+        {
+            title: 'Comercial',
+            items: [
+                {
+                    title: 'Produtos',
+                    href: indexProducts(),
+                    icon: Package,
+                    permission: 'products.view',
+                },
+                {
+                    title: 'Vendas',
+                    href: indexSales(),
+                    icon: ShoppingCart,
+                    permission: 'sales.view',
                 },
             ],
         },

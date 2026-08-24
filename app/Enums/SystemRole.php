@@ -138,6 +138,11 @@ enum SystemRole: string
                 PermissionKey::ProfessionalAvailabilityManage,
                 PermissionKey::ProfessionalTimeBlocksView,
                 PermissionKey::ProfessionalTimeBlocksManage,
+                PermissionKey::ProductsView,
+                PermissionKey::ProductsManage,
+                PermissionKey::SalesView,
+                PermissionKey::SalesManage,
+                PermissionKey::SalesApproveDiscount,
             ],
 
             // Gerente de unidade recebe as permissões de gestão de jornada/
@@ -169,6 +174,10 @@ enum SystemRole: string
                 PermissionKey::ProfessionalAvailabilityManage,
                 PermissionKey::ProfessionalTimeBlocksView,
                 PermissionKey::ProfessionalTimeBlocksManage,
+                PermissionKey::ProductsView,
+                PermissionKey::SalesView,
+                PermissionKey::SalesManage,
+                PermissionKey::SalesApproveDiscount,
             ],
 
             self::Reception => [
@@ -182,6 +191,9 @@ enum SystemRole: string
                 PermissionKey::AppointmentsView,
                 PermissionKey::AppointmentsManage,
                 PermissionKey::SettingsView,
+                PermissionKey::ProductsView,
+                PermissionKey::SalesView,
+                PermissionKey::SalesManage,
             ],
 
             self::Professional => [
@@ -195,6 +207,8 @@ enum SystemRole: string
                 PermissionKey::ProfessionalOwnAvailabilityManage,
                 PermissionKey::ProfessionalOwnTimeBlocksView,
                 PermissionKey::ProfessionalOwnTimeBlocksManage,
+                PermissionKey::ProductsView,
+                PermissionKey::SalesManageOwn,
             ],
 
             self::Finance => [
@@ -202,6 +216,8 @@ enum SystemRole: string
                 PermissionKey::UnitsView,
                 PermissionKey::LegalEntitiesView,
                 PermissionKey::SettingsView,
+                PermissionKey::ProductsView,
+                PermissionKey::SalesView,
             ],
 
             self::Auditor => [
@@ -225,6 +241,8 @@ enum SystemRole: string
                 PermissionKey::ProfessionalRegistrationsViewSensitive,
                 PermissionKey::ProfessionalAvailabilityView,
                 PermissionKey::ProfessionalTimeBlocksView,
+                PermissionKey::ProductsView,
+                PermissionKey::SalesView,
             ],
         };
     }

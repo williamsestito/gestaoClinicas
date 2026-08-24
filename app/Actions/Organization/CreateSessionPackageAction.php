@@ -20,6 +20,7 @@ class CreateSessionPackageAction
         $package = $patient->sessionPackages()->create([
             'organization_id' => $patient->organization_id,
             'service_id' => $attributes['service_id'] ?? null,
+            'origin_sale_item_id' => $attributes['origin_sale_item_id'] ?? null,
             'total_sessions' => $attributes['total_sessions'],
             'expires_at' => $attributes['expires_at'] ?? null,
             'status' => RecordStatus::Active,
@@ -28,7 +29,7 @@ class CreateSessionPackageAction
         $this->auditLogger->log(
             AuditAction::Created,
             auditable: $package,
-            after: $package->only(['service_id', 'total_sessions', 'expires_at', 'status']),
+            after: $package->only(['service_id', 'origin_sale_item_id', 'total_sessions', 'expires_at', 'status']),
             organization: $patient->organization,
         );
 

@@ -53,12 +53,29 @@ class ServiceForm
                     ->numeric()
                     ->default(0),
                 TextInput::make('default_price')
-                    ->label('Preço padrão (R$)')
+                    ->label('Preço praticado (R$)')
                     ->numeric()
                     ->prefix('R$')
                     ->afterStateHydrated(function (TextInput $component, ?Service $record) {
                         $component->state($record?->default_price_cents !== null ? $record->default_price_cents / 100 : null);
                     }),
+                TextInput::make('cost')
+                    ->label('Custo estimado (R$)')
+                    ->numeric()
+                    ->prefix('R$')
+                    ->afterStateHydrated(function (TextInput $component, ?Service $record) {
+                        $component->state($record?->cost_cents !== null ? $record->cost_cents / 100 : null);
+                    }),
+                TextInput::make('margin_percentage')
+                    ->label('Margem desejada (%)')
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(1000),
+                TextInput::make('max_discount_percentage')
+                    ->label('Desconto máximo sem aprovação (%)')
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(100),
                 TextInput::make('color')
                     ->label('Cor')
                     ->maxLength(20),

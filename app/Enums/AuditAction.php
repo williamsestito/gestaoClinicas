@@ -25,6 +25,9 @@ enum AuditAction: string
     case Unlinked = 'unlinked';
     case Viewed = 'viewed';
     case Downloaded = 'downloaded';
+    case Confirmed = 'confirmed';
+    case Cancelled = 'cancelled';
+    case Approved = 'approved';
 
     public function label(): string
     {
@@ -48,6 +51,9 @@ enum AuditAction: string
             self::Unlinked => 'Vínculo removido',
             self::Viewed => 'Visualizado',
             self::Downloaded => 'Baixado',
+            self::Confirmed => 'Confirmado',
+            self::Cancelled => 'Cancelado',
+            self::Approved => 'Aprovado',
         };
     }
 }

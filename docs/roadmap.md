@@ -50,13 +50,17 @@ dashboard de autoatendimento do profissional (pré-agendamentos pendentes,
 "meus pacientes", lembretes tipo post-it), CPF obrigatório e popup de
 confirmação no formulário público, pré-agendamentos (leads) visíveis e
 canceláveis no portal do paciente, foto de perfil pelo portal, bloqueio
-de solicitação duplicada por profissional, e prontuário clínico versionado
+de solicitação duplicada por profissional, prontuário clínico versionado
 (rascunho/finalização/adendo, separação estrita de acesso clínico,
 documentos categorizados com auditoria, modelos por especialidade via
 `specialty_data`, visibilidade no portal do paciente só para registros
-finalizados e liberados).
+finalizados e liberados), e comercial básico (`Product`/`Sale`/`SaleItem`
+com precificação simplificada, aprovação de desconto acima do limite com
+justificativa e senha, pacote de sessões ad-hoc gerando `SessionPackage`
+real ao confirmar a venda).
 
-Não existe: Produto/Venda/Financeiro/Estoque, mesclagem de pacientes,
+Não existe: Financeiro/Estoque (cobrança, parcela, recebimento, caixa,
+comissão, fornecedores/compras/lotes), mesclagem de pacientes,
 assinatura/billing, recursos vinculados por serviço, RRULE genérico de
 recorrência, notificação automática de vaga na lista de espera,
 odontograma.
@@ -781,14 +785,101 @@ com `SyncSystemRolesCommandTest.php`) para rodar isso de forma repetível
 sempre que uma etapa futura adicionar uma permissão ao conjunto padrão de
 um papel já em uso por clínicas existentes.
 
-## Etapa 5 — Comercial (produtos, serviços, vendas)
+## Etapa 5 — Comercial (produtos, serviços, vendas) ✅ concluída em 2026-08-23
 
-- `Product`, precificação em modo simplificado primeiro (custo + margem +
-  desconto máximo); modo avançado é incremento posterior, não bloqueia MVP.
-- `Sale`/`ItemVenda` vinculados a paciente, profissional, unidade, entidade
-  legal e atendimento.
-- Aprovação de desconto acima do limite com justificativa e log completo
-  (RN-010, RN-011).
+Fonte de regras: PDF `Documento_Visão_Requisitos_Plano_Entregas_Gestão_
+Clínicas.pdf`, Seção 12 (Serviços, produtos, preços e descontos), Seção 13
+(Vendas, cobranças e recebimentos), Seção 22 (modelo conceitual) e
+Apêndice A (RN-009, RN-010, RN-011, RN-017, RN-018). Detalhes completos em
+[docs/modules/sales.md](modules/sales.md).
+
+- **Escopo deliberadamente restrito** (consequência direta da separação
+  Comercial/Financeiro que o próprio PDF já faz): `Sale` registra o que
+  foi vendido, a que preço e com que desconto — **não** rastreia
+  cobrança/parcela/recebimento/forma de pagamento nem passa por caixa
+  (chegam na Etapa 6, como camada sobre a `Venda` já existente). Nenhum
+  campo de comissão entra aqui pelo mesmo motivo.
+- **`Service`/`Product`** ganham precificação em modo simplificado (custo
+  + margem desejada + desconto máximo sem aprovação); preço praticado
+  continua um valor explícito, nunca calculado automaticamente. `Product`
+  é cadastro novo, sem campos de estoque/lote/validade (Etapa 7).
+- **`Sale`/`SaleItem`**: vinculados a paciente, unidade, entidade legal,
+  profissional (opcional) e atendimento (opcional — decisão explícita,
+  venda de balcão não exige consulta em andamento). Preço e desconto do
+  item são sempre um retrato do momento da venda, nunca relidos do
+  catálogo depois. Sem soft delete — cancelamento é status (RN-009/017).
+- **Pacote de sessões ad-hoc**: vender um item "pacote" (`service_id` +
+  quantidade de sessões + preço total, sem catálogo próprio) cria de
+  verdade um `SessionPackage` (já existente desde a Etapa 3.3) ao
+  confirmar a venda, gravando `origin_sale_item_id` para rastrear a
+  origem — pacotes criados manualmente continuam funcionando sem mudança.
+- **Aprovação de desconto (RN-010/011)**: item com desconto acima do
+  limite do serviço/produto marca a venda como `pending_approval`,
+  bloqueando confirmação. Aprovar exige justificativa **e a senha do
+  próprio aprovador**, verificada diretamente no FormRequest (não via
+  `password.confirm` do Fortify — a rota é um PATCH via Inertia, não uma
+  navegação GET). Log de auditoria registra solicitante e aprovador
+  separadamente, com valores originais/finais e motivo.
+- **Autorização sem desvio RN-015/016**: dado comercial não é clínico —
+  `SalePolicy`/`ProductPolicy` usam o padrão normal do resto do app
+  (`PermissionChecker::can()`, que libera owner/platform-admin
+  normalmente), diferente de `MedicalRecordPolicy`.
+
+Testes: `ProductManagementTest.php` (8 casos — CRUD, isolamento por
+organização, código único reaproveitável após exclusão lógica, bloqueio
+de exclusão de produto já vendido), `SaleLifecycleTest.php` (7 casos —
+rascunho sem desconto confirma direto, desconto acima do limite entra em
+`pending_approval`, confirmação recusada com pendência e liberada após
+aprovação, pacote de sessões vira `SessionPackage` real, cancelamento
+nunca apaga nada, cancelar rascunho é bloqueado, preço de catálogo não
+pode ser sobrescrito pelo cliente), `SaleAccessTest.php` (4 casos —
+recepção cria mas não aprova desconto, profissional só vende para os
+próprios pacientes, profissional não atribui venda a um colega,
+isolamento cross-tenant), `ApproveSaleItemDiscountTest.php` (4 casos —
+senha errada rejeitada, justificativa obrigatória, log completo, item já
+aprovado não aprova de novo). Vitest para `ProductForm.vue`,
+`products/Index.vue`, `sales/{Create,Show,Index}.vue`, ampliação de
+`ServiceForm.vue` (3 campos novos de precificação, sem spec antes desta
+etapa). Suíte Pest completa (1095 passam, mesmas 2 falhas pré-existentes
+e não relacionadas de `PublicAvailabilityEndpointsTest`) e Vitest (733
+casos) verdes; `pint`/`composer analyse`/`vue-tsc`/ESLint/Prettier
+limpos.
+
+**Fechamento da etapa — `security-review` sobre o diff completo, dois
+achados corrigidos antes de fechar**:
+
+- **Bypass do fluxo de aprovação de desconto via preço sobrescrito
+  (severidade alta)**: o preço unitário de um item podia ser sobrescrito
+  livremente pelo cliente (`unit_price` no payload), e `requires_approval`
+  só olhava para `discount_percentage` — um usuário conseguia zerar o
+  preço de um serviço de R$ 500 informando `unit_price=0.01` com
+  `discount_percentage=0`, confirmando a venda sem nunca passar pela
+  aprovação, já que "desconto" tecnicamente era zero. Achado pelo
+  `security-review`, não por teste manual — reforça o valor de rodar essa
+  skill mesmo quando a suíte de testes já está verde. **Corrigido**: o
+  preço de catálogo (`Service::default_price_cents`/`Product::price_cents`)
+  agora sempre prevalece quando existe — `unit_price` do cliente só é
+  usado quando o item não tem preço de tabela (ex.: pacote de sessões
+  ad-hoc). Qualquer redução de preço precisa passar por
+  `discount_percentage`, o único caminho comparado contra
+  `max_discount_percentage`. Frontend ajustado para desabilitar o campo
+  de preço quando há preço de catálogo. Teste de regressão dedicado.
+- **IDOR real na criação de venda, achado durante a escrita dos próprios
+  testes de acesso (severidade alta)**: `SalePolicy::create()` só
+  consegue checar a permissão em nível de organização — o paciente da
+  venda ainda não existe como recurso no momento da checagem. Sem uma
+  segunda verificação, um usuário com apenas `sales.manage-own` (ex.:
+  profissional) conseguiria criar uma venda para o paciente de um colega
+  só por ter a permissão "própria" concedida — mesma categoria de IDOR já
+  corrigida no autoatendimento de agendamento da Etapa 3.7. **Corrigido**
+  com `CreateSaleAction::assertPatientAccessible()` (também usado por
+  `UpdateSaleDraftAction`): sem a permissão ampla, exige que
+  `patient.primary_professional_id` corresponda ao profissional vinculado
+  ao usuário — mesma definição de "paciente próprio" já usada em
+  `PatientPolicy`/`AppointmentPolicy`. O mesmo método também passou a
+  validar `professional_id`, quando informado, contra o vínculo do
+  usuário (severidade menor, mas mesma correção). Coberto por testes
+  dedicados.
 
 ## Etapa 6 — Financeiro
 

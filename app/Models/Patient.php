@@ -127,6 +127,12 @@ class Patient extends Model
         return $this->hasMany(SessionPackage::class);
     }
 
+    /** @return HasMany<Sale, $this> */
+    public function sales(): HasMany
+    {
+        return $this->hasMany(Sale::class);
+    }
+
     /**
      * Vínculo com uma conta do portal do paciente (App\Models\PatientUser),
      * se este paciente tiver sido autocadastrado ou tiver sido depois

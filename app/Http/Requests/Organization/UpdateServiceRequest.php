@@ -46,6 +46,9 @@ class UpdateServiceRequest extends FormRequest
             'buffer_before_minutes' => ['nullable', 'integer', 'min:0', 'max:1440'],
             'buffer_after_minutes' => ['nullable', 'integer', 'min:0', 'max:1440'],
             'default_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'cost' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'margin_percentage' => ['nullable', 'integer', 'min:0', 'max:1000'],
+            'max_discount_percentage' => ['nullable', 'integer', 'min:0', 'max:100'],
             'color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'is_public' => ['boolean'],
             'requires_manual_confirmation' => ['boolean'],
@@ -88,10 +91,11 @@ class UpdateServiceRequest extends FormRequest
         ];
     }
 
-    /** @return array{name: string, code: string, description: ?string, default_duration_minutes: int, buffer_before_minutes: int, buffer_after_minutes: int, default_price_cents: ?int, color: ?string, is_public: bool, requires_manual_confirmation: bool, internal_notes: ?string, unit_availability_scope: string, specialty_ids: array<int, string>, unit_ids: array<int, string>} */
+    /** @return array{name: string, code: string, description: ?string, default_duration_minutes: int, buffer_before_minutes: int, buffer_after_minutes: int, default_price_cents: ?int, cost_cents: ?int, margin_percentage: ?int, max_discount_percentage: ?int, color: ?string, is_public: bool, requires_manual_confirmation: bool, internal_notes: ?string, unit_availability_scope: string, specialty_ids: array<int, string>, unit_ids: array<int, string>} */
     public function attributesForAction(): array
     {
         $price = $this->input('default_price');
+        $cost = $this->input('cost');
 
         return [
             'name' => (string) $this->input('name'),
@@ -101,6 +105,9 @@ class UpdateServiceRequest extends FormRequest
             'buffer_before_minutes' => (int) $this->input('buffer_before_minutes', 0),
             'buffer_after_minutes' => (int) $this->input('buffer_after_minutes', 0),
             'default_price_cents' => $price === null || $price === '' ? null : (int) round(((float) $price) * 100),
+            'cost_cents' => $cost === null || $cost === '' ? null : (int) round(((float) $cost) * 100),
+            'margin_percentage' => $this->input('margin_percentage') === null || $this->input('margin_percentage') === '' ? null : (int) $this->input('margin_percentage'),
+            'max_discount_percentage' => $this->input('max_discount_percentage') === null || $this->input('max_discount_percentage') === '' ? null : (int) $this->input('max_discount_percentage'),
             'color' => $this->input('color'),
             'is_public' => $this->boolean('is_public'),
             'requires_manual_confirmation' => $this->boolean('requires_manual_confirmation'),

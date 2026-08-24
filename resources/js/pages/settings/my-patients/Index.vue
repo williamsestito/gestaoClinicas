@@ -10,6 +10,7 @@ import { dashboard } from '@/routes';
 import { patientHistory } from '@/routes/settings/medical-records';
 import { index } from '@/routes/settings/my-patients';
 import { edit } from '@/routes/settings/patients';
+import { create as createSale } from '@/routes/settings/sales';
 
 type PatientRow = {
     id: string;
@@ -168,6 +169,19 @@ function applyFilters() {
                                         :href="patientHistory(patient.id).url"
                                     >
                                         Prontuário
+                                    </Link>
+                                </Button>
+                                <Button variant="outline" size="sm" as-child>
+                                    <Link
+                                        :href="
+                                            createSale({
+                                                query: {
+                                                    patient_id: patient.id,
+                                                },
+                                            }).url
+                                        "
+                                    >
+                                        Vender
                                     </Link>
                                 </Button>
                             </td>
