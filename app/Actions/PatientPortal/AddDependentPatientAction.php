@@ -12,6 +12,7 @@ use App\Models\Patient;
 use App\Models\PatientUser;
 use App\Support\Auditing\AuditLogger;
 use App\Support\Patients\MinorGuardianGuard;
+use App\Support\Patients\OrphanAppointmentRequestLinker;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -28,7 +29,10 @@ use Illuminate\Validation\ValidationException;
  */
 class AddDependentPatientAction
 {
-    public function __construct(private readonly AuditLogger $auditLogger) {}
+    public function __construct(
+        private readonly AuditLogger $auditLogger,
+        private readonly OrphanAppointmentRequestLinker $orphanAppointmentRequestLinker,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $attributes  name, birth_date, document, phone, relationship, responsible_phone
@@ -92,6 +96,8 @@ class AddDependentPatientAction
                 after: ['patient_user_id' => $patientUser->id, 'role' => PatientUserLinkRole::Dependent->value],
                 organization: $organization,
             );
+
+            $this->orphanAppointmentRequestLinker->link($patient);
 
             return $patient;
         });

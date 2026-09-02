@@ -294,6 +294,12 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
         Route::middleware('tenant.patient-membership')->group(function () {
             Route::get('settings/patients/{patient}/edit', [PatientController::class, 'edit'])
                 ->name('settings.patients.edit');
+            // Etapa de melhoria de "Meus pacientes"/admin — modal de
+            // detalhes com histórico de agendamentos agrupado por
+            // profissional, sem conteúdo de prontuário (isso continua na
+            // tela dedicada, com sua própria Policy).
+            Route::get('settings/patients/{patient}/resumo', [PatientController::class, 'summary'])
+                ->name('settings.patients.summary');
             Route::put('settings/patients/{patient}', [PatientController::class, 'update'])
                 ->name('settings.patients.update');
             Route::patch('settings/patients/{patient}/activate', [PatientController::class, 'activate'])

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { search } from '@/routes/settings/patients';
+import { create, search } from '@/routes/settings/patients';
 
 type PatientOption = {
     id: string;
@@ -13,13 +13,52 @@ type PatientOption = {
 
 const selectedId = defineModel<string>({ default: '' });
 
-defineProps<{
+const props = defineProps<{
     error?: string;
+    /**
+     * Dados já digitados pelo lead (nome/telefone/e-mail/CPF), reaproveitados
+     * no link "Cadastrar novo paciente" abaixo — evita que quem está
+     * confirmando o agendamento tenha que redigitar tudo de novo numa aba
+     * separada quando o paciente ainda não existe (ver docs/roadmap.md).
+     */
+    prefillForNewPatient?: {
+        name?: string;
+        phone?: string;
+        email?: string;
+        document?: string;
+    };
 }>();
+
+const newPatientUrl = computed(() => {
+    const params = new URLSearchParams();
+    const prefill = props.prefillForNewPatient;
+
+    if (prefill?.name) {
+        params.set('name', prefill.name);
+    }
+
+    if (prefill?.phone) {
+        params.set('phone', prefill.phone);
+    }
+
+    if (prefill?.email) {
+        params.set('email', prefill.email);
+    }
+
+    if (prefill?.document) {
+        params.set('document', prefill.document);
+    }
+
+    const queryString = params.toString();
+
+    return queryString ? `${create().url}?${queryString}` : create().url;
+});
 
 const query = ref('');
 const results = ref<PatientOption[]>([]);
 const selectedName = ref('');
+const hasSearched = ref(false);
+const searchFailed = ref(false);
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 watch(query, (value) => {
@@ -29,21 +68,36 @@ watch(query, (value) => {
 
     if (value.trim().length < 2) {
         results.value = [];
+        hasSearched.value = false;
+        searchFailed.value = false;
 
         return;
     }
 
     debounceTimer = setTimeout(async () => {
-        const response = await fetch(
-            `${search().url}?q=${encodeURIComponent(value)}`,
-            { headers: { Accept: 'application/json' } },
-        );
+        try {
+            const response = await fetch(
+                `${search().url}?q=${encodeURIComponent(value)}`,
+                { headers: { Accept: 'application/json' } },
+            );
 
-        if (response.ok) {
+            if (!response.ok) {
+                results.value = [];
+                searchFailed.value = true;
+
+                return;
+            }
+
             const data = (await response.json()) as {
                 patients: PatientOption[];
             };
             results.value = data.patients;
+            searchFailed.value = false;
+        } catch {
+            results.value = [];
+            searchFailed.value = true;
+        } finally {
+            hasSearched.value = true;
         }
     }, 300);
 });
@@ -91,6 +145,31 @@ function clear() {
                     </button>
                 </li>
             </ul>
+            <p v-else-if="searchFailed" class="text-sm text-destructive">
+                Não foi possível buscar pacientes agora. Tente novamente ou peça
+                a alguém com acesso administrativo.
+            </p>
+            <p v-else-if="hasSearched" class="text-sm text-muted-foreground">
+                Nenhum paciente encontrado com esse nome/CPF.
+                <a
+                    :href="newPatientUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="font-medium text-foreground underline underline-offset-2"
+                >
+                    Cadastre o paciente
+                </a>
+                numa aba nova e busque de novo aqui para confirmar.
+            </p>
+            <a
+                v-else
+                :href="newPatientUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="w-fit text-xs text-muted-foreground underline underline-offset-2"
+            >
+                Paciente novo? Cadastrar antes de confirmar
+            </a>
         </template>
         <InputError :message="error" />
     </div>

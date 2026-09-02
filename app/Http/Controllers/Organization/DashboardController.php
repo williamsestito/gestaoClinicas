@@ -21,7 +21,9 @@ use App\Models\User;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -39,12 +41,12 @@ class DashboardController extends Controller
         if ($professional !== null) {
             return Inertia::render('Dashboard', [
                 'professionalDashboard' => $this->professionalDashboardData($request, $organization, $professional),
-            ] + $this->adminDashboardData($organization));
+            ] + $this->adminDashboardData($request, $organization));
         }
 
         return Inertia::render('Dashboard', [
             'professionalDashboard' => null,
-        ] + $this->adminDashboardData($organization));
+        ] + $this->adminDashboardData($request, $organization));
     }
 
     /**
@@ -96,10 +98,19 @@ class DashboardController extends Controller
             ->where('professional_id', $professional->id)
             ->whereBetween('starts_at', [$start, $end]);
 
+        // Totais reais do profissional — nunca filtrados pelo período/data
+        // selecionado na Agenda abaixo (achado de uso real: os cartões
+        // pareciam "sumir" ao trocar de dia, porque reaproveitavam a mesma
+        // query filtrada da Agenda). Só a lista detalhada da Agenda
+        // continua escopada por $start/$end.
+        $totalsQuery = fn () => Appointment::query()
+            ->where('organization_id', $organization->id)
+            ->where('professional_id', $professional->id);
+
         $counters = [
-            'open' => $baseQuery()->whereIn('status', [AppointmentStatus::Requested, AppointmentStatus::AwaitingConfirmation])->count(),
-            'scheduled' => $baseQuery()->where('status', AppointmentStatus::Confirmed)->count(),
-            'completed' => $baseQuery()->where('status', AppointmentStatus::Completed)->count(),
+            'open' => $totalsQuery()->whereIn('status', [AppointmentStatus::Requested, AppointmentStatus::AwaitingConfirmation])->count(),
+            'scheduled' => $totalsQuery()->where('status', AppointmentStatus::Confirmed)->count(),
+            'completed' => $totalsQuery()->where('status', AppointmentStatus::Completed)->count(),
         ];
 
         $agendaLimit = 200;
@@ -187,7 +198,7 @@ class DashboardController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function adminDashboardData(?Organization $organization): array
+    private function adminDashboardData(Request $request, ?Organization $organization): array
     {
         $primaryLegalEntity = $organization?->primaryLegalEntity()->first();
         $siteSetting = SiteSetting::query()->first();
@@ -223,6 +234,26 @@ class DashboardController extends Controller
         $domainConfigured = $siteSetting !== null && filled($siteSetting->official_domain);
         $seoConfigured = $siteSetting !== null && filled($siteSetting->meta_title) && filled($siteSetting->meta_description);
 
+        // Prioridade do dia a dia de quem administra/atende (achado de uso
+        // real: a tela abria só com cartões de configuração da organização,
+        // sem nada sobre atendimentos do dia) — agenda do dia com filtro por
+        // profissional, sempre a segunda coisa vista logo após o alerta de
+        // pré-agendamentos. Gate própria de `Appointment` (não reaproveita
+        // `professionalDashboard`, que é de um profissional só).
+        $canViewAgenda = $organization !== null
+            && Gate::forUser($request->user())->allows('viewAny', [Appointment::class, $organization]);
+
+        // Admin e atendimento não ficam mais restritos a navegar até "Site
+        // da clínica > Agendamentos" para descobrir que há pré-agendamentos
+        // esperando confirmação — o alerta aparece aqui, separado por
+        // profissional (mesmo requisito de "Meus pacientes"/"Pacientes"
+        // desta fase: quem administra a clínica todo enxerga por grupo de
+        // profissionais, não só o total). Gate própria (não reaproveita
+        // `professionalDashboard`, que é escopado a um único profissional)
+        // — nunca calculada para quem não tem `site.appointments.view`.
+        $canViewAppointmentRequests = $organization !== null
+            && Gate::forUser($request->user())->allows('viewAny', [AppointmentRequest::class, $organization]);
+
         return [
             'organizationName' => $organization?->name,
             'unitsCount' => $organization?->units()->count() ?? 0,
@@ -238,6 +269,91 @@ class DashboardController extends Controller
             'seoConfigured' => $seoConfigured,
             'recentActivity' => $recentActivity,
             'pendingSetupItems' => $this->pendingSetupItems($organization, $primaryLegalEntity, $siteSetting),
+            'pendingAppointmentRequestsByProfessional' => $canViewAppointmentRequests
+                ? $this->pendingAppointmentRequestsByProfessional($organization)
+                : null,
+            'orgAgenda' => $canViewAgenda ? $this->organizationAgenda($request, $organization) : null,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function organizationAgenda(Request $request, Organization $organization): array
+    {
+        $date = $request->filled('agenda_date') ? Carbon::parse($request->string('agenda_date')->value()) : Carbon::today();
+        $professionalId = $request->string('agenda_professional_id')->value() ?: null;
+
+        $appointments = $organization->appointments()
+            ->with(['professional:id,display_name', 'patient:id,name,preferred_name', 'service:id,name', 'unit:id,name'])
+            ->whereDate('starts_at', $date->toDateString())
+            ->when($professionalId, fn ($query) => $query->where('professional_id', $professionalId))
+            ->orderBy('starts_at')
+            ->get();
+
+        return [
+            'date' => $date->toDateString(),
+            'professionalId' => $professionalId,
+            'professionals' => $organization->professionals()
+                ->where('status', RecordStatus::Active)
+                ->orderBy('display_name')
+                ->get(['id', 'display_name']),
+            'appointments' => $appointments->map(fn (Appointment $appointment) => [
+                'id' => $appointment->id,
+                'starts_at' => $appointment->starts_at->toIso8601String(),
+                'ends_at' => $appointment->ends_at->toIso8601String(),
+                'status' => $appointment->status->value,
+                'status_label' => $appointment->status->label(),
+                'professional_name' => $appointment->professional->display_name,
+                'patient_name' => $appointment->patient->preferred_name ?: $appointment->patient->name,
+                'service_name' => $appointment->service->name,
+                'unit_name' => $appointment->unit->name,
+            ])->values(),
+        ];
+    }
+
+    /**
+     * @return array<int, array{
+     *     professional_id: string|null,
+     *     professional_name: string,
+     *     count: int,
+     *     requests: array<int, array{id: string, name: string, phone: string, service_name: string|null, created_at: string|null}>,
+     * }>
+     */
+    private function pendingAppointmentRequestsByProfessional(Organization $organization): array
+    {
+        return AppointmentRequest::query()
+            ->with(['professional:id,display_name', 'service:id,name'])
+            ->where('organization_id', $organization->id)
+            ->where('status', AppointmentRequestStatus::Pending)
+            ->latest()
+            ->get()
+            ->groupBy('professional_id')
+            ->map(fn ($requests) => $this->summarizeProfessionalRequestGroup($requests))
+            ->sortByDesc('count')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  Collection<int, AppointmentRequest>  $requests
+     * @return array{professional_id: string|null, professional_name: string, count: int, requests: array<int, array{id: string, name: string, phone: string, service_name: string|null, created_at: string|null}>}
+     */
+    private function summarizeProfessionalRequestGroup(Collection $requests): array
+    {
+        $first = $requests->first();
+
+        return [
+            'professional_id' => $first->professional_id,
+            'professional_name' => $first->professional_id !== null
+                ? $first->professional->display_name
+                : 'Sem profissional definido',
+            'count' => $requests->count(),
+            'requests' => $requests->take(5)->map(fn (AppointmentRequest $appointmentRequest) => [
+                'id' => $appointmentRequest->id,
+                'name' => $appointmentRequest->name,
+                'phone' => $appointmentRequest->phone,
+                'service_name' => $appointmentRequest->service?->name,
+                'created_at' => $appointmentRequest->created_at?->toIso8601String(),
+            ])->values()->all(),
         ];
     }
 

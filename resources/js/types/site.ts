@@ -127,16 +127,33 @@ export interface AppointmentRequestSummary {
     name: string;
     phone: string;
     email: string | null;
+    document?: string | null;
     service_name: string | null;
     preferred_period: string | null;
     preferred_date: string | null;
     notes: string | null;
     internal_notes: string | null;
-    utm_data: Record<string, string> | null;
+    utm_data?: Record<string, string> | null;
     status: AppointmentRequestStatus;
     status_label: string;
     created_at: string | null;
-    updated_at: string | null;
+    updated_at?: string | null;
+    appointment_status?: string | null;
+    appointment_status_label?: string | null;
+    professional_id: string | null;
+    professional_name: string | null;
+    // Estruturados (unidade/serviço reais + horário exato) — só presentes
+    // quando o lead veio de um horário específico escolhido na busca de
+    // disponibilidade da landing. Quando os três estão presentes, "Agendar"
+    // vira um popup de confirmação em vez de abrir a tela de conversão
+    // manual (ver components/appointment-requests/InstantScheduleModal.vue).
+    unit_id: string | null;
+    unit_name: string | null;
+    preferred_service_id: string | null;
+    preferred_service_name: string | null;
+    preferred_starts_at: string | null;
+    patient_id: string | null;
+    patient_name: string | null;
 }
 
 export interface SiteContactAddress {

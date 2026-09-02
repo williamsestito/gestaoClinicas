@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Notifications\NewAppointmentRequestNotification;
 use Illuminate\Contracts\Notifications\Dispatcher;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 // O rate limit real (throttle:10,1) é aplicado na rota — desabilitado
@@ -516,20 +517,17 @@ it('leaves the request unlinked when no matching patient exists', function () {
         ->toBeNull();
 });
 
-it('links the request directly to the logged-in patient portal account, skipping the matching heuristics', function () {
+it('links the request to the logged-in patient portal account when the submitted CPF matches their own', function () {
     $organization = Organization::factory()->create();
     $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
     Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
 
-    // Um paciente diferente bateria por telefone se a heurística de match
-    // fosse usada — a conta logada tem prioridade sobre qualquer matching.
-    Patient::factory()->for($organization)->create(['phone' => '(47) 99999-0000']);
-
     $link = PatientUserLink::factory()->for($organization)->create();
+    $link->patient->update(['document' => '52998224725']);
 
     $this->actingAs($link->patientUser, 'patient')->post('/agendamento', [
         'name' => 'Paciente Teste',
-        'phone' => '(47) 99999-0000',
+        'phone' => '(47) 90000-1111',
         'document' => validDocument(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
@@ -537,6 +535,49 @@ it('links the request directly to the logged-in patient portal account, skipping
 
     expect(AppointmentRequest::query()->where('name', 'Paciente Teste')->firstOrFail()->patient_id)
         ->toBe($link->patient_id);
+});
+
+it('falls back to the normal matching heuristics when the logged-in patient submits a CPF that is not their own', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+
+    // Achado em uso real: um paciente ("testeuchoa") continuou logado no
+    // navegador e enviou o formulário com nome/CPF/telefone de outra
+    // pessoa — o lead ficava preso à conta logada em vez de cair no
+    // mesmo matching usado para envios anônimos.
+    $otherPatient = Patient::factory()->for($organization)->create(['phone' => '(47) 99999-0000']);
+    $link = PatientUserLink::factory()->for($organization)->create();
+
+    $this->actingAs($link->patientUser, 'patient')->post('/agendamento', [
+        'name' => 'Outra Pessoa',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertRedirect();
+
+    expect(AppointmentRequest::query()->where('name', 'Outra Pessoa')->firstOrFail()->patient_id)
+        ->toBe($otherPatient->id);
+});
+
+it('leaves the request unlinked when the logged-in patient submits a CPF matching nobody at all', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+
+    $link = PatientUserLink::factory()->for($organization)->create();
+
+    $this->actingAs($link->patientUser, 'patient')->post('/agendamento', [
+        'name' => 'Pessoa Desconhecida',
+        'phone' => '(47) 98888-7777',
+        'document' => validDocument(),
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertRedirect();
+
+    expect(AppointmentRequest::query()->where('name', 'Pessoa Desconhecida')->firstOrFail()->patient_id)
+        ->toBeNull();
 });
 
 it('keeps the appointment request even when notifying the owner fails', function () {
@@ -609,6 +650,86 @@ it('falls back to headquarters when no real unit was chosen, exactly like before
     expect($request->unit_id)->toBe($headquarters->id)
         ->and($request->preferred_service_id)->toBeNull()
         ->and($request->preferred_starts_at)->toBeNull();
+});
+
+it('rejects a specific-slot request that conflicts with an existing confirmed appointment for that professional', function () {
+    $setup = appointmentSetup();
+    createConfirmedAppointment($setup);
+
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+        'unit_id' => $setup['unit']->id,
+        'professional_id' => $setup['professional']->id,
+        'preferred_service_id' => $setup['service']->id,
+        'preferred_starts_at' => '2026-08-03T09:00:00',
+    ])->assertSessionHasErrors('starts_at');
+
+    expect(AppointmentRequest::query()->where('name', 'Paciente Teste')->exists())->toBeFalse();
+});
+
+it('rejects a specific-slot request that conflicts with another patient\'s pending request for the same professional', function () {
+    $setup = appointmentSetup();
+
+    AppointmentRequest::factory()->for($setup['organization'])->create([
+        'professional_id' => $setup['professional']->id,
+        'preferred_service_id' => $setup['service']->id,
+        'preferred_starts_at' => Carbon::parse('2026-08-03 09:00', 'America/Sao_Paulo')->utc(),
+        'status' => AppointmentRequestStatus::Pending,
+    ]);
+
+    $this->post('/agendamento', [
+        'name' => 'Segundo Paciente',
+        'phone' => '(47) 98888-8888',
+        'document' => validDocument(),
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+        'unit_id' => $setup['unit']->id,
+        'professional_id' => $setup['professional']->id,
+        'preferred_service_id' => $setup['service']->id,
+        'preferred_starts_at' => '2026-08-03T09:00:00',
+    ])->assertSessionHasErrors('starts_at');
+
+    expect(AppointmentRequest::query()->where('name', 'Segundo Paciente')->exists())->toBeFalse();
+});
+
+it('allows a specific-slot request that conflicts when the organization allows overlap ("encaixe")', function () {
+    $setup = appointmentSetup();
+    $setup['organization']->update(['allow_appointment_overlap' => true]);
+    createConfirmedAppointment($setup);
+
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+        'unit_id' => $setup['unit']->id,
+        'professional_id' => $setup['professional']->id,
+        'preferred_service_id' => $setup['service']->id,
+        'preferred_starts_at' => '2026-08-03T09:00:00',
+    ])->assertRedirect();
+
+    expect(AppointmentRequest::query()->where('name', 'Paciente Teste')->exists())->toBeTrue();
+});
+
+it('never blocks a manual lead without a specific slot, even when the professional is fully booked', function () {
+    $setup = appointmentSetup();
+    createConfirmedAppointment($setup);
+
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+        'professional_id' => $setup['professional']->id,
+    ])->assertRedirect();
+
+    expect(AppointmentRequest::query()->where('name', 'Paciente Teste')->exists())->toBeTrue();
 });
 
 it('rejects a preferred_service_id from another organization', function () {

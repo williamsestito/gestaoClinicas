@@ -3,9 +3,13 @@
 declare(strict_types=1);
 
 use App\Actions\Organization\SeedSystemRolesAction;
+use App\Enums\AppointmentRequestStatus;
+use App\Enums\AppointmentStatus;
 use App\Enums\OrganizationMembershipStatus;
 use App\Enums\RecordStatus;
 use App\Enums\SystemRole;
+use App\Models\Appointment;
+use App\Models\AppointmentRequest;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\Patient;
@@ -66,4 +70,50 @@ it('lets the professional open their own patient edit page', function () {
     $patient = Patient::factory()->for($organization)->create(['primary_professional_id' => $professional->id]);
 
     $this->actingAs($user)->get("/settings/patients/{$patient->id}/edit")->assertOk();
+});
+
+it('lists a patient the professional has already attended, even without being the primary professional', function () {
+    [$user, $organization, $professional] = myPatientsSetup();
+    $patient = Patient::factory()->for($organization)->create(['primary_professional_id' => null, 'name' => 'Já Atendido']);
+    Appointment::factory()->for($organization)->for($professional)->for($patient)->create(['status' => AppointmentStatus::Completed]);
+
+    $response = $this->actingAs($user)->get('/settings/meus-pacientes');
+
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('patients.total', 1)
+            ->where('patients.data.0.name', 'Já Atendido')
+            ->where('patients.data.0.full_access', true)
+            ->where('patients.data.0.relationship_label', 'Já atendido'));
+});
+
+it('lists a patient with only a pending appointment request, marked without full access', function () {
+    [$user, $organization, $professional] = myPatientsSetup();
+    $patient = Patient::factory()->for($organization)->create(['primary_professional_id' => null, 'name' => 'Só Pré-agendado']);
+    AppointmentRequest::factory()->for($organization)->for($professional)->for($patient)->create(['status' => AppointmentRequestStatus::Pending]);
+
+    $response = $this->actingAs($user)->get('/settings/meus-pacientes');
+
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('patients.total', 1)
+            ->where('patients.data.0.name', 'Só Pré-agendado')
+            ->where('patients.data.0.full_access', false)
+            ->where('patients.data.0.relationship_label', 'Pré-agendamento pendente'));
+});
+
+it('lets the professional open the edit page of a patient already attended, even without being the primary professional', function () {
+    [$user, $organization, $professional] = myPatientsSetup();
+    $patient = Patient::factory()->for($organization)->create(['primary_professional_id' => null]);
+    Appointment::factory()->for($organization)->for($professional)->for($patient)->create(['status' => AppointmentStatus::Completed]);
+
+    $this->actingAs($user)->get("/settings/patients/{$patient->id}/edit")->assertOk();
+});
+
+it('blocks the professional from opening the edit page of a patient with only a pending appointment request', function () {
+    [$user, $organization, $professional] = myPatientsSetup();
+    $patient = Patient::factory()->for($organization)->create(['primary_professional_id' => null]);
+    AppointmentRequest::factory()->for($organization)->for($professional)->for($patient)->create(['status' => AppointmentRequestStatus::Pending]);
+
+    $this->actingAs($user)->get("/settings/patients/{$patient->id}/edit")->assertForbidden();
 });

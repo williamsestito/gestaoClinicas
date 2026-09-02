@@ -64,6 +64,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Inertia\ExceptionResponse;
+use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -101,6 +103,40 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureMorphMap();
         $this->configureAuthEvents();
+        $this->configureInertiaErrorPages();
+    }
+
+    /**
+     * Sem isso, uma `AuthorizationException` (403) ou rota inexistente
+     * (404) — que o Laravel sempre renderiza como HTML puro, mesmo com
+     * `APP_DEBUG=true`, já que não são "erros" inesperados — chega ao
+     * cliente Inertia como uma resposta não-Inertia, e o Inertia.js exibe
+     * isso num modal cru de página de erro (achado em uso real: profissional
+     * via uma tela branca "403 | This action is unauthorized" sem nenhum
+     * estilo do app). Renderiza como página Inertia de verdade, no layout
+     * do próprio app.
+     *
+     * Deliberadamente só 403/404, nunca 500/503: esses dois continuam sem
+     * interceptação para não esconder a página de debug do Laravel
+     * (Ignition) durante o desenvolvimento local.
+     */
+    protected function configureInertiaErrorPages(): void
+    {
+        Inertia::handleExceptionsUsing(function (ExceptionResponse $response) {
+            // Nunca para quem já espera JSON (mesma condição de
+            // `shouldRenderJsonWhen` em bootstrap/app.php) — os endpoints
+            // JSON públicos/autenticados (busca de paciente, disponibilidade)
+            // continuam recebendo um erro JSON de verdade, nunca HTML.
+            if ($response->request->expectsJson()) {
+                return null;
+            }
+
+            if (in_array($response->statusCode(), [403, 404], true)) {
+                return $response->render('ErrorPage', [
+                    'status' => $response->statusCode(),
+                ])->withSharedData();
+            }
+        });
     }
 
     /**

@@ -109,6 +109,26 @@ it('leaves the appointment status null for a lead that was never converted', fun
         ->where('requests.data.0.appointment_status_label', null));
 });
 
+it('hides cancelled requests by default, but shows them with show_cancelled=1, without deleting them', function () {
+    [$user, $organization, $professional] = myAppointmentRequestsSetup();
+    AppointmentRequest::factory()->for($organization)->for($professional)->create(['name' => 'Ativo']);
+    $cancelled = AppointmentRequest::factory()->for($organization)->for($professional)->create(['name' => 'Cancelado', 'status' => 'cancelled']);
+
+    $this->actingAs($user)->get('/settings/meus-pre-agendamentos')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('showCancelled', false)
+            ->has('requests.data', 1)
+            ->where('requests.data.0.name', 'Ativo'));
+
+    $this->actingAs($user)->get('/settings/meus-pre-agendamentos?show_cancelled=1')
+        ->assertInertia(fn ($page) => $page
+            ->where('showCancelled', true)
+            ->has('requests.data', 2));
+
+    expect($cancelled->fresh())->not->toBeNull();
+});
+
 it('shows an empty state for a user without a linked professional', function () {
     $organization = Organization::factory()->create();
     app(SeedSystemRolesAction::class)->handle($organization);
@@ -123,6 +143,20 @@ it('shows an empty state for a user without a linked professional', function () 
     $response = $this->actingAs($user)->get('/settings/meus-pre-agendamentos');
 
     $response->assertOk()->assertInertia(fn ($page) => $page->where('requests', null));
+});
+
+it('blocks the professional from changing the status once their own lead has already been converted', function () {
+    [$user, $organization, $professional] = myAppointmentRequestsSetup();
+    $request = AppointmentRequest::factory()->for($organization)->for($professional)->create([
+        'status' => 'scheduled',
+        'appointment_id' => Appointment::factory()->for($organization)->for($professional)->create()->id,
+    ]);
+
+    $this->actingAs($user)->patch("/settings/meus-pre-agendamentos/{$request->id}/status", [
+        'status' => 'contacted',
+    ])->assertSessionHasErrors('status');
+
+    expect($request->fresh()->status->value)->toBe('scheduled');
 });
 
 it('lets the professional update the status of their own appointment request', function () {

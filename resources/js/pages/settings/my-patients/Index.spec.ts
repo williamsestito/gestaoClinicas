@@ -12,6 +12,14 @@ vi.mock('@inertiajs/vue3', () => ({
     router: routerMock,
 }));
 
+vi.mock('@/components/patients/PatientSummaryModal.vue', () => ({
+    default: {
+        template: '<div data-testid="summary-modal">{{ modelValue }}</div>',
+        props: ['modelValue'],
+        emits: ['update:modelValue'],
+    },
+}));
+
 function makePatients(overrides: Partial<Record<string, unknown>> = {}) {
     return {
         data: [
@@ -24,6 +32,8 @@ function makePatients(overrides: Partial<Record<string, unknown>> = {}) {
                 phone: '(47) 99999-0000',
                 status: 'active' as const,
                 deleted_at: null,
+                full_access: true,
+                relationship_label: 'Paciente principal',
             },
         ],
         links: [],
@@ -54,21 +64,65 @@ describe('settings/my-patients/Index', () => {
         expect(wrapper.text()).toContain('Nenhum paciente encontrado');
     });
 
-    it('lists a patient with "Ver" and "Prontuário" links', () => {
+    it('opens the summary modal with the patient id when "Ver" is clicked', async () => {
         const wrapper = mount(Index, {
             props: { patients: makePatients(), filters: {} },
         });
 
         expect(wrapper.text()).toContain('Ana Souza');
+        expect(wrapper.find('[data-testid="summary-modal"]').text()).toBe('');
 
-        const verLink = wrapper.findAll('a').find((a) => a.text() === 'Ver');
-        const recordLink = wrapper
-            .findAll('a')
-            .find((a) => a.text() === 'Prontuário');
+        const verButton = wrapper
+            .findAll('button')
+            .find((b) => b.text() === 'Ver');
+        await verButton?.trigger('click');
 
-        expect(verLink?.attributes('href')).toContain('patient-1');
-        expect(recordLink?.attributes('href')).toContain('patient-1');
-        expect(recordLink?.attributes('href')).toContain('prontuarios');
+        expect(wrapper.find('[data-testid="summary-modal"]').text()).toBe(
+            'patient-1',
+        );
+    });
+
+    it('shows "Vender" only for a patient with full access', () => {
+        const fullAccessWrapper = mount(Index, {
+            props: { patients: makePatients(), filters: {} },
+        });
+
+        expect(
+            fullAccessWrapper.findAll('a').find((a) => a.text() === 'Vender'),
+        ).not.toBeUndefined();
+
+        const summaryOnlyWrapper = mount(Index, {
+            props: {
+                patients: makePatients({
+                    data: [
+                        {
+                            id: 'patient-2',
+                            name: 'Bruno Lima',
+                            preferred_name: null,
+                            document: null,
+                            birth_date: '1990-01-01',
+                            phone: '(47) 98888-0000',
+                            status: 'active' as const,
+                            deleted_at: null,
+                            full_access: false,
+                            relationship_label: 'Pré-agendamento pendente',
+                        },
+                    ],
+                }),
+                filters: {},
+            },
+        });
+
+        expect(summaryOnlyWrapper.text()).toContain('Bruno Lima');
+        expect(summaryOnlyWrapper.text()).toContain('Pré-agendamento pendente');
+        expect(
+            summaryOnlyWrapper.findAll('a').find((a) => a.text() === 'Vender'),
+        ).toBeUndefined();
+        expect(
+            summaryOnlyWrapper
+                .findAll('button')
+                .find((b) => b.text() === 'Ver'),
+        ).not.toBeUndefined();
     });
 
     it('submits the search/status filters via router.get', async () => {

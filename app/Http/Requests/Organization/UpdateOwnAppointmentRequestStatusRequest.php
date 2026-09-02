@@ -12,6 +12,7 @@ use App\Support\Tenancy\TenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 /**
  * Autoatendimento — nunca a permissão administrativa
@@ -63,5 +64,22 @@ class UpdateOwnAppointmentRequestStatusRequest extends FormRequest
         return [
             'status' => ['required', Rule::enum(AppointmentRequestStatus::class)->except(AppointmentRequestStatus::Scheduled)],
         ];
+    }
+
+    /**
+     * Mesmo bloqueio de UpdateAppointmentRequestStatusRequest — uma vez
+     * convertido (`appointment_id` preenchido), o status não pode mais ser
+     * solto por este select, mesmo pelo próprio profissional.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            /** @var AppointmentRequest|null $appointmentRequest */
+            $appointmentRequest = $this->route('appointmentRequest');
+
+            if ($appointmentRequest?->appointment_id !== null) {
+                $validator->errors()->add('status', 'Este pré-agendamento já foi confirmado em um agendamento real — o status não pode mais ser alterado por aqui.');
+            }
+        });
     }
 }

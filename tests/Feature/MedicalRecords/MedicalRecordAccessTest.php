@@ -7,59 +7,16 @@ use App\Enums\OrganizationMembershipStatus;
 use App\Enums\PermissionKey;
 use App\Enums\RecordStatus;
 use App\Enums\SystemRole;
-use App\Models\Appointment;
 use App\Models\MedicalRecord;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
-use App\Models\Patient;
 use App\Models\Permission;
 use App\Models\Professional;
 use App\Models\Role;
-use App\Models\Unit;
-use App\Models\UnitMembership;
 use App\Models\User;
 
-/**
- * @return array{organization: Organization, unit: Unit, professionalUser: User, professional: Professional, patient: Patient, appointment: Appointment}
- */
-function medicalRecordSetup(): array
-{
-    $organization = Organization::factory()->create();
-    app(SeedSystemRolesAction::class)->handle($organization);
-    $role = Role::query()->where('organization_id', $organization->id)->where('slug', SystemRole::Professional->value)->firstOrFail();
-
-    $unit = Unit::factory()->for($organization)->create(['status' => RecordStatus::Active]);
-    $professionalUser = User::factory()->create();
-    $professional = Professional::factory()->for($organization)->create(['user_id' => $professionalUser->id, 'status' => RecordStatus::Active]);
-    $membership = OrganizationMembership::factory()->for($organization)->for($professionalUser)->create([
-        'status' => OrganizationMembershipStatus::Active,
-        'role_id' => $role->id,
-    ]);
-    UnitMembership::factory()->for($membership)->create(['unit_id' => $unit->id, 'status' => RecordStatus::Active]);
-    session(['active_organization_id' => $organization->id]);
-
-    $patient = Patient::factory()->for($organization)->create(['primary_professional_id' => $professional->id]);
-    $appointment = Appointment::factory()->completed()->create([
-        'organization_id' => $organization->id,
-        'unit_id' => $unit->id,
-        'professional_id' => $professional->id,
-        'patient_id' => $patient->id,
-    ]);
-
-    return compact('organization', 'unit', 'professionalUser', 'professional', 'patient', 'appointment');
-}
-
-function medicalRecordStaffUser(Organization $organization, SystemRole $role): User
-{
-    $roleModel = Role::query()->where('organization_id', $organization->id)->where('slug', $role->value)->firstOrFail();
-    $user = User::factory()->create();
-    OrganizationMembership::factory()->for($organization)->for($user)->create([
-        'status' => OrganizationMembershipStatus::Active,
-        'role_id' => $roleModel->id,
-    ]);
-
-    return $user;
-}
+// medicalRecordSetup()/medicalRecordStaffUser() vivem em tests/Pest.php —
+// compartilhadas com tests/Feature/PatientPortal/MedicalRecordVisibilityTest.php.
 
 it('lets the authoring professional open their own medical record, creating the draft on first visit', function () {
     $setup = medicalRecordSetup();

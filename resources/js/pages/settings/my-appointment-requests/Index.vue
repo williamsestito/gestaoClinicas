@@ -1,22 +1,13 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { MessageCircle } from '@lucide/vue';
 import { reactive, ref } from 'vue';
-import PatientSearchSelect from '@/components/appointments/PatientSearchSelect.vue';
+import InstantScheduleModal from '@/components/appointment-requests/InstantScheduleModal.vue';
 import EmptyState from '@/components/EmptyState.vue';
-import InputError from '@/components/InputError.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -30,41 +21,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatDateBr, formatDateTimeBr } from '@/lib/masks';
 import { buildWhatsAppUrl } from '@/lib/whatsapp';
 import { dashboard } from '@/routes';
+import { create as createAppointment } from '@/routes/settings/appointments';
 import {
-    create as createAppointment,
-    store as storeAppointment,
-} from '@/routes/settings/appointments';
-import { notes, status } from '@/routes/settings/my-appointment-requests';
-import type { AppointmentRequestStatus } from '@/types/site';
+    index,
+    notes,
+    status,
+} from '@/routes/settings/my-appointment-requests';
+import type {
+    AppointmentRequestStatus,
+    AppointmentRequestSummary,
+} from '@/types/site';
 
-type MyAppointmentRequest = {
-    id: string;
-    name: string;
-    phone: string;
-    email: string | null;
-    service_name: string | null;
-    preferred_period: string | null;
-    preferred_date: string | null;
-    notes: string | null;
-    internal_notes: string | null;
-    status: AppointmentRequestStatus;
-    status_label: string;
-    appointment_status: string | null;
-    appointment_status_label: string | null;
-    created_at: string | null;
-    // Estruturados (unidade/serviço reais + horário exato) — só presentes
-    // quando o lead veio de um horário específico escolhido na busca de
-    // disponibilidade da landing. Quando os três estão presentes,
-    // "Agendar" vira um popup de confirmação (ver canInstantSchedule()),
-    // em vez de abrir a tela de conversão manual da Etapa 3.7.
-    unit_id: string | null;
-    unit_name: string | null;
-    preferred_service_id: string | null;
-    preferred_service_name: string | null;
-    preferred_starts_at: string | null;
-    patient_id: string | null;
-    patient_name: string | null;
-};
+type MyAppointmentRequest = AppointmentRequestSummary;
 
 type PaginatedRequests = {
     data: MyAppointmentRequest[];
@@ -75,8 +43,16 @@ type PaginatedRequests = {
 const props = defineProps<{
     requests: PaginatedRequests | null;
     canCreateAppointments?: boolean;
-    professionalId?: string;
+    showCancelled?: boolean;
 }>();
+
+function toggleShowCancelled(value: boolean) {
+    router.get(
+        index().url,
+        { show_cancelled: value ? '1' : undefined },
+        { preserveState: true, preserveScroll: true },
+    );
+}
 
 defineOptions({
     layout: {
@@ -126,43 +102,9 @@ function canInstantSchedule(request: MyAppointmentRequest): boolean {
 }
 
 const instantScheduleRequest = ref<MyAppointmentRequest | null>(null);
-const instantForm = useForm({
-    patient_id: '',
-    unit_id: '',
-    professional_id: '',
-    service_id: '',
-    starts_at: '',
-    appointment_request_id: '',
-    notes: '',
-});
 
 function openInstantSchedule(request: MyAppointmentRequest) {
-    instantForm.clearErrors();
-    instantForm.patient_id = request.patient_id ?? '';
-    instantForm.unit_id = request.unit_id ?? '';
-    instantForm.professional_id = props.professionalId ?? '';
-    instantForm.service_id = request.preferred_service_id ?? '';
-    instantForm.starts_at = request.preferred_starts_at ?? '';
-    instantForm.appointment_request_id = request.id;
-    instantForm.notes = request.notes ?? '';
     instantScheduleRequest.value = request;
-}
-
-function closeInstantSchedule() {
-    instantScheduleRequest.value = null;
-    instantForm.clearErrors();
-    instantForm.reset();
-}
-
-function confirmInstantSchedule() {
-    if (!instantScheduleRequest.value) {
-        return;
-    }
-
-    instantForm.post(storeAppointment().url, {
-        preserveScroll: true,
-        onSuccess: () => closeInstantSchedule(),
-    });
 }
 
 const processingId = ref<string | null>(null);
@@ -247,6 +189,22 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
             description="Leads da landing pública que escolheram você — confirme por telefone/WhatsApp e atualize o status."
         />
 
+        <label
+            class="text-muted-foreground flex w-fit items-center gap-2 text-sm"
+        >
+            <input
+                type="checkbox"
+                :checked="showCancelled"
+                class="border-input size-4 rounded"
+                @change="
+                    toggleShowCancelled(
+                        ($event.target as HTMLInputElement).checked,
+                    )
+                "
+            />
+            Mostrar cancelados
+        </label>
+
         <EmptyState
             v-if="requests === null"
             title="Você não possui um cadastro profissional vinculado."
@@ -268,7 +226,7 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
                         >
                             <div class="space-y-1">
                                 <p class="font-medium">{{ request.name }}</p>
-                                <p class="text-sm text-muted-foreground">
+                                <p class="text-muted-foreground text-sm">
                                     {{ request.phone }}
                                     <template v-if="request.email">
                                         · {{ request.email }}</template
@@ -276,7 +234,7 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
                                 </p>
                                 <p
                                     v-if="request.service_name"
-                                    class="text-sm text-muted-foreground"
+                                    class="text-muted-foreground text-sm"
                                 >
                                     Serviço: {{ request.service_name }}
                                 </p>
@@ -286,7 +244,7 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
                                             request.preferred_date,
                                         ) || request.preferred_period
                                     "
-                                    class="text-sm text-muted-foreground"
+                                    class="text-muted-foreground text-sm"
                                 >
                                     Preferência:
                                     <template
@@ -315,11 +273,11 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
                                 </p>
                                 <p
                                     v-if="request.notes"
-                                    class="text-sm text-muted-foreground"
+                                    class="text-muted-foreground text-sm"
                                 >
                                     "{{ request.notes }}"
                                 </p>
-                                <p class="text-xs text-muted-foreground">
+                                <p class="text-muted-foreground text-xs">
                                     Recebido em
                                     {{ formatDate(request.created_at) }}
                                 </p>
@@ -346,7 +304,10 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
                             >
                                 <Select
                                     :model-value="request.status"
-                                    :disabled="processingId === request.id"
+                                    :disabled="
+                                        processingId === request.id ||
+                                        !!request.appointment_status_label
+                                    "
                                     @update:model-value="
                                         (value) =>
                                             updateStatus(
@@ -455,7 +416,7 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
                     </Link>
                     <span
                         v-else
-                        class="pointer-events-none rounded-md px-3 py-1 text-sm text-muted-foreground opacity-50"
+                        class="text-muted-foreground pointer-events-none rounded-md px-3 py-1 text-sm opacity-50"
                         aria-disabled="true"
                         v-html="link.label"
                     />
@@ -463,78 +424,9 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
             </nav>
         </template>
 
-        <Dialog
-            :open="instantScheduleRequest !== null"
-            @update:open="(open) => !open && closeInstantSchedule()"
-        >
-            <DialogContent v-if="instantScheduleRequest">
-                <DialogHeader>
-                    <DialogTitle>Confirmar agendamento</DialogTitle>
-                    <DialogDescription>
-                        Os dados abaixo vêm do pré-agendamento — confira e
-                        confirme para criar o atendimento na sua agenda.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div class="grid gap-4">
-                    <div class="grid gap-1 text-sm">
-                        <p>
-                            <span class="text-muted-foreground">Serviço:</span>
-                            {{ instantScheduleRequest.preferred_service_name }}
-                        </p>
-                        <p>
-                            <span class="text-muted-foreground">Unidade:</span>
-                            {{ instantScheduleRequest.unit_name }}
-                        </p>
-                        <p>
-                            <span class="text-muted-foreground"
-                                >Data/hora:</span
-                            >
-                            {{
-                                formatDate(
-                                    instantScheduleRequest.preferred_starts_at,
-                                )
-                            }}
-                        </p>
-                    </div>
-
-                    <div class="grid gap-2">
-                        <Label>Paciente</Label>
-                        <p
-                            v-if="instantScheduleRequest.patient_id"
-                            class="rounded-md border bg-muted px-3 py-2 text-sm"
-                        >
-                            {{ instantScheduleRequest.patient_name }}
-                        </p>
-                        <PatientSearchSelect
-                            v-else
-                            v-model="instantForm.patient_id"
-                            :error="instantForm.errors.patient_id"
-                        />
-                    </div>
-
-                    <InputError :message="instantForm.errors.starts_at" />
-                </div>
-
-                <DialogFooter>
-                    <Button
-                        variant="outline"
-                        :disabled="instantForm.processing"
-                        @click="closeInstantSchedule()"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        :disabled="
-                            !instantForm.patient_id || instantForm.processing
-                        "
-                        @click="confirmInstantSchedule()"
-                    >
-                        <Spinner v-if="instantForm.processing" />
-                        Confirmar agendamento
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <InstantScheduleModal
+            :request="instantScheduleRequest"
+            @close="instantScheduleRequest = null"
+        />
     </div>
 </template>

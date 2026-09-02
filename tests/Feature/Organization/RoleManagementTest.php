@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Actions\Organization\SeedSystemRolesAction;
 use App\Enums\PermissionKey;
 use App\Enums\SystemRole;
 use App\Models\LegalEntity;
@@ -13,24 +12,8 @@ use App\Models\Unit;
 use App\Models\UnitMembership;
 use App\Models\User;
 
-function seedSystemRoles(Organization $organization): void
-{
-    app(SeedSystemRolesAction::class)->handle($organization);
-}
-
-function nonOwnerActingWithRole(Organization $organization, SystemRole $systemRole): array
-{
-    seedSystemRoles($organization);
-
-    $role = Role::query()->where('organization_id', $organization->id)->where('slug', $systemRole->value)->firstOrFail();
-
-    $user = User::factory()->create();
-    $membership = OrganizationMembership::factory()->for($organization)->for($user)->create(['role_id' => $role->id]);
-
-    session(['active_organization_id' => $organization->id]);
-
-    return compact('user', 'membership', 'role');
-}
+// seedSystemRoles()/nonOwnerActingWithRole() vivem em tests/Pest.php —
+// compartilhadas com vários outros arquivos de Organization/Sales.
 
 it('lets the owner list roles including the auto-seeded system roles', function () {
     $ctx = ownerActingInOrganization();

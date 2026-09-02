@@ -18,6 +18,20 @@ use App\Models\ServiceSpecialty;
 use App\Models\SiteSetting;
 use App\Models\Specialty;
 use App\Models\Unit;
+use Illuminate\Support\Carbon;
+
+/**
+ * Próxima segunda-feira a partir de agora (nunca hoje, mesmo que hoje já
+ * seja segunda) — a jornada de teste só existe às segundas
+ * (`publicAvailabilityEndpointSetup()`). Data fixa aqui já quebrou a suíte
+ * uma vez ao virar passado com o avanço do relógio real (ver
+ * docs/roadmap.md, Etapa 3.7); nunca mais hardcodar uma data absoluta
+ * neste arquivo.
+ */
+function nextAvailableMonday(): Carbon
+{
+    return Carbon::now()->next(Carbon::MONDAY);
+}
 
 /** @return array{0: Organization, 1: Unit, 2: Specialty, 3: Service, 4: Professional} */
 function publicAvailabilityEndpointSetup(bool $published = true): array
@@ -96,17 +110,21 @@ it('rejects a unit id belonging to another organization', function () {
 
 it('returns available dates for a month, without exposing raw working hours or blocks', function () {
     [, $unit, $specialty, $service, $professional] = publicAvailabilityEndpointSetup();
+    $monday = nextAvailableMonday();
 
     $response = $this->get('/disponibilidade/datas?'.http_build_query([
         'unit_id' => $unit->id,
         'service_id' => $service->id,
         'professional_id' => $professional->id,
         'specialty_id' => $specialty->id,
-        'month' => '2026-08',
+        'month' => $monday->format('Y-m'),
     ]))->assertOk();
 
+    $mondayEntry = collect($response->json('data'))->firstWhere('date', $monday->toDateString());
+
     expect($response->json('data.0'))->toHaveKeys(['date', 'is_available'])
-        ->and($response->json('data.2')['is_available'])->toBeTrue(); // 2026-08-03 é segunda-feira
+        ->and($mondayEntry)->not->toBeNull()
+        ->and($mondayEntry['is_available'])->toBeTrue();
 });
 
 it('returns available times for a date, with minimal aggregated data', function () {
@@ -117,7 +135,7 @@ it('returns available times for a date, with minimal aggregated data', function 
         'service_id' => $service->id,
         'professional_id' => $professional->id,
         'specialty_id' => $specialty->id,
-        'date' => '2026-08-03',
+        'date' => nextAvailableMonday()->toDateString(),
     ]))->assertOk();
 
     $slot = $response->json('data.0');
@@ -141,7 +159,7 @@ it('never creates any reservation record when querying availability', function (
         'service_id' => $service->id,
         'professional_id' => $professional->id,
         'specialty_id' => $specialty->id,
-        'date' => '2026-08-03',
+        'date' => nextAvailableMonday()->toDateString(),
     ]))->assertOk();
 
     expect(AppointmentRequest::query()->count())->toBe(0);

@@ -38,7 +38,14 @@ export type ProfessionalDashboardData = {
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3';
 import { AlarmClock, AlertTriangle, CalendarDays, Plus, X } from '@lucide/vue';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import {
+    computed,
+    nextTick,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
+} from 'vue';
 import TextLink from '@/components/TextLink.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -115,6 +122,24 @@ function reload(params: { period?: Period; date?: string }) {
             only: ['professionalDashboard'],
         },
     );
+}
+
+/**
+ * Clique nos cartões "Em aberto"/"Agendados"/"Executados" — leva até a
+ * seção Agenda da mesma página (não existe tela cheia dedicada para o
+ * profissional), ajustando para o mês atual para aumentar a chance de o
+ * item relevante já aparecer na lista abaixo sem precisar navegar mais.
+ */
+function goToAgenda() {
+    const today = new Date().toISOString().slice(0, 10);
+
+    reload({ period: 'month', date: today });
+
+    nextTick(() => {
+        document
+            .getElementById('agenda')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 }
 
 function shiftDate(direction: 1 | -1): string {
@@ -444,7 +469,14 @@ function dismissFiredAlarm() {
         </div>
 
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Card>
+            <Card
+                role="button"
+                tabindex="0"
+                data-testid="dashboard-counter-card"
+                class="cursor-pointer transition-colors hover:bg-muted/50"
+                @click="goToAgenda()"
+                @keydown.enter="goToAgenda()"
+            >
                 <CardHeader class="pb-2">
                     <CardDescription>Em aberto</CardDescription>
                     <CardTitle class="text-3xl">{{
@@ -452,7 +484,14 @@ function dismissFiredAlarm() {
                     }}</CardTitle>
                 </CardHeader>
             </Card>
-            <Card>
+            <Card
+                role="button"
+                tabindex="0"
+                data-testid="dashboard-counter-card"
+                class="cursor-pointer transition-colors hover:bg-muted/50"
+                @click="goToAgenda()"
+                @keydown.enter="goToAgenda()"
+            >
                 <CardHeader class="pb-2">
                     <CardDescription>Agendados</CardDescription>
                     <CardTitle class="text-3xl">{{
@@ -460,7 +499,14 @@ function dismissFiredAlarm() {
                     }}</CardTitle>
                 </CardHeader>
             </Card>
-            <Card>
+            <Card
+                role="button"
+                tabindex="0"
+                data-testid="dashboard-counter-card"
+                class="cursor-pointer transition-colors hover:bg-muted/50"
+                @click="goToAgenda()"
+                @keydown.enter="goToAgenda()"
+            >
                 <CardHeader class="pb-2">
                     <CardDescription>Executados</CardDescription>
                     <CardTitle class="text-3xl">{{
@@ -468,26 +514,27 @@ function dismissFiredAlarm() {
                     }}</CardTitle>
                 </CardHeader>
             </Card>
-            <Card>
-                <CardHeader class="pb-2">
-                    <CardDescription>Pré-agendamentos</CardDescription>
-                    <CardTitle class="text-3xl">{{
-                        data.pendingAppointmentRequestsCount
-                    }}</CardTitle>
-                </CardHeader>
-                <CardContent class="pt-0">
-                    <TextLink
-                        :href="myAppointmentRequests()"
-                        class="text-sm font-medium"
-                    >
-                        Ver pré-agendamentos
-                    </TextLink>
-                </CardContent>
-            </Card>
+            <Link :href="myAppointmentRequests()" class="block">
+                <Card
+                    class="cursor-pointer transition-colors hover:bg-muted/50"
+                >
+                    <CardHeader class="pb-2">
+                        <CardDescription>Pré-agendamentos</CardDescription>
+                        <CardTitle class="text-3xl">{{
+                            data.pendingAppointmentRequestsCount
+                        }}</CardTitle>
+                    </CardHeader>
+                    <CardContent class="pt-0">
+                        <span class="text-sm font-medium text-primary">
+                            Ver pré-agendamentos
+                        </span>
+                    </CardContent>
+                </Card>
+            </Link>
         </div>
 
         <div class="grid gap-4 lg:grid-cols-3 lg:items-start">
-            <Card class="lg:col-span-2">
+            <Card id="agenda" class="lg:col-span-2">
                 <CardHeader
                     class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                 >

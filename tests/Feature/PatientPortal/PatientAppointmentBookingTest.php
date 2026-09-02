@@ -15,18 +15,9 @@ use Illuminate\Routing\Middleware\ThrottleRequests;
 // ambiente de teste — mesmo padrão de PatientPortalAuthenticationTest.
 beforeEach(fn () => $this->withoutMiddleware(ThrottleRequests::class));
 
-function patientPortalAppointmentSetup(): array
-{
-    $setup = appointmentSetup();
-
-    $patientUser = PatientUser::factory()->for($setup['organization'])->create();
-    PatientUserLink::factory()
-        ->for($patientUser)
-        ->for($setup['patient'], 'patient')
-        ->create(['organization_id' => $setup['organization']->id, 'role' => PatientUserLinkRole::Self]);
-
-    return [...$setup, 'patientUser' => $patientUser];
-}
+// patientPortalAppointmentSetup()/appointmentSetup()/appointmentMonday()
+// vivem em tests/Pest.php — compartilhadas com vários outros arquivos de
+// Appointments/PatientPortal.
 
 it('lists available slots for the portal without requiring the patient in the URL', function () {
     $setup = patientPortalAppointmentSetup();

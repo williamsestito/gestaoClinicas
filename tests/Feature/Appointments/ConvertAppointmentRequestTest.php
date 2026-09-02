@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\AppointmentRequestStatus;
 use App\Enums\OrganizationMembershipStatus;
 use App\Enums\PermissionKey;
+use App\Enums\SystemRole;
 use App\Models\AppointmentRequest;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
@@ -77,6 +78,33 @@ it('does not convert a cancelled lead', function () {
     ]);
 
     storeAppointmentFromRequest($setup, $lead)->assertSessionHasErrors('appointment_request_id');
+});
+
+it('lets a reception user (not the professional) confirm a pending lead for any professional in the organization', function () {
+    $setup = appointmentSetup();
+    $lead = AppointmentRequest::factory()->create(['organization_id' => $setup['organization']->id]);
+
+    seedSystemRoles($setup['organization']);
+    $role = Role::query()->where('organization_id', $setup['organization']->id)->where('slug', SystemRole::Reception->value)->firstOrFail();
+
+    $receptionUser = User::factory()->create(['is_active' => true, 'email_verified_at' => now()]);
+    OrganizationMembership::factory()->for($setup['organization'])->for($receptionUser)->create([
+        'status' => OrganizationMembershipStatus::Active,
+        'role_id' => $role->id,
+    ]);
+
+    test()->actingAs($receptionUser)->post('/settings/appointments', [
+        'unit_id' => $setup['unit']->id,
+        'professional_id' => $setup['professional']->id,
+        'patient_id' => $setup['patient']->id,
+        'service_id' => $setup['service']->id,
+        'starts_at' => appointmentMonday()->toDateString().'T09:00:00',
+        'appointment_request_id' => $lead->id,
+    ])->assertRedirect('/settings/appointments');
+
+    $lead->refresh();
+    expect($lead->status)->toBe(AppointmentRequestStatus::Scheduled)
+        ->and($lead->appointment_id)->not->toBeNull();
 });
 
 it('requires appointments.manage to convert a lead, same as any other appointment creation', function () {

@@ -2,26 +2,112 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 COMPOSE := docker compose
+COMPOSE_PROD := docker compose -f compose.yaml -f compose.prod.yaml
+
 APP_SERVICE := app
 NODE_SERVICE := node
 
-.PHONY: help init build up down restart ps logs shell root-shell artisan composer npm \
-        migrate seed fresh test test-backend test-frontend lint format analyse \
-        build-assets doctor db redis clean
+.PHONY: \
+	help \
+	init \
+	build \
+	up \
+	down \
+	restart \
+	ps \
+	logs \
+	shell \
+	root-shell \
+	artisan \
+	composer \
+	npm \
+	migrate \
+	seed \
+	fresh \
+	test \
+	test-backend \
+	test-frontend \
+	lint \
+	format \
+	analyse \
+	build-assets \
+	doctor \
+	db \
+	redis \
+	clean \
+	prod-build \
+	prod-up \
+	prod-down \
+	prod-restart \
+	prod-ps \
+	prod-logs \
+	prod-shell \
+	prod-root-shell \
+	prod-artisan \
+	prod-composer \
+	prod-npm \
+	prod-migrate \
+	prod-seed \
+	prod-config-cache \
+	prod-route-cache \
+	prod-view-cache \
+	prod-optimize \
+	prod-optimize-clear \
+	prod-build-assets \
+	prod-db \
+	prod-redis \
+	prod-status \
+	prod-deploy
 
 help: ## Lista os comandos disponiveis
 	@echo "Gestao de Clinicas — comandos disponiveis:"
 	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
+	@echo "DESENVOLVIMENTO"
+	@echo "  make init                         Prepara o projeto do zero"
+	@echo "  make build                        Constroi as imagens"
+	@echo "  make up                           Sobe os containers"
+	@echo "  make down                         Para os containers"
+	@echo "  make restart                      Reinicia os containers"
+	@echo "  make ps                           Lista containers"
+	@echo "  make logs                         Acompanha logs"
+	@echo "  make logs service=app             Logs de um servico"
+	@echo "  make shell                        Shell no container app"
+	@echo "  make artisan cmd=\"migrate\"        Executa Artisan"
+	@echo "  make composer cmd=\"install\"       Executa Composer"
+	@echo "  make npm cmd=\"run build\"          Executa NPM"
+	@echo "  make migrate                      Executa migrations"
+	@echo "  make seed                         Executa seeders"
+	@echo "  make fresh                        Recria banco com confirmacao"
+	@echo "  make test                         Executa todos os testes"
+	@echo "  make lint                         Executa verificacoes de lint"
+	@echo "  make format                       Formata o projeto"
+	@echo "  make analyse                      Executa analise estatica"
+	@echo "  make doctor                       Diagnostico da infraestrutura"
 	@echo ""
-	@echo "Exemplos:"
-	@echo "  make init                        # prepara o projeto do zero (idempotente)"
-	@echo "  make artisan cmd=\"migrate\"        # roda um comando artisan"
-	@echo "  make composer cmd=\"require foo\"  # roda um comando composer"
-	@echo "  make npm cmd=\"run build\"          # roda um comando npm"
-	@echo "  make fresh                       # migrate:fresh, pede confirmacao"
+	@echo "PRODUCAO"
+	@echo "  make prod-build                   Constroi imagens de producao"
+	@echo "  make prod-up                      Sobe ambiente de producao"
+	@echo "  make prod-down                    Para ambiente de producao"
+	@echo "  make prod-restart                 Reinicia ambiente de producao"
+	@echo "  make prod-ps                      Lista containers de producao"
+	@echo "  make prod-status                  Status detalhado da producao"
+	@echo "  make prod-logs                    Logs de producao"
+	@echo "  make prod-logs service=app        Logs de um servico"
+	@echo "  make prod-shell                   Shell no app de producao"
+	@echo "  make prod-artisan cmd=\"about\"     Executa Artisan em producao"
+	@echo "  make prod-migrate                 Executa migrations com --force"
+	@echo "  make prod-seed                    Executa seeders com --force"
+	@echo "  make prod-build-assets            Compila assets de producao"
+	@echo "  make prod-optimize                Cria caches Laravel"
+	@echo "  make prod-optimize-clear          Limpa caches Laravel"
+	@echo "  make prod-deploy                  Executa fluxo padrao de deploy"
+	@echo ""
 
-init: ## Prepara o projeto (idempotente): .env, build, up, deps, key, migrate, storage:link
+# =========================================================
+# DESENVOLVIMENTO
+# =========================================================
+
+init: ## Prepara o projeto do zero
 	@bash docker/scripts/bootstrap.sh
 
 build: ## Constroi as imagens Docker
@@ -30,7 +116,7 @@ build: ## Constroi as imagens Docker
 up: ## Sobe todos os containers em background
 	$(COMPOSE) up -d
 
-down: ## Para e remove os containers (mantem volumes)
+down: ## Para e remove containers mantendo volumes
 	$(COMPOSE) down
 
 restart: down up ## Reinicia todos os containers
@@ -38,31 +124,31 @@ restart: down up ## Reinicia todos os containers
 ps: ## Lista o status dos containers
 	$(COMPOSE) ps
 
-logs: ## Acompanha os logs de todos os servicos (use service=<nome> para um so)
+logs: ## Acompanha logs. Use service=<nome>
 	$(COMPOSE) logs -f $(service)
 
-shell: ## Abre um shell no container app como usuario nao-root
+shell: ## Abre shell no container app
 	$(COMPOSE) exec $(APP_SERVICE) bash
 
-root-shell: ## Abre um shell no container app como root
+root-shell: ## Abre shell root no container app
 	$(COMPOSE) exec -u root $(APP_SERVICE) bash
 
-artisan: ## Executa um comando artisan. Uso: make artisan cmd="migrate:status"
+artisan: ## Executa Artisan. Uso: make artisan cmd="migrate:status"
 	$(COMPOSE) exec $(APP_SERVICE) php artisan $(cmd)
 
-composer: ## Executa um comando composer. Uso: make composer cmd="require foo/bar"
+composer: ## Executa Composer. Uso: make composer cmd="require foo/bar"
 	$(COMPOSE) exec $(APP_SERVICE) composer $(cmd)
 
-npm: ## Executa um comando npm no container node. Uso: make npm cmd="run build"
+npm: ## Executa NPM. Uso: make npm cmd="run build"
 	$(COMPOSE) exec $(NODE_SERVICE) npm $(cmd)
 
-migrate: ## Executa as migrations pendentes
+migrate: ## Executa migrations pendentes
 	$(COMPOSE) exec $(APP_SERVICE) php artisan migrate
 
-seed: ## Executa os seeders
+seed: ## Executa seeders
 	$(COMPOSE) exec $(APP_SERVICE) php artisan db:seed
 
-fresh: ## migrate:fresh — APAGA E RECRIA todas as tabelas. Pede confirmacao.
+fresh: ## migrate:fresh com confirmacao
 	@read -p "Isto vai APAGAR todas as tabelas do banco de aplicacao. Continuar? [y/N] " ans; \
 	if [ "$$ans" = "y" ] || [ "$$ans" = "Y" ]; then \
 		$(COMPOSE) exec $(APP_SERVICE) php artisan migrate:fresh; \
@@ -70,46 +156,147 @@ fresh: ## migrate:fresh — APAGA E RECRIA todas as tabelas. Pede confirmacao.
 		echo "Cancelado."; \
 	fi
 
-test: test-backend test-frontend ## Executa os testes de backend e frontend
+test: test-backend test-frontend ## Executa testes backend e frontend
 
-test-backend: ## Executa os testes Pest
+test-backend: ## Executa testes Pest
 	$(COMPOSE) exec $(APP_SERVICE) php artisan test
 
-test-frontend: ## Executa os testes Vitest
+test-frontend: ## Executa testes Vitest
 	$(COMPOSE) exec $(NODE_SERVICE) npm run test:run
 
-lint: ## Executa Pint (verificacao) e ESLint
+lint: ## Executa Pint e ESLint
 	$(COMPOSE) exec $(APP_SERVICE) ./vendor/bin/pint --test
 	$(COMPOSE) exec $(NODE_SERVICE) npm run lint
 
-format: ## Aplica formatacao (Pint + Prettier)
+format: ## Aplica Pint e Prettier
 	$(COMPOSE) exec $(APP_SERVICE) ./vendor/bin/pint
 	$(COMPOSE) exec $(NODE_SERVICE) npm run format
 
-analyse: ## Executa Larastan/PHPStan e vue-tsc
+analyse: ## Executa PHPStan/Larastan e vue-tsc
 	$(COMPOSE) exec $(APP_SERVICE) ./vendor/bin/phpstan analyse
 	$(COMPOSE) exec $(NODE_SERVICE) npm run types
 
-build-assets: ## Compila os assets de producao (vite build)
+build-assets: ## Compila assets com Vite
 	$(COMPOSE) exec $(NODE_SERVICE) npm run build
 
-doctor: ## Executa o diagnostico completo da infraestrutura
+doctor: ## Executa diagnostico da infraestrutura
 	@bash docker/scripts/doctor.sh
 
-db: ## Abre um psql no banco de aplicacao
-	$(COMPOSE) exec postgres psql -U $${DB_USERNAME:-gestao_clinicas} -d $${DB_DATABASE:-gestao_clinicas}
+db: ## Abre psql no banco
+	$(COMPOSE) exec postgres sh -c 'psql -U "$${POSTGRES_USER:-gestao_clinicas}" -d "$${POSTGRES_DB:-gestao_clinicas}"'
 
-redis: ## Abre um redis-cli autenticado
+redis: ## Abre redis-cli autenticado
 	$(COMPOSE) exec redis sh -c 'redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning'
 
-clean: ## Remove containers. Pede confirmacao extra para apagar volumes (banco/redis/minio)
+clean: ## Remove containers e opcionalmente volumes
 	$(COMPOSE) down
-	@read -p "Também remover os volumes (dados de Postgres/Redis/MinIO serão perdidos)? [y/N] " ans; \
+	@read -p "Tambem remover os volumes? Dados de Postgres/Redis/MinIO serao perdidos. [y/N] " ans; \
 	if [ "$$ans" = "y" ] || [ "$$ans" = "Y" ]; then \
-		read -p "Tem certeza? Esta ação é irreversível. Digite 'sim' para confirmar: " confirm; \
+		read -p "Digite 'sim' para confirmar: " confirm; \
 		if [ "$$confirm" = "sim" ]; then \
 			$(COMPOSE) down -v; \
 		else \
 			echo "Cancelado."; \
 		fi \
 	fi
+
+# =========================================================
+# PRODUCAO
+# =========================================================
+
+prod-build: ## Constroi imagens de producao
+	$(COMPOSE_PROD) build
+
+prod-up: ## Sobe ambiente de producao
+	$(COMPOSE_PROD) up -d
+
+prod-down: ## Para ambiente mantendo volumes
+	$(COMPOSE_PROD) down
+
+prod-restart: ## Reinicia ambiente de producao
+	$(COMPOSE_PROD) down
+	$(COMPOSE_PROD) up -d
+
+prod-ps: ## Lista containers de producao
+	$(COMPOSE_PROD) ps
+
+prod-status: ## Exibe status e health dos containers
+	@echo "=== Containers ==="
+	@$(COMPOSE_PROD) ps
+	@echo ""
+	@echo "=== Docker ==="
+	@docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+prod-logs: ## Acompanha logs. Use service=<nome>
+	$(COMPOSE_PROD) logs -f $(service)
+
+prod-shell: ## Shell no container app de producao
+	$(COMPOSE_PROD) exec $(APP_SERVICE) bash
+
+prod-root-shell: ## Shell root no container app
+	$(COMPOSE_PROD) exec -u root $(APP_SERVICE) bash
+
+prod-artisan: ## Artisan em producao. Uso: make prod-artisan cmd="about"
+	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan $(cmd)
+
+prod-composer: ## Composer em producao
+	$(COMPOSE_PROD) exec $(APP_SERVICE) composer $(cmd)
+
+prod-npm: ## NPM em producao
+	$(COMPOSE_PROD) exec $(NODE_SERVICE) npm $(cmd)
+
+prod-migrate: ## Executa migrations em producao
+	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan migrate --force
+
+prod-seed: ## Executa seeders em producao
+	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan db:seed --force
+
+prod-build-assets: ## Compila os assets para producao
+	$(COMPOSE_PROD) exec $(NODE_SERVICE) npm run build
+
+prod-config-cache: ## Gera cache de configuracao
+	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan config:cache
+
+prod-route-cache: ## Gera cache de rotas
+	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan route:cache
+
+prod-view-cache: ## Gera cache das views
+	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan view:cache
+
+prod-optimize: ## Executa otimizacoes Laravel
+	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan optimize
+
+prod-optimize-clear: ## Limpa todos os caches Laravel
+	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan optimize:clear
+
+prod-db: ## Abre psql no banco de producao
+	$(COMPOSE_PROD) exec postgres sh -c 'psql -U "$${POSTGRES_USER:-gestao_clinicas}" -d "$${POSTGRES_DB:-gestao_clinicas}"'
+
+prod-redis: ## Abre redis-cli de producao
+	$(COMPOSE_PROD) exec redis sh -c 'redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning'
+
+prod-deploy: ## Fluxo padrao de deploy da aplicacao
+	@echo "=== Gestao de Clinicas: deploy de producao ==="
+	@echo ""
+	@echo "1. Construindo imagens..."
+	$(COMPOSE_PROD) build
+	@echo ""
+	@echo "2. Subindo infraestrutura..."
+	$(COMPOSE_PROD) up -d
+	@echo ""
+	@echo "3. Aguardando containers..."
+	@sleep 10
+	@echo ""
+	@echo "4. Executando migrations..."
+	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan migrate --force
+	@echo ""
+	@echo "5. Limpando caches antigos..."
+	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan optimize:clear
+	@echo ""
+	@echo "6. Criando caches de producao..."
+	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan optimize
+	@echo ""
+	@echo "7. Status final:"
+	$(COMPOSE_PROD) ps
+	@echo ""
+	@echo "Deploy concluido."

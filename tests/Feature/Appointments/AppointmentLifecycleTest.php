@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Enums\AppointmentStatus;
 use App\Enums\OrganizationMembershipStatus;
 use App\Enums\PermissionKey;
-use App\Models\Appointment;
 use App\Models\AuditLog;
 use App\Models\OrganizationMembership;
 use App\Models\Patient;
@@ -14,24 +13,8 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 
-function createConfirmedAppointment(array $setup, ?Carbon $startsAt = null): Appointment
-{
-    // ->utc() é obrigatório: o cast 'datetime' do Eloquent serializa o
-    // Carbon no fuso em que ele já está, sem converter sozinho (mesmo
-    // cuidado do controller, ver AppointmentController::store()).
-    $startsAt ??= Carbon::parse('2026-08-03 09:00', 'America/Sao_Paulo')->utc();
-
-    return Appointment::factory()->create([
-        'organization_id' => $setup['organization']->id,
-        'unit_id' => $setup['unit']->id,
-        'professional_id' => $setup['professional']->id,
-        'patient_id' => $setup['patient']->id,
-        'service_id' => $setup['service']->id,
-        'starts_at' => $startsAt,
-        'ends_at' => $startsAt->copy()->addMinutes(30),
-        'status' => AppointmentStatus::Confirmed,
-    ]);
-}
+// createConfirmedAppointment()/appointmentSetup() vivem em tests/Pest.php —
+// compartilhadas com vários outros arquivos de Appointments/PatientPortal.
 
 it('walks through the full lifecycle: confirmed -> checked-in -> in-progress -> completed', function () {
     $setup = appointmentSetup();

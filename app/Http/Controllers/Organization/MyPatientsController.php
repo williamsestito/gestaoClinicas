@@ -43,16 +43,33 @@ class MyPatientsController extends Controller
             $request->string('search')->value() ?: null,
             $status !== '' ? RecordStatus::from($status) : null,
             primaryProfessionalId: $professional->id,
-        )->through(fn ($patient) => [
-            'id' => $patient->id,
-            'name' => $patient->name,
-            'preferred_name' => $patient->preferred_name,
-            'document' => $patient->document ? Document::fromCpf($patient->document)->masked() : null,
-            'birth_date' => $patient->birth_date->toDateString(),
-            'phone' => $patient->phone,
-            'status' => $patient->status->value,
-            'deleted_at' => $patient->deleted_at,
-        ]);
+        )->through(function ($patient) use ($professional) {
+            // Mesma definição de acesso completo de
+            // PatientPolicy::hasOwnAccess() — quem só tem um
+            // pré-agendamento pendente com este profissional (nunca foi
+            // atendido de verdade, nunca é o principal) vê o paciente na
+            // lista, mas sem os botões de ação: abrir o cadastro/prontuário
+            // agora resultaria em 403.
+            $isPrimary = $patient->primary_professional_id === $professional->id;
+            $hasAppointment = $patient->appointments()->where('professional_id', $professional->id)->exists();
+
+            return [
+                'id' => $patient->id,
+                'name' => $patient->name,
+                'preferred_name' => $patient->preferred_name,
+                'document' => $patient->document ? Document::fromCpf($patient->document)->masked() : null,
+                'birth_date' => $patient->birth_date->toDateString(),
+                'phone' => $patient->phone,
+                'status' => $patient->status->value,
+                'deleted_at' => $patient->deleted_at,
+                'full_access' => $isPrimary || $hasAppointment,
+                'relationship_label' => match (true) {
+                    $isPrimary => 'Paciente principal',
+                    $hasAppointment => 'Já atendido',
+                    default => 'Pré-agendamento pendente',
+                },
+            ];
+        });
 
         return Inertia::render('settings/my-patients/Index', [
             'patients' => $patients,

@@ -104,7 +104,7 @@ describe('ProfessionalDashboard', () => {
         expect(wrapper.find('[role="status"]').exists()).toBe(false);
     });
 
-    it('always shows the pending-requests count and a link to the full list, even at zero', () => {
+    it('always shows the pending-requests count and a clickable card linking to the full list, even at zero', () => {
         const wrapper = mount(ProfessionalDashboard, {
             props: {
                 data: makeData({
@@ -118,11 +118,11 @@ describe('ProfessionalDashboard', () => {
         expect(wrapper.text()).toContain('Ver pré-agendamentos');
         const link = wrapper
             .findAll('a')
-            .find((a) => a.text() === 'Ver pré-agendamentos');
+            .find((a) => a.text().includes('Ver pré-agendamentos'));
         expect(link?.exists()).toBe(true);
     });
 
-    it('shows the open/scheduled/completed counters', () => {
+    it('shows the open/scheduled/completed counters as the real totals, unaffected by the selected period', () => {
         const wrapper = mount(ProfessionalDashboard, {
             props: { data: makeData() },
         });
@@ -130,6 +130,21 @@ describe('ProfessionalDashboard', () => {
         expect(wrapper.text()).toContain('Em aberto');
         expect(wrapper.text()).toContain('Agendados');
         expect(wrapper.text()).toContain('Executados');
+    });
+
+    it('reloads the agenda in month view when a counter card is clicked', async () => {
+        const wrapper = mount(ProfessionalDashboard, {
+            props: { data: makeData() },
+        });
+
+        const cards = wrapper.findAll('[data-testid="dashboard-counter-card"]');
+        expect(cards).toHaveLength(3);
+
+        await cards[1].trigger('click');
+        await nextTick();
+
+        expect(getMock).toHaveBeenCalledTimes(1);
+        expect(getMock.mock.calls[0][1]).toMatchObject({ period: 'month' });
     });
 
     it('lists the reminders and lets a professional remove one', async () => {

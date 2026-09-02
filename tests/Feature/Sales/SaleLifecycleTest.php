@@ -2,48 +2,14 @@
 
 declare(strict_types=1);
 
-use App\Actions\Organization\SeedSystemRolesAction;
-use App\Enums\OrganizationMembershipStatus;
 use App\Enums\SaleStatus;
-use App\Enums\SystemRole;
-use App\Models\LegalEntity;
-use App\Models\Organization;
-use App\Models\OrganizationMembership;
-use App\Models\Patient;
 use App\Models\Product;
-use App\Models\Role;
 use App\Models\Sale;
 use App\Models\Service;
 use App\Models\SessionPackage;
-use App\Models\Unit;
-use App\Models\UnitMembership;
-use App\Models\User;
 
-/**
- * @return array{organization: Organization, unit: Unit, legalEntity: LegalEntity, user: User, patient: Patient}
- */
-function saleSetup(): array
-{
-    $organization = Organization::factory()->create();
-    app(SeedSystemRolesAction::class)->handle($organization);
-
-    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
-    $unit = Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
-
-    $role = Role::query()->where('organization_id', $organization->id)->where('slug', SystemRole::ClinicAdmin->value)->firstOrFail();
-    $user = User::factory()->create();
-    $membership = OrganizationMembership::factory()->for($organization)->for($user)->create([
-        'status' => OrganizationMembershipStatus::Active,
-        'role_id' => $role->id,
-    ]);
-    UnitMembership::factory()->for($membership, 'organizationMembership')->for($unit, 'unit')->create();
-
-    session(['active_organization_id' => $organization->id, 'active_unit_id' => $unit->id]);
-
-    $patient = Patient::factory()->for($organization)->create();
-
-    return compact('organization', 'unit', 'legalEntity', 'user', 'patient');
-}
+// saleSetup() vive em tests/Pest.php — compartilhada com outros dois
+// arquivos deste diretório.
 
 it('creates a draft sale with a service item that has no discount, confirming it right away', function () {
     $setup = saleSetup();

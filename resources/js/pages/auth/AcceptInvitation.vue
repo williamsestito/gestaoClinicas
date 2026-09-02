@@ -30,7 +30,7 @@ defineOptions({
     <Head title="Aceitar convite" />
 
     <div v-if="!valid" class="space-y-4 text-center">
-        <p class="text-sm text-muted-foreground">
+        <p class="text-muted-foreground text-sm">
             Este convite não é mais válido — pode já ter sido usado, cancelado
             ou expirado. Solicite um novo convite ao administrador da clínica.
         </p>
@@ -40,10 +40,11 @@ defineOptions({
     <Form
         v-else
         v-bind="store.form(token)"
+        :reset-on-success="['password', 'password_confirmation']"
         v-slot="{ errors, processing }"
         class="flex flex-col gap-6"
     >
-        <p class="text-sm text-muted-foreground">
+        <p class="text-muted-foreground text-sm">
             Você foi convidado para fazer parte de
             <strong>{{ organizationName }}</strong
             >. Crie sua senha para concluir o acesso.
@@ -85,6 +86,19 @@ defineOptions({
                     :passwordrules="passwordRules"
                 />
                 <InputError :message="errors.password" />
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="password_confirmation">Confirmar senha</Label>
+                <PasswordInput
+                    id="password_confirmation"
+                    name="password_confirmation"
+                    required
+                    autocomplete="new-password"
+                    placeholder="Confirmar senha"
+                    :passwordrules="passwordRules"
+                />
+                <InputError :message="errors.password_confirmation" />
             </div>
 
             <Button

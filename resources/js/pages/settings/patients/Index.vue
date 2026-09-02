@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import PatientSummaryModal from '@/components/patients/PatientSummaryModal.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,11 +38,14 @@ type PaginatedPatients = {
 
 const props = defineProps<{
     patients: PaginatedPatients;
-    filters: { search?: string; status?: string };
+    professionals: { id: string; display_name: string }[];
+    filters: { search?: string; status?: string; professional_id?: string };
 }>();
 
 const search = ref(props.filters.search ?? '');
 const statusFilter = ref(props.filters.status ?? '');
+const professionalFilter = ref(props.filters.professional_id ?? '');
+const selectedPatientId = ref<string | null>(null);
 
 defineOptions({
     layout: {
@@ -58,6 +62,7 @@ function applyFilters() {
         {
             search: search.value || undefined,
             status: statusFilter.value || undefined,
+            professional_id: professionalFilter.value || undefined,
         },
         { preserveState: true, replace: true },
     );
@@ -132,6 +137,28 @@ function restorePatient(patient: PatientRow) {
                     <option value="inactive">Inativos</option>
                 </select>
             </div>
+            <div class="grid gap-2">
+                <label
+                    for="patient-professional"
+                    class="text-sm font-medium text-muted-foreground"
+                >
+                    Profissional
+                </label>
+                <select
+                    id="patient-professional"
+                    v-model="professionalFilter"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                >
+                    <option value="">Todos</option>
+                    <option
+                        v-for="professional in professionals"
+                        :key="professional.id"
+                        :value="professional.id"
+                    >
+                        {{ professional.display_name }}
+                    </option>
+                </select>
+            </div>
             <Button type="submit" variant="outline">Filtrar</Button>
         </form>
 
@@ -191,6 +218,13 @@ function restorePatient(patient: PatientRow) {
                                     </Button>
                                 </template>
                                 <template v-else>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        @click="selectedPatientId = patient.id"
+                                    >
+                                        Ver
+                                    </Button>
                                     <Button
                                         variant="outline"
                                         size="sm"
@@ -274,5 +308,7 @@ function restorePatient(patient: PatientRow) {
                 />
             </template>
         </nav>
+
+        <PatientSummaryModal v-model="selectedPatientId" />
     </div>
 </template>

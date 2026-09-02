@@ -31,6 +31,8 @@ type Prefill = {
     waitlist_entry_id?: string;
     name: string;
     phone: string;
+    email?: string | null;
+    document?: string | null;
     notes: string | null;
     unit_id?: string | null;
     professional_id?: string | null;
@@ -227,6 +229,16 @@ function submit() {
                 <PatientSearchSelect
                     v-model="form.patient_id"
                     :error="form.errors.patient_id"
+                    :prefill-for-new-patient="
+                        prefill
+                            ? {
+                                  name: prefill.name,
+                                  phone: prefill.phone,
+                                  email: prefill.email ?? undefined,
+                                  document: prefill.document ?? undefined,
+                              }
+                            : undefined
+                    "
                 />
             </div>
 

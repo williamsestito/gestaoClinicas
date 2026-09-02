@@ -2,21 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Models\Organization;
 use App\Models\Patient;
-use App\Models\PatientUser;
-use App\Models\PatientUserLink;
 use Database\Factories\LegalEntityFactory;
 
-function patientPortalProfileSetup(): array
-{
-    $organization = Organization::factory()->create();
-    $patientUser = PatientUser::factory()->for($organization)->create();
-    $patient = Patient::factory()->for($organization)->create();
-    PatientUserLink::factory()->for($patientUser)->for($patient, 'patient')->create(['organization_id' => $organization->id]);
-
-    return compact('organization', 'patientUser', 'patient');
-}
+// patientPortalProfileSetup() vive em tests/Pest.php — compartilhada com
+// outro arquivo deste diretório.
 
 it('updates the core fields of the linked patient', function () {
     $setup = patientPortalProfileSetup();

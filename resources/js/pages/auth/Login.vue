@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PasskeyVerify from '@/components/PasskeyVerify.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
@@ -12,6 +13,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
+import patientPortal from '@/routes/patient-portal';
 
 defineOptions({
     layout: {
@@ -24,6 +26,44 @@ defineProps<{
     status?: string;
     canResetPassword: boolean;
 }>();
+
+/**
+ * Esta tela é compartilhada entre login de clínica/staff e de paciente
+ * (ver routes/patient-portal.php). Quando o link "Acessar o portal do
+ * paciente" da landing pública (LandingSchedulingSection.vue) traz os
+ * dados do pré-agendamento na query string, é porque quem chegou aqui é
+ * um paciente — "Cadastre-se" pula direto para o formulário do portal
+ * (patient-portal.register), já pré-preenchido, em vez do seletor
+ * genérico "clínica ou paciente" (achado real: a pessoa tentava entrar
+ * sem ter conta ainda, e não encontrava um caminho direto de volta ao
+ * cadastro certo).
+ */
+const patientPrefillQuery = computed<Record<string, string> | null>(() => {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const query: Record<string, string> = {};
+
+    for (const key of ['name', 'phone', 'email', 'document']) {
+        const value = params.get(key);
+
+        if (value) {
+            query[key] = value;
+        }
+    }
+
+    return Object.keys(query).length > 0 ? query : null;
+});
+
+const registerHref = computed(() => {
+    if (patientPrefillQuery.value) {
+        return patientPortal.register({ query: patientPrefillQuery.value }).url;
+    }
+
+    return register().url;
+});
 </script>
 
 <template>
@@ -102,9 +142,9 @@ defineProps<{
             </Button>
         </div>
 
-        <div class="text-center text-sm text-muted-foreground">
+        <div class="text-muted-foreground text-center text-sm">
             Não tem uma conta?
-            <TextLink :href="register()" :tabindex="5">Cadastre-se</TextLink>
+            <TextLink :href="registerHref" :tabindex="5">Cadastre-se</TextLink>
         </div>
     </Form>
 </template>

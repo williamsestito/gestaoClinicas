@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { maskCpf } from '@/lib/masks';
 import { dashboard } from '@/routes';
 import { index } from '@/routes/settings/patients';
 import {
@@ -270,7 +271,13 @@ function closePackage(packageId: string) {
                         </Label>
                         <Input
                             id="new-responsible-document"
-                            v-model="responsibleForm.document"
+                            :model-value="responsibleForm.document"
+                            @update:model-value="
+                                (value) =>
+                                    (responsibleForm.document = maskCpf(
+                                        String(value),
+                                    ))
+                            "
                         />
                     </div>
                 </div>

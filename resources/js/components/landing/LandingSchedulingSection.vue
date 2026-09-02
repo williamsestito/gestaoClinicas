@@ -81,7 +81,7 @@ const submittedContact = ref({
     email: '',
     document: '',
 });
-const registerHref = computed(() => {
+function submittedContactQuery(): Record<string, string> {
     const query: Record<string, string> = {};
 
     if (submittedContact.value.name) {
@@ -100,8 +100,21 @@ const registerHref = computed(() => {
         query.document = submittedContact.value.document;
     }
 
-    return patientPortal.register({ query });
-});
+    return query;
+}
+
+const registerHref = computed(() =>
+    patientPortal.register({ query: submittedContactQuery() }),
+);
+
+// Mesmos dados na URL de login — Login.vue (compartilhado com o
+// cadastro de clínica/staff) lê essa query string para saber que quem
+// chegou ali é um paciente vindo da landing, e troca o link "Cadastre-se"
+// para ir direto ao formulário certo (patient-portal.register) em vez do
+// seletor genérico "clínica ou paciente" (achado real: a pessoa clicava
+// em "Acessar o portal do paciente", falhava o login por ainda não ter
+// conta, e não encontrava um caminho direto de volta ao cadastro).
+const loginHref = computed(() => login({ query: submittedContactQuery() }));
 
 // Popup de confirmação — o banner inline abaixo (`form.recentlySuccessful`)
 // já existia, mas fica invisível se a pessoa não estiver olhando para o
@@ -346,7 +359,7 @@ function submit() {
             <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
                 Agende sua avaliação
             </h2>
-            <p class="mt-2 text-muted-foreground">
+            <p class="text-muted-foreground mt-2">
                 Preencha seus dados e entraremos em contato para confirmar o
                 melhor horário.
             </p>
@@ -369,7 +382,7 @@ function submit() {
                     {{ index + 1 }}
                 </span>
                 <p class="text-sm font-medium">{{ step.title }}</p>
-                <p class="text-xs text-muted-foreground">
+                <p class="text-muted-foreground text-xs">
                     {{ step.description }}
                 </p>
             </li>
@@ -379,12 +392,12 @@ function submit() {
 
         <div
             v-if="form.recentlySuccessful"
-            class="flex flex-col items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 p-6 text-center"
+            class="border-primary/30 bg-primary/5 flex flex-col items-center gap-2 rounded-xl border p-6 text-center"
             role="status"
         >
-            <CheckCircle2 class="size-8 text-primary" />
+            <CheckCircle2 class="text-primary size-8" />
             <p class="font-medium">Pré-agendamento enviado!</p>
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 Sua solicitação foi encaminhada à clínica. Você receberá a
                 confirmação do procedimento em breve, pelo telefone ou WhatsApp
                 informado.
@@ -393,14 +406,14 @@ function submit() {
 
         <form
             v-else
-            class="grid gap-5 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8"
+            class="border-border bg-card grid gap-5 rounded-2xl border p-6 shadow-sm sm:p-8"
             @submit.prevent="submit"
         >
             <div
                 v-if="form.errors.service_id || form.errors.professional_id"
                 class="grid gap-2"
             >
-                <p class="text-sm text-destructive">
+                <p class="text-destructive text-sm">
                     {{ form.errors.service_id || form.errors.professional_id }}
                     Você ainda pode enviar o pré-agendamento
                     <button
@@ -459,7 +472,7 @@ function submit() {
                         (v) => (form.document = maskCpf(String(v)))
                     "
                 />
-                <p class="text-xs text-muted-foreground">
+                <p class="text-muted-foreground text-xs">
                     Ajuda a localizar seu cadastro, caso você já seja paciente.
                 </p>
                 <InputError :message="form.errors.document" />
@@ -539,7 +552,7 @@ function submit() {
                 <Spinner v-if="form.processing" />
                 Criar pré-agendamento
             </Button>
-            <p class="text-center text-xs text-muted-foreground">
+            <p class="text-muted-foreground text-center text-xs">
                 O envio não garante reserva do horário — nossa equipe confirmará
                 a disponibilidade pelo telefone ou WhatsApp informado.
             </p>
@@ -551,7 +564,7 @@ function submit() {
         >
             <DialogContent class="sm:max-w-md">
                 <DialogHeader class="items-center text-center">
-                    <CheckCircle2 class="mb-2 size-8 text-primary" />
+                    <CheckCircle2 class="text-primary mb-2 size-8" />
                     <DialogTitle>Pré-agendamento enviado!</DialogTitle>
                     <DialogDescription>
                         Sua solicitação foi encaminhada à clínica. Você receberá
@@ -559,13 +572,13 @@ function submit() {
                         WhatsApp informado.
                     </DialogDescription>
                 </DialogHeader>
-                <p class="text-center text-sm text-muted-foreground">
+                <p class="text-muted-foreground text-center text-sm">
                     Acompanhe o status da sua solicitação pelo portal do
                     paciente.
                 </p>
                 <DialogFooter class="flex-col gap-2 sm:flex-col">
                     <Button as-child class="w-full">
-                        <Link :href="login()">
+                        <Link :href="loginHref">
                             Acessar o portal do paciente
                         </Link>
                     </Button>

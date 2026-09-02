@@ -3,13 +3,12 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import PatientSummaryModal from '@/components/patients/PatientSummaryModal.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
-import { patientHistory } from '@/routes/settings/medical-records';
 import { index } from '@/routes/settings/my-patients';
-import { edit } from '@/routes/settings/patients';
 import { create as createSale } from '@/routes/settings/sales';
 
 type PatientRow = {
@@ -21,6 +20,8 @@ type PatientRow = {
     phone: string | null;
     status: 'active' | 'inactive';
     deleted_at: string | null;
+    full_access: boolean;
+    relationship_label: string;
 };
 
 type PaginatedPatients = {
@@ -36,6 +37,7 @@ const props = defineProps<{
 
 const search = ref(props.filters.search ?? '');
 const statusFilter = ref(props.filters.status ?? '');
+const selectedPatientId = ref<string | null>(null);
 
 defineOptions({
     layout: {
@@ -129,6 +131,7 @@ function applyFilters() {
                             <th class="px-4 py-3">Nascimento</th>
                             <th class="px-4 py-3">Telefone</th>
                             <th class="px-4 py-3">Status</th>
+                            <th class="px-4 py-3">Vínculo</th>
                             <th class="px-4 py-3 text-right">Ações</th>
                         </tr>
                     </thead>
@@ -156,22 +159,25 @@ function applyFilters() {
                                     :deleted-at="patient.deleted_at"
                                 />
                             </td>
+                            <td class="px-4 py-3 text-muted-foreground">
+                                {{ patient.relationship_label }}
+                            </td>
                             <td
                                 class="flex justify-end gap-2 px-4 py-3 text-right"
                             >
-                                <Button variant="outline" size="sm" as-child>
-                                    <Link :href="edit(patient.id).url">
-                                        Ver
-                                    </Link>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    @click="selectedPatientId = patient.id"
+                                >
+                                    Ver
                                 </Button>
-                                <Button variant="outline" size="sm" as-child>
-                                    <Link
-                                        :href="patientHistory(patient.id).url"
-                                    >
-                                        Prontuário
-                                    </Link>
-                                </Button>
-                                <Button variant="outline" size="sm" as-child>
+                                <Button
+                                    v-if="patient.full_access"
+                                    variant="outline"
+                                    size="sm"
+                                    as-child
+                                >
                                     <Link
                                         :href="
                                             createSale({
@@ -222,5 +228,7 @@ function applyFilters() {
                 </template>
             </nav>
         </template>
+
+        <PatientSummaryModal v-model="selectedPatientId" />
     </div>
 </template>

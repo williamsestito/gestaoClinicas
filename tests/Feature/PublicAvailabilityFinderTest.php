@@ -2,11 +2,16 @@
 
 declare(strict_types=1);
 
+use App\Enums\AppointmentRequestStatus;
+use App\Enums\AppointmentStatus;
 use App\Enums\RecordStatus;
 use App\Enums\Weekday;
 use App\Models\Address;
+use App\Models\Appointment;
+use App\Models\AppointmentRequest;
 use App\Models\LegalEntity;
 use App\Models\Organization;
+use App\Models\Patient;
 use App\Models\Professional;
 use App\Models\ProfessionalService;
 use App\Models\ProfessionalSpecialty;
@@ -128,6 +133,58 @@ it('computes theoretical time slots respecting service duration', function () {
     expect($times->pluck('time')->all())->toBe(['08:00', '08:30', '09:00', '09:30'])
         ->and($times->first()['professional_name'])->toBe($professional->display_name)
         ->and($times->first()['duration_minutes'])->toBe(30);
+});
+
+it('excludes a slot already taken by a confirmed appointment for that professional', function () {
+    [$organization, $unit, $specialty, $service, $professional] = publicAvailabilitySetup();
+
+    Appointment::factory()->create([
+        'organization_id' => $organization->id,
+        'unit_id' => $unit->id,
+        'professional_id' => $professional->id,
+        'patient_id' => Patient::factory()->for($organization)->create()->id,
+        'service_id' => $service->id,
+        'starts_at' => Carbon::parse('2026-08-03 08:30', 'America/Sao_Paulo')->utc(),
+        'ends_at' => Carbon::parse('2026-08-03 09:00', 'America/Sao_Paulo')->utc(),
+        'status' => AppointmentStatus::Confirmed,
+    ]);
+
+    $finder = app(PublicAvailabilityFinder::class);
+    $times = $finder->availableTimes($organization, $unit->id, $service->id, $professional->id, $specialty->id, Carbon::parse('2026-08-03'));
+
+    expect($times->pluck('time')->all())->toBe(['08:00', '09:00', '09:30']);
+});
+
+it('excludes a slot already requested (pending) by another patient for that professional', function () {
+    [$organization, $unit, $specialty, $service, $professional] = publicAvailabilitySetup();
+
+    AppointmentRequest::factory()->for($organization)->create([
+        'professional_id' => $professional->id,
+        'preferred_service_id' => $service->id,
+        'preferred_starts_at' => Carbon::parse('2026-08-03 09:00', 'America/Sao_Paulo')->utc(),
+        'status' => AppointmentRequestStatus::Pending,
+    ]);
+
+    $finder = app(PublicAvailabilityFinder::class);
+    $times = $finder->availableTimes($organization, $unit->id, $service->id, $professional->id, $specialty->id, Carbon::parse('2026-08-03'));
+
+    expect($times->pluck('time')->all())->toBe(['08:00', '08:30', '09:30']);
+});
+
+it('never excludes a slot from a cancelled or already-converted appointment request', function () {
+    [$organization, $unit, $specialty, $service, $professional] = publicAvailabilitySetup();
+
+    AppointmentRequest::factory()->for($organization)->create([
+        'professional_id' => $professional->id,
+        'preferred_service_id' => $service->id,
+        'preferred_starts_at' => Carbon::parse('2026-08-03 09:00', 'America/Sao_Paulo')->utc(),
+        'status' => AppointmentRequestStatus::Cancelled,
+    ]);
+
+    $finder = app(PublicAvailabilityFinder::class);
+    $times = $finder->availableTimes($organization, $unit->id, $service->id, $professional->id, $specialty->id, Carbon::parse('2026-08-03'));
+
+    expect($times->pluck('time')->all())->toBe(['08:00', '08:30', '09:00', '09:30']);
 });
 
 it('unions availability across compatible professionals when "any professional" is requested', function () {

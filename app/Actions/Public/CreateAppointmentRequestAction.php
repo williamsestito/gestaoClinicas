@@ -13,11 +13,16 @@ use App\Models\Organization;
 use App\Models\Patient;
 use App\Models\PatientUser;
 use App\Models\PatientUserLink;
+use App\Models\Professional;
 use App\Models\Unit;
 use App\Notifications\NewAppointmentRequestNotification;
+use App\Services\Availability\BookedRangeResolver;
 use App\Support\Auditing\AuditLogger;
+use App\Support\Availability\ActiveProfessionalServiceLinkResolver;
+use App\Support\Availability\AppointmentOverlapGuard;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -32,7 +37,11 @@ class CreateAppointmentRequestAction
 {
     private const DUPLICATE_WINDOW_MINUTES = 10;
 
-    public function __construct(private readonly AuditLogger $auditLogger) {}
+    public function __construct(
+        private readonly AuditLogger $auditLogger,
+        private readonly ActiveProfessionalServiceLinkResolver $linkResolver,
+        private readonly BookedRangeResolver $bookedRangeResolver,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data
@@ -49,25 +58,39 @@ class CreateAppointmentRequestAction
 
         $this->guardAgainstPendingDuplicateProfessional($patientId, $data['professional_id'] ?? null, $organization);
 
-        $appointmentRequest = AppointmentRequest::query()->create([
-            'organization_id' => $organization?->id,
-            'unit_id' => $unit?->id,
-            'service_id' => $data['service_id'] ?? null,
-            'preferred_service_id' => $data['preferred_service_id'] ?? null,
-            'professional_id' => $data['professional_id'] ?? null,
-            'patient_id' => $patientId,
-            'name' => $data['name'],
-            'phone' => $data['phone'],
-            'email' => $data['email'] ?? null,
-            'document' => $data['document'] ?? null,
-            'preferred_period' => $data['preferred_period'] ?? null,
-            'preferred_date' => $data['preferred_date'] ?? null,
-            'preferred_starts_at' => $this->resolvePreferredStartsAt($data, $unit),
-            'notes' => $data['notes'] ?? null,
-            'utm_data' => array_filter($data['utm'] ?? []) ?: null,
-            'status' => AppointmentRequestStatus::Pending,
-            'terms_accepted_at' => now(),
-        ]);
+        $preferredStartsAt = $this->resolvePreferredStartsAt($data, $unit);
+
+        // Checagem + criação na mesma transação: o advisory lock adquirido
+        // dentro de guardAgainstSlotConflict() (via AppointmentOverlapGuard,
+        // reentrante por profissional) só serializa duas requisições
+        // concorrentes para o mesmo profissional/horário enquanto ambas
+        // continuarem na mesma transação até o INSERT — fora de uma
+        // transação, o lock seria liberado antes do create(), reabrindo a
+        // janela de corrida (achado explícito: "podemos ter inúmeros
+        // pacientes realizando pré-agendamentos simultaneamente").
+        $appointmentRequest = DB::transaction(function () use ($data, $organization, $unit, $patientId, $preferredStartsAt) {
+            $this->guardAgainstSlotConflict($data, $organization, $unit, $preferredStartsAt);
+
+            return AppointmentRequest::query()->create([
+                'organization_id' => $organization?->id,
+                'unit_id' => $unit?->id,
+                'service_id' => $data['service_id'] ?? null,
+                'preferred_service_id' => $data['preferred_service_id'] ?? null,
+                'professional_id' => $data['professional_id'] ?? null,
+                'patient_id' => $patientId,
+                'name' => $data['name'],
+                'phone' => $data['phone'],
+                'email' => $data['email'] ?? null,
+                'document' => $data['document'] ?? null,
+                'preferred_period' => $data['preferred_period'] ?? null,
+                'preferred_date' => $data['preferred_date'] ?? null,
+                'preferred_starts_at' => $preferredStartsAt,
+                'notes' => $data['notes'] ?? null,
+                'utm_data' => array_filter($data['utm'] ?? []) ?: null,
+                'status' => AppointmentRequestStatus::Pending,
+                'terms_accepted_at' => now(),
+            ]);
+        });
 
         $this->auditLogger->log(
             AuditAction::Created,
@@ -108,6 +131,70 @@ class CreateAppointmentRequestAction
         }
 
         return Carbon::parse($data['preferred_starts_at'], $unit->timezone)->utc();
+    }
+
+    /**
+     * Só verifica conflito quando o lead veio de um horário específico
+     * escolhido na busca de disponibilidade (profissional + serviço
+     * operacional + horário exato todos presentes) — nunca para o
+     * formulário manual, que só carrega preferência aproximada (dia/
+     * período), sem profissional/serviço/horário resolvidos o suficiente
+     * para checar sobreposição de agenda de verdade.
+     *
+     * Mesmos guards da criação real de agendamento
+     * (App\Actions\Organization\CreateAppointmentAction/
+     * App\Actions\PatientPortal\BookAppointmentAction) — bloqueia no
+     * momento em que o cliente envia a solicitação, em vez de só na
+     * conversão pelo staff, quando a recepção já teria perdido tempo
+     * tentando confirmar um horário impossível (achado em uso real).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function guardAgainstSlotConflict(array $data, ?Organization $organization, ?Unit $unit, ?Carbon $preferredStartsAt): void
+    {
+        if ($preferredStartsAt === null || $organization === null || $unit === null) {
+            return;
+        }
+
+        $professionalId = $data['professional_id'] ?? null;
+        $serviceId = $data['preferred_service_id'] ?? null;
+
+        if ($professionalId === null || $serviceId === null) {
+            return;
+        }
+
+        $professional = Professional::query()->where('organization_id', $organization->id)->find((string) $professionalId);
+
+        if ($professional === null) {
+            return;
+        }
+
+        $link = $this->linkResolver->resolve($organization->id, $professional->id, $serviceId, $unit->id);
+        $endsAt = $preferredStartsAt->copy()->addMinutes($link->effectiveDurationMinutes());
+
+        AppointmentOverlapGuard::assertWithinAvailability($professional, $unit, $preferredStartsAt, $endsAt);
+        AppointmentOverlapGuard::assertNoConflict($professional, $preferredStartsAt, $endsAt, allowOverlap: $organization->allow_appointment_overlap);
+
+        // AppointmentOverlapGuard::assertNoConflict() só enxerga Appointment
+        // de verdade — dois pré-agendamentos PENDENTES (nunca convertidos)
+        // para o mesmo profissional no mesmo horário exato não caem nela.
+        // Reaproveita o mesmo advisory lock adquirido pela chamada acima
+        // (dentro da mesma transação de handle()) para também checar
+        // contra outros pré-agendamentos em aberto — sem isso, dois
+        // pacientes enviando ao mesmo tempo conseguiam os dois "pedir" o
+        // mesmo horário, e só o segundo a ser CONVERTIDO pelo staff
+        // descobriria o conflito.
+        if (! $organization->allow_appointment_overlap) {
+            $localStart = $preferredStartsAt->copy()->setTimezone($unit->timezone)->format('H:i');
+            $localEnd = $endsAt->copy()->setTimezone($unit->timezone)->format('H:i');
+            $bookedRanges = $this->bookedRangeResolver->forProfessionalOnDate($professional, $unit, $preferredStartsAt);
+
+            if (BookedRangeResolver::overlapsAny($localStart, $localEnd, $bookedRanges)) {
+                throw ValidationException::withMessages([
+                    'starts_at' => 'Este horário acabou de ser solicitado por outro paciente e aguarda confirmação da clínica. Escolha outro horário.',
+                ]);
+            }
+        }
     }
 
     /**
@@ -154,11 +241,28 @@ class CreateAppointmentRequestAction
         }
 
         if ($patientUser !== null) {
-            return PatientUserLink::query()
-                ->where('patient_user_id', $patientUser->id)
-                ->where('organization_id', $organization->id)
-                ->where('role', PatientUserLinkRole::Self)
-                ->value('patient_id');
+            $ownPatient = Patient::query()
+                ->whereIn('id', PatientUserLink::query()
+                    ->where('patient_user_id', $patientUser->id)
+                    ->where('organization_id', $organization->id)
+                    ->where('role', PatientUserLinkRole::Self)
+                    ->select('patient_id'))
+                ->first(['id', 'document']);
+
+            $submittedDocument = $data['document'] ?? null;
+
+            // O CPF digitado descreve claramente outra pessoa (bate com
+            // nenhum, não com o da própria conta logada) — nunca força o
+            // vínculo à conta autenticada nesse caso, cai no mesmo
+            // matching do lead anônimo. Achado em uso real: um paciente
+            // logado enviando o formulário com dados de outra pessoa
+            // (nome/CPF/telefone diferentes) ficava com o lead preso à
+            // própria conta, nunca ao paciente certo.
+            if ($ownPatient !== null && $submittedDocument !== null && $ownPatient->document !== $submittedDocument) {
+                return $this->matchExistingPatient($data, $organization)?->id;
+            }
+
+            return $ownPatient?->id;
         }
 
         return $this->matchExistingPatient($data, $organization)?->id;

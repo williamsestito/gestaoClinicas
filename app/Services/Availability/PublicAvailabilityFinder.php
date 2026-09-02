@@ -36,6 +36,7 @@ final class PublicAvailabilityFinder
     public function __construct(
         private readonly ProfessionalAvailabilityResolver $availabilityResolver,
         private readonly ProfessionalAvailabilityCalendarResolver $calendarResolver,
+        private readonly BookedRangeResolver $bookedRangeResolver,
     ) {}
 
     /** @return Collection<int, array<string, mixed>> */
@@ -191,19 +192,31 @@ final class PublicAvailabilityFinder
             $totalSpan = $bufferBefore + $duration + $bufferAfter;
 
             $daily = $this->availabilityResolver->resolve($link->professional, $unit, $date);
+            // Nunca sugere (nem deixa o paciente concluir) um horário que
+            // já tem um agendamento real ou um pré-agendamento pendente de
+            // OUTRO paciente para este profissional — achado em uso real:
+            // este buscador nunca subtraía reservas porque não existiam
+            // quando foi escrito (ver App\Services\Availability\StaffAppointmentSlotFinder,
+            // que já fazia isso do lado autenticado).
+            $bookedRanges = $this->bookedRangeResolver->forProfessionalOnDate($link->professional, $unit, $date);
 
             foreach ($daily->effectiveIntervals as $interval) {
                 $cursor = $interval->startsAt;
 
                 while ($this->addMinutes($cursor, $totalSpan) <= $interval->endsAt) {
-                    $slots->push([
-                        'time' => $this->addMinutes($cursor, $bufferBefore),
-                        'professional_id' => $link->professional->id,
-                        'professional_name' => $link->professional->display_name,
-                        'unit_name' => $unit->name,
-                        'service_name' => $service->name,
-                        'duration_minutes' => $duration,
-                    ]);
+                    $slotStart = $this->addMinutes($cursor, $bufferBefore);
+                    $slotEnd = $this->addMinutes($slotStart, $duration);
+
+                    if (! BookedRangeResolver::overlapsAny($slotStart, $slotEnd, $bookedRanges)) {
+                        $slots->push([
+                            'time' => $slotStart,
+                            'professional_id' => $link->professional->id,
+                            'professional_name' => $link->professional->display_name,
+                            'unit_name' => $unit->name,
+                            'service_name' => $service->name,
+                            'duration_minutes' => $duration,
+                        ]);
+                    }
 
                     $cursor = $this->addMinutes($cursor, $duration);
                 }

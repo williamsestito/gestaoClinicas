@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { maskCpf } from '@/lib/masks';
 
 export type ResponsibleForm = {
     name: string;
@@ -92,7 +93,11 @@ function removeRow(index: number) {
                     </Label>
                     <Input
                         :id="`responsible-document-${index}`"
-                        v-model="responsible.document"
+                        :model-value="responsible.document"
+                        @update:model-value="
+                            (value) =>
+                                (responsible.document = maskCpf(String(value)))
+                        "
                     />
                     <InputError
                         :message="errors?.[`responsibles.${index}.document`]"

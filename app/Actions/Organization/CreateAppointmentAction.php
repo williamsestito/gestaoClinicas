@@ -64,6 +64,17 @@ class CreateAppointmentAction
         ?WaitlistEntry $sourceWaitlistEntry = null,
     ): Appointment {
         return DB::transaction(function () use ($organization, $unit, $professional, $patient, $service, $startsAt, $endsAt, $notes, $sourceRequest, $resourceIds, $sessionPackage, $recurrenceGroupId, $sourceWaitlistEntry) {
+            // Trava a linha do lead e revalida antes de criar qualquer coisa —
+            // agora que profissional, admin e atendimento podem confirmar o
+            // mesmo pré-agendamento simultaneamente, sem isso duas requisições
+            // concorrentes leriam `appointment_id === null` ao mesmo tempo (a
+            // instância já carregada fora da transação) e ambas converteriam o
+            // mesmo lead, criando dois Appointments reais.
+            if ($sourceRequest !== null) {
+                $sourceRequest = AppointmentRequest::query()->whereKey($sourceRequest->id)->lockForUpdate()->firstOrFail();
+                $this->assertSourceRequestConvertible($sourceRequest, $organization);
+            }
+
             AppointmentOverlapGuard::assertWithinAvailability($professional, $unit, $startsAt, $endsAt);
             $hadConflict = AppointmentOverlapGuard::assertNoConflict($professional, $startsAt, $endsAt, allowOverlap: $organization->allow_appointment_overlap);
 
@@ -184,7 +195,7 @@ class CreateAppointmentAction
         }
     }
 
-    private function convertSourceRequest(AppointmentRequest $sourceRequest, Appointment $appointment, Organization $organization, Unit $unit): void
+    private function assertSourceRequestConvertible(AppointmentRequest $sourceRequest, Organization $organization): void
     {
         if ($sourceRequest->organization_id !== $organization->id) {
             throw ValidationException::withMessages([
@@ -194,7 +205,7 @@ class CreateAppointmentAction
 
         if ($sourceRequest->appointment_id !== null) {
             throw ValidationException::withMessages([
-                'appointment_request_id' => 'Este lead já foi convertido em um agendamento.',
+                'appointment_request_id' => 'Este pré-agendamento já foi confirmado por outro usuário. Atualize a página.',
             ]);
         }
 
@@ -203,7 +214,16 @@ class CreateAppointmentAction
                 'appointment_request_id' => 'Não é possível converter um lead cancelado.',
             ]);
         }
+    }
 
+    /**
+     * Chamado só depois de assertSourceRequestConvertible() ter validado o
+     * mesmo registro travado (`lockForUpdate()`) dentro desta transação —
+     * sem revalidar de novo aqui para não mascarar o cenário de corrida com
+     * uma segunda leitura fora do lock.
+     */
+    private function convertSourceRequest(AppointmentRequest $sourceRequest, Appointment $appointment, Organization $organization, Unit $unit): void
+    {
         $before = ['status' => $sourceRequest->status->value, 'appointment_id' => null];
 
         $sourceRequest->update([

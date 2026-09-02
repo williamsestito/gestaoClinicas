@@ -109,6 +109,8 @@ class AppointmentController extends Controller
                 'appointment_request_id' => $sourceRequest->id,
                 'name' => $sourceRequest->name,
                 'phone' => $sourceRequest->phone,
+                'email' => $sourceRequest->email,
+                'document' => $sourceRequest->document,
                 'notes' => $sourceRequest->notes,
                 // Unidade e profissional já são conhecidos quando a
                 // solicitação já os carrega — trava esses dois campos no

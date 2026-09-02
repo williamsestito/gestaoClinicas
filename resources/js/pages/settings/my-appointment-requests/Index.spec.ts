@@ -50,6 +50,7 @@ type Row = {
     name: string;
     phone: string;
     email: string | null;
+    document: string | null;
     service_name: string | null;
     preferred_period: string | null;
     preferred_date: string | null;
@@ -60,6 +61,8 @@ type Row = {
     appointment_status: string | null;
     appointment_status_label: string | null;
     created_at: string | null;
+    professional_id: string | null;
+    professional_name: string | null;
     unit_id: string | null;
     unit_name: string | null;
     preferred_service_id: string | null;
@@ -75,6 +78,7 @@ function makeRequest(overrides: Partial<Row> = {}): Row {
         name: 'Ana Souza',
         phone: '(47) 99999-0000',
         email: 'ana@example.com',
+        document: null,
         service_name: 'Limpeza de pele',
         preferred_period: 'Manhã',
         preferred_date: null,
@@ -85,6 +89,8 @@ function makeRequest(overrides: Partial<Row> = {}): Row {
         appointment_status: null,
         appointment_status_label: null,
         created_at: '2026-07-20T10:00:00Z',
+        professional_id: 'prof-1',
+        professional_name: 'Dra Juliana Cruz',
         unit_id: null,
         unit_name: null,
         preferred_service_id: null,
@@ -124,7 +130,6 @@ function resetInstantFormState() {
 function mountIndex(
     requestsData: Row[] | null = [makeRequest()],
     canCreateAppointments = true,
-    professionalId = 'prof-1',
 ) {
     return mount(Index, {
         props: {
@@ -137,7 +142,6 @@ function mountIndex(
                           total: requestsData.length,
                       },
             canCreateAppointments,
-            professionalId,
         },
     });
 }
@@ -231,6 +235,20 @@ describe('settings/my-appointment-requests/Index', () => {
         const wrapper = mountIndex();
 
         expect(wrapper.text()).not.toContain('Agendamento real:');
+    });
+
+    it('disables the status select once the lead has been converted, so it can never desync from the real appointment again', () => {
+        const wrapper = mountIndex([
+            makeRequest({
+                status: 'contacted',
+                appointment_status: 'confirmed',
+                appointment_status_label: 'Confirmado',
+            }),
+        ]);
+
+        expect(
+            wrapper.findComponent({ name: 'SelectRoot' }).props('disabled'),
+        ).toBe(true);
     });
 
     it('sends a status update via router.patch', async () => {
@@ -340,5 +358,37 @@ describe('settings/my-appointment-requests/Index', () => {
         await patientSearchInput?.dispatchEvent(
             new Event('input', { bubbles: true }),
         );
+    });
+
+    it('shows the "Mostrar cancelados" checkbox unchecked by default, and reloads with show_cancelled when toggled', async () => {
+        const wrapper = mountIndex();
+
+        const checkbox = wrapper.find('input[type="checkbox"]');
+        expect((checkbox.element as HTMLInputElement).checked).toBe(false);
+
+        await checkbox.setValue(true);
+
+        expect(routerMock.get).toHaveBeenCalledWith(
+            expect.stringContaining('/settings/meus-pre-agendamentos'),
+            { show_cancelled: '1' },
+            expect.objectContaining({ preserveState: true }),
+        );
+    });
+
+    it('reflects showCancelled=true from the server in the checkbox state', () => {
+        const wrapper = mount(Index, {
+            props: {
+                requests: {
+                    data: [makeRequest()],
+                    links: [],
+                    total: 1,
+                },
+                canCreateAppointments: true,
+                showCancelled: true,
+            },
+        });
+
+        const checkbox = wrapper.find('input[type="checkbox"]');
+        expect((checkbox.element as HTMLInputElement).checked).toBe(true);
     });
 });

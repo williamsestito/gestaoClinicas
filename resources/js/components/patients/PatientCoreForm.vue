@@ -38,11 +38,18 @@ const props = withDefaults(
         patient?: EditablePatient;
         address?: AddressForm | null;
         states?: string[];
+        prefill?: {
+            name?: string;
+            phone?: string;
+            email?: string;
+            document?: string;
+        } | null;
     }>(),
     {
         patient: undefined,
         address: null,
         states: () => [],
+        prefill: null,
     },
 );
 
@@ -64,13 +71,13 @@ function emptyAddress(): AddressForm {
 }
 
 const createForm = useForm({
-    name: '',
+    name: props.prefill?.name ?? '',
     preferred_name: '',
-    document: '',
+    document: maskCpf(props.prefill?.document ?? ''),
     birth_date: '',
-    phone: '',
+    phone: props.prefill?.phone ?? '',
     whatsapp: '',
-    email: '',
+    email: props.prefill?.email ?? '',
     origin: '',
     preferred_unit_id: '',
     primary_professional_id: '',

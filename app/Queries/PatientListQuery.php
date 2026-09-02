@@ -28,8 +28,18 @@ final class PatientListQuery
     ): LengthAwarePaginator {
         $query = $organization->patients()->withTrashed()->orderBy('name');
 
+        // "Meus pacientes" não é só quem tem `primary_professional_id`
+        // apontando para o profissional — inclui também quem ele já
+        // atendeu de verdade (Appointment) ou tem um pré-agendamento
+        // pendente com ele, mesmo sem nunca ter sido formalmente
+        // designado como "principal" (achado em uso real: um profissional
+        // com vários atendimentos reais via agenda via a lista vazia).
         if ($primaryProfessionalId !== null) {
-            $query->where('primary_professional_id', $primaryProfessionalId);
+            $query->where(function ($inner) use ($primaryProfessionalId) {
+                $inner->where('primary_professional_id', $primaryProfessionalId)
+                    ->orWhereHas('appointments', fn ($q) => $q->where('professional_id', $primaryProfessionalId))
+                    ->orWhereHas('appointmentRequests', fn ($q) => $q->where('professional_id', $primaryProfessionalId));
+            });
         }
 
         if ($status !== null) {

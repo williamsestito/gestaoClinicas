@@ -6,77 +6,19 @@ use App\Enums\OrganizationMembershipStatus;
 use App\Enums\PermissionKey;
 use App\Enums\ProfessionalTimeBlockScope;
 use App\Enums\ProfessionalTimeBlockType;
-use App\Enums\RecordStatus;
-use App\Enums\Weekday;
 use App\Models\Appointment;
 use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\Patient;
 use App\Models\Permission;
-use App\Models\Professional;
-use App\Models\ProfessionalService;
 use App\Models\ProfessionalTimeBlock;
-use App\Models\ProfessionalUnit;
-use App\Models\ProfessionalWorkingHour;
 use App\Models\Role;
-use App\Models\Service;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 
-/**
- * Organização própria com unidade (fuso America/Sao_Paulo, funcionamento
- * 08:00-18:00 às segundas), profissional com jornada 08:00-18:00às
- * segundas, serviço de 30min sem buffer, e um paciente — pronta para testar
- * criação de agendamento real.
- */
-function appointmentSetup(): array
-{
-    $user = actingOwnerWithActiveContext();
-    $organization = $user->organizationMemberships()->first()->organization;
-    $unit = $organization->units()->first();
-    $unit->update(['timezone' => 'America/Sao_Paulo']);
-    $unit->openingHours()->create([
-        'organization_id' => $organization->id,
-        'day_of_week' => Weekday::Monday->value,
-        'opens_at' => '08:00',
-        'closes_at' => '18:00',
-        'sort_order' => 0,
-    ]);
-
-    $professional = Professional::factory()->for($organization)->create(['status' => RecordStatus::Active]);
-    $professionalUnit = ProfessionalUnit::factory()->for($professional)->create([
-        'organization_id' => $organization->id,
-        'unit_id' => $unit->id,
-        'status' => RecordStatus::Active,
-    ]);
-    ProfessionalWorkingHour::factory()->for($professionalUnit, 'professionalUnit')->create([
-        'organization_id' => $organization->id,
-        'weekday' => Weekday::Monday,
-        'starts_at' => '08:00',
-        'ends_at' => '18:00',
-    ]);
-
-    $service = Service::factory()->for($organization)->create([
-        'default_duration_minutes' => 30,
-        'buffer_before_minutes' => 0,
-        'buffer_after_minutes' => 0,
-    ]);
-    $link = ProfessionalService::factory()->for($professional)->create([
-        'organization_id' => $organization->id,
-        'service_id' => $service->id,
-    ]);
-
-    $patient = Patient::factory()->for($organization)->create();
-
-    return compact('user', 'organization', 'unit', 'professional', 'professionalUnit', 'service', 'link', 'patient');
-}
-
-// 2026-08-03 é uma segunda-feira.
-function appointmentMonday(): Carbon
-{
-    return Carbon::parse('2026-08-03');
-}
+// appointmentSetup()/appointmentMonday() vivem em tests/Pest.php —
+// compartilhadas com muitos outros arquivos de Appointments/PatientPortal.
 
 it('creates a real appointment within the professional availability', function () {
     ['user' => $user, 'organization' => $organization, 'unit' => $unit, 'professional' => $professional, 'service' => $service, 'patient' => $patient] = appointmentSetup();

@@ -91,7 +91,7 @@ it('buckets appointments into open, scheduled and completed counters', function 
         ->where('professionalDashboard.agenda', fn ($agenda) => count($agenda) === 5));
 });
 
-it('excludes appointments outside the selected day', function () {
+it('excludes appointments outside the selected day only from the agenda list, never from the counters', function () {
     [$user, $organization, $professional] = professionalDashboardSetup();
     $today = now()->startOfDay();
 
@@ -100,10 +100,16 @@ it('excludes appointments outside the selected day', function () {
 
     $response = $this->actingAs($user)->get('/dashboard?date='.$today->toDateString());
 
-    $response->assertInertia(fn ($page) => $page->where('professionalDashboard.counters.scheduled', 1));
+    // Os contadores são sempre o total real do profissional — nunca
+    // filtrados pelo período/data selecionado (achado de uso real: os
+    // cartões pareciam "sumir" ao trocar de dia). Só a lista da Agenda
+    // abaixo é escopada pela data.
+    $response->assertInertia(fn ($page) => $page
+        ->where('professionalDashboard.counters.scheduled', 2)
+        ->where('professionalDashboard.agenda', fn ($agenda) => count($agenda) === 1));
 });
 
-it('expands the range to the whole week or month when requested', function () {
+it('keeps the counters unchanged when the agenda period/range changes', function () {
     [$user, $organization, $professional] = professionalDashboardSetup();
     $today = now()->startOfWeek(Carbon::MONDAY)->addDays(2);
 
@@ -113,10 +119,13 @@ it('expands the range to the whole week or month when requested', function () {
     $weekResponse = $this->actingAs($user)->get('/dashboard?period=week&date='.$today->toDateString());
     $weekResponse->assertInertia(fn ($page) => $page
         ->where('professionalDashboard.period', 'week')
-        ->where('professionalDashboard.counters.scheduled', 2));
+        ->where('professionalDashboard.counters.scheduled', 2)
+        ->where('professionalDashboard.agenda', fn ($agenda) => count($agenda) === 2));
 
     $dayResponse = $this->actingAs($user)->get('/dashboard?period=day&date='.$today->toDateString());
-    $dayResponse->assertInertia(fn ($page) => $page->where('professionalDashboard.counters.scheduled', 1));
+    $dayResponse->assertInertia(fn ($page) => $page
+        ->where('professionalDashboard.counters.scheduled', 2)
+        ->where('professionalDashboard.agenda', fn ($agenda) => count($agenda) === 1));
 });
 
 it('counts and lists only the professional\'s own pending appointment requests', function () {

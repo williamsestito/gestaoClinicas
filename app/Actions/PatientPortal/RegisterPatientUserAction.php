@@ -11,6 +11,7 @@ use App\Enums\RecordStatus;
 use App\Models\Organization;
 use App\Models\PatientUser;
 use App\Support\Auditing\AuditLogger;
+use App\Support\Patients\OrphanAppointmentRequestLinker;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,7 @@ class RegisterPatientUserAction
         private readonly AuditLogger $auditLogger,
         private readonly AddDependentPatientAction $addDependentPatientAction,
         private readonly UpdatePatientPhotoAction $updatePatientPhotoAction,
+        private readonly OrphanAppointmentRequestLinker $orphanAppointmentRequestLinker,
     ) {}
 
     /**
@@ -106,6 +108,8 @@ class RegisterPatientUserAction
                 after: ['patient_user_id' => $patientUser->id, 'role' => PatientUserLinkRole::Self->value],
                 organization: $organization,
             );
+
+            $this->orphanAppointmentRequestLinker->link($patient);
 
             return $patientUser;
         });

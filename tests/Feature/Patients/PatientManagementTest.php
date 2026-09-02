@@ -11,6 +11,7 @@ use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\Patient;
 use App\Models\Permission;
+use App\Models\Professional;
 use App\Models\Role;
 use App\Models\User;
 
@@ -30,6 +31,61 @@ it('shows an empty listing for a brand new clinic', function () {
         ->assertInertia(fn ($page) => $page
             ->component('settings/patients/Index')
             ->where('patients.data', []));
+});
+
+it('lists the organization\'s active professionals for the filter and narrows the listing when one is selected', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+    $professionalA = Professional::factory()->for($organization)->create(['status' => RecordStatus::Active, 'display_name' => 'Dra Juliana Cruz']);
+    $professionalB = Professional::factory()->for($organization)->create(['status' => RecordStatus::Active, 'display_name' => 'Dr João Paiva']);
+    Professional::factory()->for($organization)->create(['status' => RecordStatus::Inactive, 'display_name' => 'Inativo']);
+    Patient::factory()->for($organization)->create(['primary_professional_id' => $professionalA->id, 'name' => 'Paciente A']);
+    Patient::factory()->for($organization)->create(['primary_professional_id' => $professionalB->id, 'name' => 'Paciente B']);
+
+    $response = $this->actingAs($user)->get('/settings/patients');
+
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('professionals.0.display_name', 'Dr João Paiva')
+            ->where('professionals.1.display_name', 'Dra Juliana Cruz')
+            ->where('patients.total', 2));
+
+    $filtered = $this->actingAs($user)->get('/settings/patients?professional_id='.$professionalA->id);
+
+    $filtered->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('patients.total', 1)
+            ->where('patients.data.0.name', 'Paciente A'));
+});
+
+it('shows no prefill on the create form when no query string is given', function () {
+    $user = actingOwnerWithActiveContext();
+
+    $this->actingAs($user)
+        ->get('/settings/patients/create')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('settings/patients/Create')
+            ->where('prefill', null));
+});
+
+it('prefills the create form from a lead\'s name/phone/email/document in the query string', function () {
+    $user = actingOwnerWithActiveContext();
+
+    $this->actingAs($user)
+        ->get('/settings/patients/create?'.http_build_query([
+            'name' => 'Teste Uchoa',
+            'phone' => '(47) 99696-1511',
+            'email' => 'uchoateste@example.com',
+            'document' => '52998224725',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('settings/patients/Create')
+            ->where('prefill.name', 'Teste Uchoa')
+            ->where('prefill.phone', '(47) 99696-1511')
+            ->where('prefill.email', 'uchoateste@example.com')
+            ->where('prefill.document', '52998224725'));
 });
 
 it('creates an adult patient with an emergency contact', function () {

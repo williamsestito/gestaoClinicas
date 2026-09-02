@@ -11,20 +11,8 @@ use App\Models\UnitMembership;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 
-function ownerActingInOrganization(): array
-{
-    $organization = Organization::factory()->create();
-    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
-    $headquarters = Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
-
-    $user = User::factory()->create();
-    $membership = OrganizationMembership::factory()->owner()->for($organization)->for($user)->create();
-    UnitMembership::factory()->for($membership, 'organizationMembership')->for($headquarters, 'unit')->create();
-
-    session(['active_organization_id' => $organization->id, 'active_unit_id' => $headquarters->id]);
-
-    return compact('organization', 'legalEntity', 'headquarters', 'user', 'membership');
-}
+// ownerActingInOrganization() vive em tests/Pest.php — compartilhada com
+// vários outros arquivos de Organization/Sales/Roles.
 
 it('enforces a unique unit code per organization', function () {
     $ctx = ownerActingInOrganization();

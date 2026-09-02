@@ -17,6 +17,12 @@ defineOptions({
 
 defineProps<{
     states: string[];
+    prefill?: {
+        name?: string;
+        phone?: string;
+        email?: string;
+        document?: string;
+    } | null;
 }>();
 
 function cancel() {
@@ -33,6 +39,11 @@ function cancel() {
             description="Cadastre um novo paciente da clínica."
         />
 
-        <PatientCoreForm mode="create" :states="states" @cancel="cancel" />
+        <PatientCoreForm
+            mode="create"
+            :states="states"
+            :prefill="prefill"
+            @cancel="cancel"
+        />
     </div>
 </template>

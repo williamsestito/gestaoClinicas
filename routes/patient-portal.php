@@ -31,7 +31,9 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('portal')->name('patient-portal.')->group(function () {
     Route::middleware('guest:patient')->group(function () {
         Route::get('registrar', [RegisteredPatientUserController::class, 'create'])->name('register');
-        Route::post('registrar', [RegisteredPatientUserController::class, 'store'])->middleware('throttle:patient-register');
+        Route::post('registrar', [RegisteredPatientUserController::class, 'store'])
+            ->middleware('throttle:patient-register')
+            ->name('register.store');
 
         Route::get('esqueci-senha', [PatientPasswordResetController::class, 'create'])->name('password.request');
         Route::post('esqueci-senha', [PatientPasswordResetController::class, 'store'])

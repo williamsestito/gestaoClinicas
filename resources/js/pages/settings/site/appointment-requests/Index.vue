@@ -2,8 +2,10 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import { MessageCircle } from '@lucide/vue';
 import { reactive, ref } from 'vue';
+import InstantScheduleModal from '@/components/appointment-requests/InstantScheduleModal.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -39,11 +41,13 @@ type PaginatedRequests = {
 
 const props = defineProps<{
     requests: PaginatedRequests;
+    professionals: { id: string; display_name: string }[];
     filters: {
         status?: string;
         search?: string;
         from?: string;
         to?: string;
+        professional_id?: string;
     };
     can_create_appointments: boolean;
 }>();
@@ -51,7 +55,8 @@ const props = defineProps<{
 function canConvert(request: AppointmentRequestSummary): boolean {
     return (
         props.can_create_appointments &&
-        (request.status === 'pending' || request.status === 'contacted')
+        (request.status === 'pending' || request.status === 'contacted') &&
+        !request.appointment_status_label
     );
 }
 
@@ -62,6 +67,25 @@ function convertUrl(request: AppointmentRequestSummary): string {
     const params = new URLSearchParams({ appointment_request_id: request.id });
 
     return `${createAppointment().url}?${params.toString()}`;
+}
+
+// Mesma regra de canInstantSchedule() de "Meus pré-agendamentos" — admin e
+// atendimento também confirmam direto por aqui quando o lead já carrega
+// unidade/serviço/horário exatos, para qualquer profissional da
+// organização (ver InstantScheduleModal.vue).
+function canInstantSchedule(request: AppointmentRequestSummary): boolean {
+    return (
+        canConvert(request) &&
+        !!request.unit_id &&
+        !!request.preferred_service_id &&
+        !!request.preferred_starts_at
+    );
+}
+
+const instantScheduleRequest = ref<AppointmentRequestSummary | null>(null);
+
+function openInstantSchedule(request: AppointmentRequestSummary) {
+    instantScheduleRequest.value = request;
 }
 
 defineOptions({
@@ -95,6 +119,7 @@ const EDITABLE_STATUS_OPTIONS = STATUS_FILTER_OPTIONS.filter(
 
 const search = ref(props.filters.search ?? '');
 const statusFilter = ref(props.filters.status ?? '');
+const professionalFilter = ref(props.filters.professional_id ?? '');
 const fromDate = ref(props.filters.from ?? '');
 const toDate = ref(props.filters.to ?? '');
 
@@ -115,6 +140,7 @@ function applyFilters() {
         {
             search: search.value || undefined,
             status: statusFilter.value || undefined,
+            professional_id: professionalFilter.value || undefined,
             from: fromDate.value || undefined,
             to: toDate.value || undefined,
         },
@@ -157,6 +183,20 @@ function formatDate(value: string | null): string {
 
 function formatPreferredDate(value: string | null): string | null {
     return value ? formatDateBr(value) : null;
+}
+
+function appointmentStatusVariant(
+    status: string,
+): 'default' | 'secondary' | 'destructive' | 'outline' {
+    if (status === 'cancelled' || status === 'no_show') {
+        return 'destructive';
+    }
+
+    if (status === 'completed') {
+        return 'secondary';
+    }
+
+    return 'default';
 }
 
 function whatsappLink(request: AppointmentRequestSummary): string | null {
@@ -205,7 +245,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                 <select
                     id="request-status"
                     v-model="statusFilter"
-                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
                 >
                     <option value="">Todos</option>
                     <option
@@ -214,6 +254,24 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                         :value="option.value"
                     >
                         {{ option.label }}
+                    </option>
+                </select>
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="request-professional">Profissional</Label>
+                <select
+                    id="request-professional"
+                    v-model="professionalFilter"
+                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                >
+                    <option value="">Todos</option>
+                    <option
+                        v-for="professional in professionals"
+                        :key="professional.id"
+                        :value="professional.id"
+                    >
+                        {{ professional.display_name }}
                     </option>
                 </select>
             </div>
@@ -245,15 +303,21 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                     >
                         <div class="space-y-1">
                             <p class="font-medium">{{ request.name }}</p>
-                            <p class="text-sm text-muted-foreground">
+                            <p class="text-muted-foreground text-sm">
                                 {{ request.phone }}
                                 <template v-if="request.email">
                                     · {{ request.email }}</template
                                 >
                             </p>
+                            <p class="text-muted-foreground text-sm">
+                                Profissional:
+                                {{
+                                    request.professional_name ?? 'Não definido'
+                                }}
+                            </p>
                             <p
                                 v-if="request.service_name"
-                                class="text-sm text-muted-foreground"
+                                class="text-muted-foreground text-sm"
                             >
                                 Serviço: {{ request.service_name }}
                             </p>
@@ -263,7 +327,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                                         request.preferred_date,
                                     ) || request.preferred_period
                                 "
-                                class="text-sm text-muted-foreground"
+                                class="text-muted-foreground text-sm"
                             >
                                 Preferência:
                                 <template
@@ -290,16 +354,31 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                             </p>
                             <p
                                 v-if="request.notes"
-                                class="text-sm text-muted-foreground"
+                                class="text-muted-foreground text-sm"
                             >
                                 "{{ request.notes }}"
                             </p>
-                            <p class="text-xs text-muted-foreground">
+                            <p class="text-muted-foreground text-xs">
                                 Recebido em {{ formatDate(request.created_at) }}
                             </p>
                             <p
+                                v-if="request.appointment_status_label"
+                                class="flex items-center gap-2 text-sm"
+                            >
+                                Agendamento real:
+                                <Badge
+                                    :variant="
+                                        appointmentStatusVariant(
+                                            request.appointment_status ?? '',
+                                        )
+                                    "
+                                >
+                                    {{ request.appointment_status_label }}
+                                </Badge>
+                            </p>
+                            <p
                                 v-if="utmEntries(request).length > 0"
-                                class="text-xs text-muted-foreground"
+                                class="text-muted-foreground text-xs"
                             >
                                 Origem:
                                 <span
@@ -319,7 +398,10 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                         >
                             <Select
                                 :model-value="request.status"
-                                :disabled="processingId === request.id"
+                                :disabled="
+                                    processingId === request.id ||
+                                    !!request.appointment_status_label
+                                "
                                 @update:model-value="
                                     (value) =>
                                         updateStatus(
@@ -358,8 +440,17 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                                 </Button>
                             </a>
 
+                            <Button
+                                v-if="canInstantSchedule(request)"
+                                size="sm"
+                                class="w-full sm:w-48"
+                                @click="openInstantSchedule(request)"
+                            >
+                                Confirmar agendamento
+                            </Button>
+
                             <Link
-                                v-if="canConvert(request)"
+                                v-else-if="canConvert(request)"
                                 :href="convertUrl(request)"
                             >
                                 <Button size="sm" class="w-full sm:w-48">
@@ -415,11 +506,16 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                 </Link>
                 <span
                     v-else
-                    class="pointer-events-none rounded-md px-3 py-1 text-sm text-muted-foreground opacity-50"
+                    class="text-muted-foreground pointer-events-none rounded-md px-3 py-1 text-sm opacity-50"
                     aria-disabled="true"
                     v-html="link.label"
                 />
             </template>
         </nav>
+
+        <InstantScheduleModal
+            :request="instantScheduleRequest"
+            @close="instantScheduleRequest = null"
+        />
     </div>
 </template>

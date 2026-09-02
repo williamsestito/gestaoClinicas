@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Organization;
 
+use App\Enums\AppointmentRequestStatus;
 use App\Enums\AuditAction;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
@@ -15,6 +16,7 @@ use App\Models\User;
 use App\Support\Auditing\AuditLogger;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -32,7 +34,7 @@ use Inertia\Response;
  */
 class MyAppointmentRequestsController extends Controller
 {
-    public function index(TenantContext $tenant): Response
+    public function index(Request $request, TenantContext $tenant): Response
     {
         $organization = $tenant->organization();
         $professional = $organization ? $this->resolveOwnProfessional($organization->id) : null;
@@ -50,6 +52,13 @@ class MyAppointmentRequestsController extends Controller
             'professional_id' => $professional->id,
         ]));
 
+        // Cancelado nunca some de verdade (histórico preservado), só some da
+        // tela por padrão — achado de uso real: a lista ficava poluída de
+        // pré-agendamentos já descartados, dando a impressão de que cancelar
+        // "não tinha feito nada" (o registro continuava visível do mesmo
+        // jeito, só com o status mudado).
+        $showCancelled = $request->boolean('show_cancelled');
+
         $requests = AppointmentRequest::query()
             ->with([
                 'service:id,name',
@@ -60,6 +69,7 @@ class MyAppointmentRequestsController extends Controller
             ])
             ->where('organization_id', $organization->id)
             ->where('professional_id', $professional->id)
+            ->when(! $showCancelled, fn ($query) => $query->where('status', '!=', AppointmentRequestStatus::Cancelled))
             ->latest()
             ->paginate(20)
             ->withQueryString()
@@ -68,6 +78,7 @@ class MyAppointmentRequestsController extends Controller
                 'name' => $request->name,
                 'phone' => $request->phone,
                 'email' => $request->email,
+                'document' => $request->document,
                 'service_name' => $request->service?->name,
                 'preferred_period' => $request->preferred_period,
                 'preferred_date' => $request->preferred_date?->toDateString(),
@@ -83,6 +94,8 @@ class MyAppointmentRequestsController extends Controller
                 'appointment_status' => $request->appointment?->status->value,
                 'appointment_status_label' => $request->appointment?->status->label(),
                 'created_at' => $request->created_at?->toIso8601String(),
+                'professional_id' => $professional->id,
+                'professional_name' => $professional->display_name,
                 // Estruturados (unidade/serviço reais + horário exato) — só
                 // preenchidos quando o lead veio de um horário específico
                 // escolhido na busca de disponibilidade (ver
@@ -104,7 +117,7 @@ class MyAppointmentRequestsController extends Controller
         return Inertia::render('settings/my-appointment-requests/Index', [
             'requests' => $requests,
             'canCreateAppointments' => $canCreateAppointments,
-            'professionalId' => $professional->id,
+            'showCancelled' => $showCancelled,
         ]);
     }
 

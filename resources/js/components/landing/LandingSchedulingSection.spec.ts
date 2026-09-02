@@ -221,6 +221,32 @@ describe('LandingSchedulingSection', () => {
             );
         });
 
+        it('carries the already-entered data into the login link too, so "Cadastre-se" can skip straight to the patient registration form', async () => {
+            // Achado real: quem clicava em "Acessar o portal do paciente"
+            // ainda não tinha conta (o pré-agendamento não cria uma
+            // sozinho) — o login falhava e a pessoa não encontrava um
+            // caminho direto de volta ao cadastro certo a partir de
+            // /login. Login.vue lê esses mesmos parâmetros da query string
+            // para trocar o link "Cadastre-se" (ver Login.vue).
+            const wrapper = mount(LandingSchedulingSection, {
+                attachTo: document.body,
+            });
+            await wrapper.find('#name').setValue('Ana Souza');
+            await wrapper.find('#phone').setValue('47999990000');
+            await wrapper.find('form').trigger('submit');
+
+            const onSuccess = postMock.mock.calls.at(-1)?.[1]?.onSuccess as
+                (() => void) | undefined;
+            onSuccess?.();
+            await nextTick();
+
+            const loginLink = Array.from(
+                document.body.querySelectorAll('a'),
+            ).find((a) => a.getAttribute('href')?.startsWith('/login'));
+
+            expect(loginLink?.getAttribute('href')).toContain('name=Ana+Souza');
+        });
+
         it('does not show the popup before a successful submission', () => {
             mount(LandingSchedulingSection, { attachTo: document.body });
 
