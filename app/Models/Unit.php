@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -23,11 +25,12 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  * @property RecordStatus $status
  * @property bool $is_headquarters
  * @property string $timezone
+ * @property Carbon|null $deleted_at
  */
 class Unit extends Model
 {
     /** @use HasFactory<UnitFactory> */
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids, SoftDeletes;
 
     protected $fillable = [
         'organization_id',
@@ -79,5 +82,17 @@ class Unit extends Model
     public function memberships(): HasMany
     {
         return $this->hasMany(UnitMembership::class);
+    }
+
+    /**
+     * Profissionais que ATUAM nesta unidade (App\Models\ProfessionalUnit) —
+     * não confundir com `memberships()`, que são usuários com ACESSO ao
+     * sistema nesta unidade.
+     *
+     * @return HasMany<ProfessionalUnit, $this>
+     */
+    public function professionalLinks(): HasMany
+    {
+        return $this->hasMany(ProfessionalUnit::class);
     }
 }

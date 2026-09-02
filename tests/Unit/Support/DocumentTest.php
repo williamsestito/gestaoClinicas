@@ -35,8 +35,14 @@ it('rejects a document with the wrong number of digits for the type', function (
     expect(Document::isValid(LegalEntityType::Company, '11144477735'))->toBeFalse();
 });
 
-it('masks the document keeping only the last two digits', function () {
+it('masks a CPF keeping only the last two digits, formatted', function () {
     $document = Document::fromCpf('111.444.777-35');
 
-    expect($document->masked())->toBe('*********35');
+    expect($document->masked())->toBe('***.***.***-35');
+});
+
+it('masks a CNPJ keeping only the last two digits, formatted', function () {
+    $document = Document::fromCnpj('11.222.333/0001-81');
+
+    expect($document->masked())->toBe('**.***.***/****-81');
 });

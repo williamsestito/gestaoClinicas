@@ -25,17 +25,22 @@ class AuditLogsTable
                     ->label('Usuário')
                     ->placeholder('Sistema'),
                 TextColumn::make('organization.name')
+                    ->label('Clínica')
                     ->placeholder('—'),
                 TextColumn::make('unit.name')
+                    ->label('Unidade')
                     ->placeholder('—'),
                 TextColumn::make('action')
+                    ->label('Ação')
                     ->badge(),
                 TextColumn::make('auditable_type')
-                    ->label('Recurso'),
-                TextColumn::make('ip_address'),
+                    ->label('Tipo do registro'),
+                TextColumn::make('ip_address')
+                    ->label('Endereço IP'),
             ])
             ->filters([
                 SelectFilter::make('action')
+                    ->label('Ação')
                     ->options(AuditAction::class),
             ])
             ->recordActions([

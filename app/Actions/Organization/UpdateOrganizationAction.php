@@ -16,7 +16,7 @@ class UpdateOrganizationAction
     public function handle(Organization $organization, array $attributes): Organization
     {
         $allowed = collect($attributes)->only([
-            'name', 'default_timezone', 'default_currency', 'locale', 'primary_color', 'secondary_color',
+            'name', 'default_timezone', 'default_currency', 'locale', 'primary_color', 'secondary_color', 'allow_appointment_overlap',
         ])->all();
 
         $before = $organization->only(array_keys($allowed));

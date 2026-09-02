@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -18,11 +20,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $opens_at
  * @property string $closes_at
  * @property int $sort_order
+ * @property Carbon|null $deleted_at
  */
 class UnitOpeningHour extends Model
 {
     /** @use HasFactory<UnitOpeningHourFactory> */
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids, SoftDeletes;
 
     protected $fillable = [
         'organization_id',

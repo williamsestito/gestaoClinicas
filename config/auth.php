@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\PatientUser;
 use App\Models\User;
 
 return [
@@ -42,6 +43,15 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Guard próprio do portal do paciente — separado do staff ("web")
+        // para nunca colidir com a unicidade de e-mail de "users", nem
+        // herdar comportamento do Fortify pensado para staff. Ver
+        // docs/modules/patient-portal.md.
+        'patient' => [
+            'driver' => 'session',
+            'provider' => 'patient_users',
+        ],
     ],
 
     /*
@@ -71,6 +81,11 @@ return [
         //     'driver' => 'database',
         //     'table' => 'users',
         // ],
+
+        'patient_users' => [
+            'driver' => 'eloquent',
+            'model' => PatientUser::class,
+        ],
     ],
 
     /*
@@ -96,6 +111,14 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        // Tabela própria — nunca compartilha broker com o staff.
+        'patient_users' => [
+            'provider' => 'patient_users',
+            'table' => 'patient_password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
         ],

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ModuleKey;
 use App\Enums\OrganizationStatus;
 use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -20,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $default_timezone
  * @property string $default_currency
  * @property string $locale
+ * @property bool $allow_appointment_overlap
  */
 class Organization extends Model
 {
@@ -36,12 +38,14 @@ class Organization extends Model
         'primary_color',
         'secondary_color',
         'logo_path',
+        'allow_appointment_overlap',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => OrganizationStatus::class,
+            'allow_appointment_overlap' => 'boolean',
         ];
     }
 
@@ -73,5 +77,95 @@ class Organization extends Model
     public function memberships(): HasMany
     {
         return $this->hasMany(OrganizationMembership::class);
+    }
+
+    /** @return HasMany<Role, $this> */
+    public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class);
+    }
+
+    /** @return HasMany<Invitation, $this> */
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(Invitation::class);
+    }
+
+    /** @return HasMany<Specialty, $this> */
+    public function specialties(): HasMany
+    {
+        return $this->hasMany(Specialty::class);
+    }
+
+    /** @return HasMany<Service, $this> */
+    public function services(): HasMany
+    {
+        return $this->hasMany(Service::class);
+    }
+
+    /** @return HasMany<SharedResource, $this> */
+    public function resources(): HasMany
+    {
+        return $this->hasMany(SharedResource::class);
+    }
+
+    /** @return HasMany<Product, $this> */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    /** @return HasMany<Sale, $this> */
+    public function sales(): HasMany
+    {
+        return $this->hasMany(Sale::class);
+    }
+
+    /** @return HasMany<Professional, $this> */
+    public function professionals(): HasMany
+    {
+        return $this->hasMany(Professional::class);
+    }
+
+    /** @return HasMany<Patient, $this> */
+    public function patients(): HasMany
+    {
+        return $this->hasMany(Patient::class);
+    }
+
+    /** @return HasMany<Appointment, $this> */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+    /** @return HasMany<PatientUser, $this> */
+    public function patientUsers(): HasMany
+    {
+        return $this->hasMany(PatientUser::class);
+    }
+
+    /** @return HasMany<OrganizationModule, $this> */
+    public function modules(): HasMany
+    {
+        return $this->hasMany(OrganizationModule::class);
+    }
+
+    /**
+     * `Core` está sempre habilitado e não tem linha correspondente em
+     * `organization_modules` — os demais módulos são habilitados/
+     * desabilitados explicitamente pelo proprietário (ver
+     * docs/roadmap.md, Etapa 1).
+     */
+    public function hasModule(ModuleKey $key): bool
+    {
+        if ($key->isCore()) {
+            return true;
+        }
+
+        return $this->modules()
+            ->where('module_key', $key)
+            ->where('is_enabled', true)
+            ->exists();
     }
 }

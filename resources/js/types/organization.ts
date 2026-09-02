@@ -24,6 +24,7 @@ export interface Organization {
     locale: string;
     primary_color: string | null;
     secondary_color: string | null;
+    allow_appointment_overlap: boolean;
 }
 
 export interface Unit {
@@ -39,6 +40,7 @@ export interface Unit {
     email: string | null;
     phone: string | null;
     whatsapp: string | null;
+    deleted_at: string | null;
 }
 
 export interface LegalEntity {
@@ -48,8 +50,44 @@ export interface LegalEntity {
     document: string;
     legal_name: string;
     trade_name: string | null;
+    state_registration?: string | null;
+    municipal_registration?: string | null;
+    email?: string | null;
+    phone?: string | null;
     is_primary: boolean;
     status: 'active' | 'inactive';
+    deleted_at: string | null;
+}
+
+export interface TenantOrganizationSummary {
+    id: string;
+    name: string;
+    slug: string;
+}
+
+export interface TenantUnitSummary {
+    id: string;
+    name: string;
+    code: string;
+    is_headquarters: boolean;
+}
+
+export interface TenantContext {
+    organization: (TenantOrganizationSummary & { status: string }) | null;
+    unit: (TenantUnitSummary & { status: string }) | null;
+    membership: {
+        id: string;
+        status: string;
+        is_owner: boolean;
+        role_name: string | null;
+    } | null;
+    availableOrganizations: TenantOrganizationSummary[];
+    availableUnits: TenantUnitSummary[];
+    isOwner: boolean;
+    isUnitManager: boolean;
+    isPlatformAdmin: boolean;
+    /** Só para refletir a navegação/UI — nunca a fonte de autorização real. */
+    permissions: string[];
 }
 
 export const WEEKDAYS = [

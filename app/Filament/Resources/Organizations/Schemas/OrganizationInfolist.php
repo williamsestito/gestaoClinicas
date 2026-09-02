@@ -13,16 +13,24 @@ class OrganizationInfolist
             ->components([
                 TextEntry::make('id')
                     ->label('ID'),
-                TextEntry::make('name'),
-                TextEntry::make('slug'),
+                TextEntry::make('name')
+                    ->label('Nome'),
+                TextEntry::make('slug')
+                    ->label('Slug'),
                 TextEntry::make('status')
+                    ->label('Status')
                     ->badge(),
-                TextEntry::make('default_timezone'),
-                TextEntry::make('default_currency'),
-                TextEntry::make('locale'),
+                TextEntry::make('default_timezone')
+                    ->label('Fuso horário padrão'),
+                TextEntry::make('default_currency')
+                    ->label('Moeda padrão'),
+                TextEntry::make('locale')
+                    ->label('Idioma'),
                 TextEntry::make('primary_color')
+                    ->label('Cor primária')
                     ->placeholder('-'),
                 TextEntry::make('secondary_color')
+                    ->label('Cor secundária')
                     ->placeholder('-'),
                 TextEntry::make('primaryLegalEntity.legal_name')
                     ->label('Entidade legal principal')
@@ -31,9 +39,11 @@ class OrganizationInfolist
                     ->label('Unidade matriz')
                     ->placeholder('-'),
                 TextEntry::make('created_at')
+                    ->label('Criado em')
                     ->dateTime()
                     ->placeholder('-'),
                 TextEntry::make('updated_at')
+                    ->label('Atualizado em')
                     ->dateTime()
                     ->placeholder('-'),
             ]);

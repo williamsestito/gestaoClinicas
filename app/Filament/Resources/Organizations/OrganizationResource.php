@@ -22,6 +22,21 @@ class OrganizationResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    public static function getModelLabel(): string
+    {
+        return 'Clínica';
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'Clínicas';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Clínicas';
+    }
+
     public static function form(Schema $schema): Schema
     {
         return OrganizationForm::configure($schema);

@@ -24,6 +24,21 @@ class AuditLogResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    public static function getModelLabel(): string
+    {
+        return 'Registro de auditoria';
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'Registros de auditoria';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Sistema';
+    }
+
     public static function infolist(Schema $schema): Schema
     {
         return AuditLogInfolist::configure($schema);

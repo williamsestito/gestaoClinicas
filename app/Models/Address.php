@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * Endereço reutilizável (relação polimórfica) para LegalEntity, Unit e,
@@ -19,12 +21,19 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string $id
  * @property string $organization_id
  * @property string $postal_code
+ * @property string $street
+ * @property string $number
+ * @property string|null $complement
+ * @property string $neighborhood
+ * @property string $city
  * @property string $state
+ * @property string $country
+ * @property Carbon|null $deleted_at
  */
 class Address extends Model
 {
     /** @use HasFactory<AddressFactory> */
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids, SoftDeletes;
 
     protected $fillable = [
         'organization_id',

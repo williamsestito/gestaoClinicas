@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $unit_id
  * @property RecordStatus $status
  * @property bool $is_manager
+ * @property bool $is_primary
  */
 class UnitMembership extends Model
 {
@@ -28,6 +29,7 @@ class UnitMembership extends Model
         'unit_id',
         'status',
         'is_manager',
+        'is_primary',
     ];
 
     protected function casts(): array
@@ -35,6 +37,7 @@ class UnitMembership extends Model
         return [
             'status' => RecordStatus::class,
             'is_manager' => 'boolean',
+            'is_primary' => 'boolean',
         ];
     }
 

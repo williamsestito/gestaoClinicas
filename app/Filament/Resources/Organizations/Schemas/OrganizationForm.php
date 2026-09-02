@@ -20,18 +20,24 @@ class OrganizationForm
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label('Nome')
                     ->required()
                     ->maxLength(255),
                 TextInput::make('default_timezone')
+                    ->label('Fuso horário padrão')
                     ->required(),
                 TextInput::make('default_currency')
+                    ->label('Moeda padrão')
                     ->required()
                     ->maxLength(3),
                 TextInput::make('locale')
+                    ->label('Idioma')
                     ->required()
                     ->maxLength(10),
-                TextInput::make('primary_color'),
-                TextInput::make('secondary_color'),
+                TextInput::make('primary_color')
+                    ->label('Cor primária'),
+                TextInput::make('secondary_color')
+                    ->label('Cor secundária'),
             ]);
     }
 }

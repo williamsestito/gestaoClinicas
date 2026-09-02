@@ -73,14 +73,15 @@ final readonly class Document
     }
 
     /**
-     * Versão mascarada, segura para logs/auditoria (nunca expor o
-     * documento completo).
+     * Versão mascarada, segura para exibição em telas e Filament (nunca
+     * expor o documento completo): mantém só os 2 últimos dígitos, com a
+     * pontuação de CPF ou CNPJ conforme o tipo.
      */
     public function masked(): string
     {
-        $length = strlen($this->digits);
-
-        return str_repeat('*', $length - 2).substr($this->digits, -2);
+        return $this->type === LegalEntityType::Individual
+            ? '***.***.***-'.substr($this->digits, -2)
+            : '**.***.***/****-'.substr($this->digits, -2);
     }
 
     private static function isValidCpf(string $cpf): bool

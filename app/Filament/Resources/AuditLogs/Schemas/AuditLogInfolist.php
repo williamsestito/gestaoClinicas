@@ -20,16 +20,19 @@ class AuditLogInfolist
                     ->label('Usuário')
                     ->placeholder('Sistema'),
                 TextEntry::make('organization.name')
+                    ->label('Clínica')
                     ->placeholder('—'),
                 TextEntry::make('unit.name')
+                    ->label('Unidade')
                     ->placeholder('—'),
                 TextEntry::make('action')
+                    ->label('Ação')
                     ->badge(),
                 TextEntry::make('auditable_type')
-                    ->label('Recurso')
+                    ->label('Tipo do registro')
                     ->placeholder('—'),
                 TextEntry::make('auditable_id')
-                    ->label('ID do recurso')
+                    ->label('ID do registro')
                     ->placeholder('—'),
                 TextEntry::make('before_data')
                     ->label('Antes')
@@ -38,6 +41,7 @@ class AuditLogInfolist
                     ->label('Depois')
                     ->placeholder('—'),
                 TextEntry::make('ip_address')
+                    ->label('Endereço IP')
                     ->placeholder('—'),
             ]);
     }

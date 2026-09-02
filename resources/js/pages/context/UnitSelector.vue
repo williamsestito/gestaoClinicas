@@ -2,6 +2,7 @@
 import { Head, useForm } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { update } from '@/routes/context/unit';
 import type { Unit } from '@/types/organization';
 
 defineProps<{
@@ -12,7 +13,7 @@ const form = useForm({ unit_id: '' });
 
 function select(unit: Unit) {
     form.unit_id = unit.id;
-    form.put('/context/unit');
+    form.put(update().url);
 }
 </script>
 

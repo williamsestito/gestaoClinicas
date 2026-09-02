@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $user_id
  * @property OrganizationMembershipStatus $status
  * @property bool $is_owner
+ * @property string|null $role_id
+ * @property string|null $admin_note
  */
 class OrganizationMembership extends Model
 {
@@ -29,6 +31,8 @@ class OrganizationMembership extends Model
         'user_id',
         'status',
         'is_owner',
+        'role_id',
+        'admin_note',
         'joined_at',
         'created_by',
     ];
@@ -58,5 +62,11 @@ class OrganizationMembership extends Model
     public function unitMemberships(): HasMany
     {
         return $this->hasMany(UnitMembership::class);
+    }
+
+    /** @return BelongsTo<Role, $this> */
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class);
     }
 }

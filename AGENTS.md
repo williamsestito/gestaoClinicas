@@ -42,7 +42,8 @@ npm run quality    # lint + format:check + types + test:run (frontend)
 - Rotas organizadas por contexto em `routes/`: `public-site.php`, `clinic.php`, `patient-portal.php`, `platform.php`, carregadas explicitamente por `web.php`.
 - O painel Filament (`/admin`) é a única forma de administração da plataforma nesta fase; não duplique rotas dele em `platform.php`.
 - **Multiempresa (Fase 1)**: banco/schema compartilhados, `organization_id`/`unit_id` em toda tabela de negócio, IDs em ULID. Contexto ativo resolvido por `App\Support\Tenancy\TenantContext` — ver `docs/architecture/tenancy.md`. Nunca confie em IDs de organização/unidade vindos do frontend sem revalidar o vínculo.
-- **Auditoria**: `App\Support\Auditing\AuditLogger`, chamado explicitamente nas Actions — ver `docs/architecture/auditing.md`. Nunca grave CPF/CNPJ ou segredos sem mascarar/remover.
+- **Auditoria**: `App\Support\Auditing\AuditLogger`, chamado explicitamente nas Actions — ver `docs/architecture/auditing.md`. Nunca grave CPF/CNPJ ou segredos sem mascarar/remover (sanitização é recursiva, em qualquer profundidade).
+- **Localização**: código (classes, métodos, variáveis, colunas, rotas) sempre em inglês; interface (labels, mensagens, e-mails) sempre em português — ver `docs/architecture/localization.md` para o vocabulário oficial do produto. Nunca renomeie algo técnico para "traduzir" a UI.
 
 ## Regras obrigatórias
 

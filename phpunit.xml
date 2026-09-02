@@ -36,5 +36,8 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Valor fixo e dedicado, nunca o mesmo de APP_KEY: garante que os
+             testes exercitem o segredo dedicado de passkeys, não o fallback. -->
+        <env name="PASSKEYS_USER_HANDLE_SECRET" value="test-only-passkeys-user-handle-secret"/>
     </php>
 </phpunit>

@@ -1,16 +1,10 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import {
-    BookOpen,
-    Building2,
-    FolderGit2,
-    LayoutGrid,
-    MapPin,
-} from '@lucide/vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
+import TenantSwitcher from '@/components/TenantSwitcher.vue';
 import {
     Sidebar,
     SidebarContent,
@@ -19,40 +13,15 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarSeparator,
 } from '@/components/ui/sidebar';
+import { buildNavGroups } from '@/config/navigation';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Organização',
-        href: '/settings/organization',
-        icon: Building2,
-    },
-    {
-        title: 'Unidades',
-        href: '/settings/units',
-        icon: MapPin,
-    },
-];
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
-];
+const page = usePage();
+const navGroups = computed(() =>
+    buildNavGroups(page.props.tenant?.permissions ?? []),
+);
 </script>
 
 <template>
@@ -67,14 +36,18 @@ const footerNavItems: NavItem[] = [
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
+            <div class="px-2 pb-1 group-data-[collapsible=icon]:hidden">
+                <TenantSwitcher />
+            </div>
         </SidebarHeader>
 
+        <SidebarSeparator class="group-data-[collapsible=icon]:hidden" />
+
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain :groups="navGroups" />
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

@@ -9,7 +9,8 @@ use Illuminate\Database\Seeder;
 
 /**
  * Ponto de entrada dos seeders. Não cria nenhum usuário genérico/inseguro
- * — apenas encadeia seeders seguros e condicionais (ver PlatformAdminSeeder).
+ * — apenas encadeia seeders seguros e condicionais (ver PlatformAdminSeeder
+ * e DemoOrganizationSeeder).
  */
 class DatabaseSeeder extends Seeder
 {
@@ -18,5 +19,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(PlatformAdminSeeder::class);
+        $this->call(SiteSettingSeeder::class);
+        $this->call(DemoOrganizationSeeder::class);
+        $this->call(LandingContentDemoSeeder::class);
     }
 }

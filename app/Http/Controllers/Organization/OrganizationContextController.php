@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Organization;
 
 use App\Actions\Organization\SetActiveOrganizationAction;
 use App\Enums\OrganizationMembershipStatus;
+use App\Enums\OrganizationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Organization\SetActiveOrganizationRequest;
 use App\Models\Organization;
@@ -18,12 +19,19 @@ class OrganizationContextController extends Controller
 {
     public function edit(): Response
     {
-        $organizations = Auth::user()
-            ->organizationMemberships()
-            ->with('organization')
-            ->where('status', OrganizationMembershipStatus::Active)
-            ->get()
-            ->pluck('organization');
+        $user = Auth::guard('web')->user();
+
+        // Superadmin enxerga todas as organizações ativas (acesso global);
+        // os demais usuários só veem as organizações onde têm vínculo.
+        $organizations = $user->is_platform_admin
+            ? Organization::query()->where('status', OrganizationStatus::Active)->orderBy('name')->get()
+            : $user->organizationMemberships()
+                ->with('organization')
+                ->where('status', OrganizationMembershipStatus::Active)
+                ->get()
+                ->pluck('organization')
+                ->filter(fn (?Organization $organization) => $organization?->status === OrganizationStatus::Active)
+                ->values();
 
         return Inertia::render('context/OrganizationSelector', [
             'organizations' => $organizations,
@@ -34,7 +42,7 @@ class OrganizationContextController extends Controller
     {
         $organization = Organization::query()->findOrFail((string) $request->validated('organization_id'));
 
-        $action->handle($request, $request->user(), $organization);
+        $action->handle($request, $request->user('web'), $organization);
 
         return to_route('dashboard');
     }

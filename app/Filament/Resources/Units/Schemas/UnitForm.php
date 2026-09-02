@@ -19,15 +19,20 @@ class UnitForm
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label('Nome')
                     ->required()
                     ->maxLength(255),
                 TextInput::make('timezone')
+                    ->label('Fuso horário')
                     ->required(),
                 TextInput::make('email')
+                    ->label('E-mail')
                     ->email(),
                 TextInput::make('phone')
+                    ->label('Telefone')
                     ->tel(),
-                TextInput::make('whatsapp'),
+                TextInput::make('whatsapp')
+                    ->label('WhatsApp'),
             ]);
     }
 }

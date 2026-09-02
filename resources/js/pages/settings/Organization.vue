@@ -3,13 +3,26 @@ import { Head, useForm } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { dashboard } from '@/routes';
+import { update } from '@/routes/settings/organization';
 import type { Organization } from '@/types/organization';
+
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            { title: 'Início', href: dashboard() },
+            { title: 'Configurações da clínica' },
+            { title: 'Dados da clínica' },
+        ],
+    },
+});
 
 const props = defineProps<{
     organization: Organization;
-    isOwner: boolean;
+    canUpdate: boolean;
 }>();
 
 const form = useForm({
@@ -19,10 +32,11 @@ const form = useForm({
     locale: props.organization.locale,
     primary_color: props.organization.primary_color ?? '',
     secondary_color: props.organization.secondary_color ?? '',
+    allow_appointment_overlap: props.organization.allow_appointment_overlap,
 });
 
 function submit() {
-    form.put('/settings/organization');
+    form.put(update().url);
 }
 </script>
 
@@ -36,14 +50,18 @@ function submit() {
             description="Dados gerais da sua organização"
         />
 
-        <p v-if="!isOwner" class="text-sm text-muted-foreground">
-            Somente o proprietário da organização pode alterar estes dados.
+        <p v-if="!canUpdate" class="text-sm text-muted-foreground">
+            Você não tem permissão para alterar estes dados.
         </p>
 
         <form class="grid max-w-xl gap-6" @submit.prevent="submit">
             <div class="grid gap-2">
                 <Label for="org-name">Nome</Label>
-                <Input id="org-name" v-model="form.name" :disabled="!isOwner" />
+                <Input
+                    id="org-name"
+                    v-model="form.name"
+                    :disabled="!canUpdate"
+                />
                 <InputError :message="form.errors.name" />
             </div>
 
@@ -52,7 +70,7 @@ function submit() {
                 <Input
                     id="org-timezone"
                     v-model="form.default_timezone"
-                    :disabled="!isOwner"
+                    :disabled="!canUpdate"
                 />
                 <InputError :message="form.errors.default_timezone" />
             </div>
@@ -63,7 +81,7 @@ function submit() {
                     id="org-currency"
                     v-model="form.default_currency"
                     maxlength="3"
-                    :disabled="!isOwner"
+                    :disabled="!canUpdate"
                 />
                 <InputError :message="form.errors.default_currency" />
             </div>
@@ -73,13 +91,34 @@ function submit() {
                 <Input
                     id="org-locale"
                     v-model="form.locale"
-                    :disabled="!isOwner"
+                    :disabled="!canUpdate"
                 />
                 <InputError :message="form.errors.locale" />
             </div>
 
+            <div class="flex items-start gap-2">
+                <Checkbox
+                    id="org-allow-overlap"
+                    v-model:model-value="form.allow_appointment_overlap"
+                    :disabled="!canUpdate"
+                />
+                <div class="grid gap-1">
+                    <Label for="org-allow-overlap"
+                        >Permitir encaixe na agenda</Label
+                    >
+                    <p class="text-sm text-muted-foreground">
+                        Quando ativado, a agenda deixa de bloquear sobreposição
+                        de horário do mesmo profissional (ex.: encaixe de
+                        urgência). Recursos (salas/equipamentos) continuam
+                        sempre bloqueando sobreposição, mesmo com esta opção
+                        ativada.
+                    </p>
+                </div>
+                <InputError :message="form.errors.allow_appointment_overlap" />
+            </div>
+
             <Button
-                v-if="isOwner"
+                v-if="canUpdate"
                 type="submit"
                 class="w-fit"
                 :disabled="form.processing"

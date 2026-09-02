@@ -20,11 +20,16 @@ use Illuminate\Support\Str;
  */
 class AuditLogger
 {
-    /** @var list<string> chaves nunca gravadas em texto puro */
-    private const SENSITIVE_KEYS = ['password', 'token', 'secret', 'remember_token', 'api_key'];
+    /** @var list<string> chaves nunca gravadas em texto puro, em qualquer profundidade */
+    private const SENSITIVE_KEYS = [
+        'password', 'password_confirmation', 'token', 'access_token', 'refresh_token',
+        'secret', 'remember_token', 'api_key', 'recovery_codes', 'authentication_code',
+        'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at',
+        'credential', 'credential_id', 'public_key', 'user_handle_secret',
+    ];
 
-    /** @var list<string> chaves mascaradas (mantém os 2 últimos caracteres) */
-    private const MASKED_KEYS = ['document'];
+    /** @var list<string> chaves mascaradas (mantém os 2 últimos caracteres), em qualquer profundidade */
+    private const MASKED_KEYS = ['document', 'cpf', 'cnpj', 'registration_number'];
 
     /**
      * @param  array<string, mixed>  $before
@@ -39,7 +44,11 @@ class AuditLogger
         ?Unit $unit = null,
     ): AuditLog {
         return AuditLog::query()->create([
-            'actor_user_id' => Auth::id(),
+            // Guard explícito: "actor" é sempre um App\Models\User (staff) —
+            // nunca um App\Models\PatientUser (guard "patient"). Bare
+            // Auth::id() resolveria o guard "default" do AuthManager, que
+            // testes podem trocar via actingAs($patientUser, 'patient').
+            'actor_user_id' => Auth::guard('web')->id(),
             'organization_id' => $organization?->id,
             'unit_id' => $unit?->id,
             'action' => $action,
@@ -53,6 +62,10 @@ class AuditLogger
     }
 
     /**
+     * Sanitiza recursivamente, em qualquer profundidade (arrays aninhados
+     * também são percorridos) — nunca grava senhas/tokens/segredos em
+     * texto puro e sempre mascara documentos (CPF/CNPJ).
+     *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
@@ -69,6 +82,12 @@ class AuditLogger
 
             if (in_array($lowerKey, self::MASKED_KEYS, true) && is_string($value)) {
                 $data[$key] = str_repeat('*', max(strlen($value) - 2, 0)).substr($value, -2);
+
+                continue;
+            }
+
+            if (is_array($value)) {
+                $data[$key] = $this->sanitize($value);
             }
         }
 

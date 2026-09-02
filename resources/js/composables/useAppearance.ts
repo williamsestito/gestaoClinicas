@@ -48,12 +48,22 @@ const mediaQuery = () => {
     return window.matchMedia('(prefers-color-scheme: dark)');
 };
 
-const getStoredAppearance = () => {
+const APPEARANCE_VALUES: readonly Appearance[] = ['light', 'dark', 'system'];
+
+const isAppearance = (value: string | null): value is Appearance =>
+    value !== null && (APPEARANCE_VALUES as readonly string[]).includes(value);
+
+/** Fonte unica de leitura da preferencia salva — ignora valores invalidos
+ * (ex.: gravados por uma versao antiga ou corrompidos manualmente) em vez de
+ * propaga-los para o estado da aplicacao. */
+const getStoredAppearance = (): Appearance | null => {
     if (typeof window === 'undefined') {
         return null;
     }
 
-    return localStorage.getItem('appearance') as Appearance | null;
+    const value = localStorage.getItem('appearance');
+
+    return isAppearance(value) ? value : null;
 };
 
 const prefersDark = (): boolean => {
@@ -67,7 +77,7 @@ const prefersDark = (): boolean => {
 const handleSystemThemeChange = () => {
     const currentAppearance = getStoredAppearance();
 
-    updateTheme(currentAppearance || 'system');
+    updateTheme(currentAppearance || 'light');
 };
 
 export function initializeTheme(): void {
@@ -75,21 +85,20 @@ export function initializeTheme(): void {
         return;
     }
 
-    // Initialize theme from saved preference or default to system...
+    // Initialize theme from saved preference, defaulting to light — never
+    // to the OS theme — when the user hasn't chosen one explicitly yet.
     const savedAppearance = getStoredAppearance();
-    updateTheme(savedAppearance || 'system');
+    updateTheme(savedAppearance || 'light');
 
     // Set up system theme change listener...
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);
 }
 
-const appearance = ref<Appearance>('system');
+const appearance = ref<Appearance>('light');
 
 export function useAppearance(): UseAppearanceReturn {
     onMounted(() => {
-        const savedAppearance = localStorage.getItem(
-            'appearance',
-        ) as Appearance | null;
+        const savedAppearance = getStoredAppearance();
 
         if (savedAppearance) {
             appearance.value = savedAppearance;

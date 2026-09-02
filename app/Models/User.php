@@ -21,6 +21,16 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property string|null $phone
+ * @property string|null $cpf dígitos apenas, sem máscara (ver App\Support\Documents\Document)
+ * @property string|null $photo_path
+ * @property string|null $address_postal_code
+ * @property string|null $address_street
+ * @property string|null $address_number
+ * @property string|null $address_complement
+ * @property string|null $address_neighborhood
+ * @property string|null $address_city
+ * @property string|null $address_state
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property bool $is_active
@@ -29,11 +39,16 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
+ * @property Carbon|null $last_login_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Fillable([
+    'name', 'email', 'password', 'phone', 'cpf', 'photo_path',
+    'address_postal_code', 'address_street', 'address_number', 'address_complement',
+    'address_neighborhood', 'address_city', 'address_state',
+])]
+#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'photo_path'])]
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
@@ -52,6 +67,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Pas
             'two_factor_confirmed_at' => 'datetime',
             'is_active' => 'boolean',
             'is_platform_admin' => 'boolean',
+            'last_login_at' => 'datetime',
         ];
     }
 
@@ -70,5 +86,17 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Pas
     public function organizationMemberships(): HasMany
     {
         return $this->hasMany(OrganizationMembership::class);
+    }
+
+    /**
+     * Cadastros operacionais de profissional vinculados a este usuário.
+     * Vínculo meramente informativo — nunca concede acesso/permissões por
+     * si só (ver App\Support\Authorization\PermissionChecker).
+     *
+     * @return HasMany<Professional, $this>
+     */
+    public function professionals(): HasMany
+    {
+        return $this->hasMany(Professional::class);
     }
 }
