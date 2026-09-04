@@ -24,11 +24,6 @@ const hasHeroImage = computed(
     () => Boolean(props.site.hero_image_url) && !heroImageFailedToLoad.value,
 );
 
-// No desktop, o botão secundário (outline) fica sobre a imagem — o
-// variant padrão usa fundo claro, que fica ilegível sobre a foto escura.
-const secondaryButtonOverImageClass =
-    'md:border-white md:bg-transparent md:text-white md:hover:bg-white/10 md:hover:text-white';
-
 // "Três destaques rápidos" ao lado do título — reaproveita os diferenciais
 // já cadastrados (seção "benefits") em vez de um campo novo só para isto.
 const quickHighlights = computed(() => props.benefits.slice(0, 3));
@@ -44,8 +39,12 @@ const heroBackgroundVars = computed(() => {
         return {};
     }
 
+    // Sem texto/botões sobrepostos, o degradê não precisa mais garantir
+    // contraste de leitura — só uma leve vinheta para dar profundidade,
+    // preservando as cores originais do banner (pedido explícito: o
+    // sombreamento forte "apagava" o banner).
     return {
-        '--hero-bg-image': `linear-gradient(to right, rgba(0,0,0,0.75), rgba(0,0,0,0.35) 55%, rgba(0,0,0,0.05)), url("${props.site.hero_image_url}")`,
+        '--hero-bg-image': `linear-gradient(to right, rgba(0,0,0,0.25), rgba(0,0,0,0.1) 55%, rgba(0,0,0,0)), url("${props.site.hero_image_url}")`,
     };
 });
 </script>
@@ -91,33 +90,44 @@ const heroBackgroundVars = computed(() => {
                     "
                 >
                     <span
-                        v-if="site.schema_type_label"
+                        v-if="site.schema_type_label && !hasHeroImage"
                         class="landing-eyebrow block"
-                        :class="hasHeroImage && 'landing-eyebrow--on-image'"
                     >
                         {{ site.schema_type_label }}
                     </span>
 
+                    <!--
+                        Quando há um banner customizado, ele já traz sua
+                        própria mensagem (logo, título, tagline) desenhada na
+                        imagem — sobrepor título/descrição por cima ficava
+                        redundante e poluído (achado real, pedido explícito
+                        para remover). O <h1> continua no DOM, só
+                        visualmente oculto (`sr-only`), para nunca perder a
+                        página sem um heading principal.
+                    -->
                     <h1
                         class="text-balance text-4xl font-bold leading-[0.98] tracking-tight sm:text-5xl"
+                        :class="hasHeroImage && 'sr-only'"
                     >
                         {{ site.title }}
                     </h1>
                     <p
-                        v-if="site.description"
-                        class="mx-auto max-w-2xl text-balance text-lg"
-                        :class="
-                            hasHeroImage
-                                ? 'md:mx-0 md:text-white/90'
-                                : 'text-muted-foreground'
-                        "
+                        v-if="site.description && !hasHeroImage"
+                        class="text-muted-foreground mx-auto max-w-2xl text-balance text-lg"
                     >
                         {{ site.description }}
                     </p>
 
+                    <!--
+                        Mesmo raciocínio do título/descrição acima: quando o
+                        banner já traz seu próprio botão desenhado na
+                        imagem, um CTA real sobreposto fica redundante — a
+                        navbar já mantém "Agendar horário"/"Acessar o
+                        sistema" sempre visíveis como alternativa funcional.
+                    -->
                     <div
+                        v-if="!hasHeroImage"
                         class="flex flex-col items-center justify-center gap-3 sm:flex-row"
-                        :class="hasHeroImage && 'md:justify-start'"
                     >
                         <a
                             v-if="site.cta_text && site.cta_url"
@@ -138,10 +148,6 @@ const heroBackgroundVars = computed(() => {
                                 size="lg"
                                 variant="outline"
                                 class="rounded-full"
-                                :class="
-                                    hasHeroImage &&
-                                    secondaryButtonOverImageClass
-                                "
                             >
                                 {{ site.cta_secondary_text }}
                             </Button>
@@ -149,9 +155,8 @@ const heroBackgroundVars = computed(() => {
                     </div>
 
                     <div
-                        v-if="!site.cta_text"
+                        v-if="!hasHeroImage && !site.cta_text"
                         class="flex flex-col items-center justify-center gap-3 sm:flex-row"
-                        :class="hasHeroImage && 'md:justify-start'"
                     >
                         <Link v-if="page.props.auth.user" :href="dashboard()">
                             <Button size="lg" class="rounded-full"
@@ -169,10 +174,6 @@ const heroBackgroundVars = computed(() => {
                                     size="lg"
                                     variant="outline"
                                     class="rounded-full"
-                                    :class="
-                                        hasHeroImage &&
-                                        secondaryButtonOverImageClass
-                                    "
                                     >Criar conta</Button
                                 >
                             </Link>
@@ -180,13 +181,8 @@ const heroBackgroundVars = computed(() => {
                     </div>
 
                     <ul
-                        v-if="quickHighlights.length > 0"
-                        class="flex flex-col flex-wrap items-center justify-center gap-x-6 gap-y-2 pt-2 text-sm sm:flex-row"
-                        :class="[
-                            hasHeroImage
-                                ? 'md:justify-start md:text-white/90'
-                                : 'text-muted-foreground',
-                        ]"
+                        v-if="quickHighlights.length > 0 && !hasHeroImage"
+                        class="text-muted-foreground flex flex-col flex-wrap items-center justify-center gap-x-6 gap-y-2 pt-2 text-sm sm:flex-row"
                     >
                         <li
                             v-for="highlight in quickHighlights"
@@ -195,11 +191,7 @@ const heroBackgroundVars = computed(() => {
                         >
                             <span
                                 class="size-1.5 shrink-0 rounded-full"
-                                :style="{
-                                    backgroundColor: hasHeroImage
-                                        ? 'currentColor'
-                                        : 'var(--landing-primary)',
-                                }"
+                                style="background-color: var(--landing-primary)"
                                 aria-hidden="true"
                             />
                             {{ highlight.title }}

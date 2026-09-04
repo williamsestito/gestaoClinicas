@@ -57,7 +57,6 @@ const mobileOpen = ref(false);
                     class="text-primary size-9 rounded-lg fill-current"
                     aria-hidden="true"
                 />
-                <span class="truncate">{{ title }}</span>
             </a>
 
             <nav

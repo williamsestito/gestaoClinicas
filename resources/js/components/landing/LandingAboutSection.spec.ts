@@ -88,6 +88,37 @@ describe('LandingAboutSection', () => {
         expect(wrapper.text()).not.toContain('Não deveria aparecer');
     });
 
+    it("prefers the mobile banner over the desktop one — the desktop banner is much wider and gets cropped oddly in this section's portrait-ish card", () => {
+        const wrapper = mount(LandingAboutSection, {
+            props: {
+                site: makeSite({
+                    about_text: 'Texto sobre a clínica.',
+                    hero_image_url: 'https://example.com/desktop.jpg',
+                    hero_image_mobile_url: 'https://example.com/mobile.jpg',
+                }),
+            },
+        });
+
+        expect(wrapper.find('img').attributes('src')).toBe(
+            'https://example.com/mobile.jpg',
+        );
+    });
+
+    it('falls back to the desktop banner when no mobile banner was uploaded', () => {
+        const wrapper = mount(LandingAboutSection, {
+            props: {
+                site: makeSite({
+                    about_text: 'Texto sobre a clínica.',
+                    hero_image_url: 'https://example.com/desktop.jpg',
+                }),
+            },
+        });
+
+        expect(wrapper.find('img').attributes('src')).toBe(
+            'https://example.com/desktop.jpg',
+        );
+    });
+
     it('shows mission and vision only when configured', () => {
         const withoutThem = mount(LandingAboutSection, {
             props: { site: makeSite({ about_text: 'Texto sobre a clínica.' }) },

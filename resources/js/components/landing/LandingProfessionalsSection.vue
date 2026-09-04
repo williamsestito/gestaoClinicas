@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { Link2, User } from '@lucide/vue';
+import { Link2, User, X } from '@lucide/vue';
+import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useLandingScheduling } from '@/composables/useLandingScheduling';
 import type { PublicProfessional } from '@/types/site';
 
@@ -19,6 +26,8 @@ function selectProfessional(professional: PublicProfessional) {
     selectedProfessionalId.value = professional.professional_id;
     selectedProfessionalName.value = professional.name;
 }
+
+const expandedProfessional = ref<PublicProfessional | null>(null);
 </script>
 
 <template>
@@ -40,13 +49,20 @@ function selectProfessional(professional: PublicProfessional) {
                 :key="professional.id"
                 class="rounded-(--landing-radius-md) border-border bg-card flex flex-col items-center border p-6 text-center shadow-sm"
             >
-                <img
+                <button
                     v-if="professional.photo_url"
-                    :src="professional.photo_url"
-                    :alt="professional.name"
-                    loading="lazy"
-                    class="size-24 rounded-full object-cover"
-                />
+                    type="button"
+                    class="focus-visible:ring-ring rounded-full focus-visible:outline-none focus-visible:ring-2"
+                    :aria-label="`Ver foto de ${professional.name} em tamanho maior`"
+                    @click="expandedProfessional = professional"
+                >
+                    <img
+                        :src="professional.photo_url"
+                        :alt="professional.name"
+                        loading="lazy"
+                        class="size-24 rounded-full object-cover"
+                    />
+                </button>
                 <div
                     v-else
                     class="bg-muted text-muted-foreground flex size-24 items-center justify-center rounded-full"
@@ -128,5 +144,32 @@ function selectProfessional(professional: PublicProfessional) {
                 </a>
             </div>
         </div>
+
+        <Dialog
+            :open="expandedProfessional !== null"
+            @update:open="(open) => !open && (expandedProfessional = null)"
+        >
+            <DialogContent
+                class="max-w-2xl gap-0 border-0 bg-transparent p-0 shadow-none"
+            >
+                <DialogTitle class="sr-only">
+                    {{ expandedProfessional?.name }}
+                </DialogTitle>
+                <div class="relative">
+                    <img
+                        v-if="expandedProfessional"
+                        :src="expandedProfessional.photo_url ?? undefined"
+                        :alt="expandedProfessional.name"
+                        class="max-h-[80vh] w-full rounded-lg object-contain"
+                    />
+                    <DialogClose
+                        class="absolute right-2 top-2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
+                        aria-label="Fechar"
+                    >
+                        <X class="size-4" />
+                    </DialogClose>
+                </div>
+            </DialogContent>
+        </Dialog>
     </section>
 </template>
