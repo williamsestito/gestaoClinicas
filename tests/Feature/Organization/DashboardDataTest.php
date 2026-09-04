@@ -11,8 +11,10 @@ use App\Models\AppointmentRequest;
 use App\Models\LegalEntity;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\Patient;
 use App\Models\Professional;
 use App\Models\Role;
+use App\Models\Service;
 use App\Models\SiteSetting;
 use App\Models\Unit;
 use App\Models\UnitMembership;
@@ -87,6 +89,21 @@ it('groups pending appointment requests by professional for the admin/reception 
             ->where('pendingAppointmentRequestsByProfessional.1.count', 1));
 });
 
+it('falls back to a placeholder label instead of crashing when the requested professional was logically deleted', function () {
+    $ctx = ownerActingInOrganization();
+    $professional = Professional::factory()->for($ctx['organization'])->create(['display_name' => 'Dra Juliana Cruz']);
+    AppointmentRequest::factory()->for($ctx['organization'])->create(['professional_id' => $professional->id, 'name' => 'Lead 1']);
+    $professional->delete();
+
+    $this->actingAs($ctx['user'])
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('pendingAppointmentRequestsByProfessional', 1)
+            ->where('pendingAppointmentRequestsByProfessional.0.professional_name', 'Sem profissional definido')
+            ->where('pendingAppointmentRequestsByProfessional.0.count', 1));
+});
+
 it('never exposes the pending-appointment-request alert to a role without site.appointments.view', function () {
     $ctx = ownerActingInOrganization();
     seedSystemRoles($ctx['organization']);
@@ -142,6 +159,38 @@ it('shows today\'s organization-wide agenda, filterable by professional, for adm
         ->assertInertia(fn ($page) => $page
             ->has('orgAgenda.appointments', 1)
             ->where('orgAgenda.appointments.0.professional_name', 'Dra Juliana Cruz'));
+});
+
+it('keeps showing the real historical names in the organization agenda after the professional/patient/service/unit was logically deleted', function () {
+    $ctx = ownerActingInOrganization();
+    $professional = Professional::factory()->for($ctx['organization'])->create(['display_name' => 'Dra Juliana Cruz']);
+    $patient = Patient::factory()->for($ctx['organization'])->create(['name' => 'Ana Souza', 'preferred_name' => null]);
+    $service = Service::factory()->for($ctx['organization'])->create(['name' => 'Limpeza de pele']);
+    // Unidade própria (não a matriz do contexto ativo) — apagar a matriz
+    // quebraria a resolução de tenant/sessão, o que não é o que este teste
+    // quer exercitar.
+    $unit = Unit::factory()->for($ctx['organization'])->create(['name' => 'Unidade Norte']);
+    Appointment::factory()->for($ctx['organization'])->for($professional)->for($patient)->for($service)->for($unit, 'unit')->create([
+        'status' => AppointmentStatus::Confirmed,
+        'starts_at' => now()->setTime(9, 0),
+    ]);
+    $professional->delete();
+    $patient->delete();
+    $service->delete();
+    $unit->delete();
+
+    // Achado real: acessar a agenda quebrava com 500 assim que qualquer um
+    // desses vínculos era excluído logicamente — ver
+    // App\Actions\Organization\DeleteProfessionalAction, cujo próprio
+    // contrato é preservar o histórico, não escondê-lo.
+    $this->actingAs($ctx['user'])
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('orgAgenda.appointments.0.professional_name', 'Dra Juliana Cruz')
+            ->where('orgAgenda.appointments.0.patient_name', 'Ana Souza')
+            ->where('orgAgenda.appointments.0.service_name', 'Limpeza de pele')
+            ->where('orgAgenda.appointments.0.unit_name', 'Unidade Norte'));
 });
 
 it('never exposes the organization agenda to a role without appointments.view', function () {
