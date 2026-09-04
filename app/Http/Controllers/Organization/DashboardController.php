@@ -312,12 +312,12 @@ class DashboardController extends Controller
                 'ends_at' => $appointment->ends_at->toIso8601String(),
                 'status' => $appointment->status->value,
                 'status_label' => $appointment->status->label(),
-                'professional_name' => $appointment->professional?->display_name ?? 'Profissional removido',
-                'patient_name' => $appointment->patient
-                    ? ($appointment->patient->preferred_name ?: $appointment->patient->name)
-                    : 'Paciente removido',
-                'service_name' => $appointment->service?->name ?? 'Serviço removido',
-                'unit_name' => $appointment->unit?->name ?? 'Unidade removida',
+                'professional_name' => $appointment->professional === null ? 'Profissional removido' : $appointment->professional->display_name,
+                'patient_name' => $appointment->patient === null
+                    ? 'Paciente removido'
+                    : ($appointment->patient->preferred_name ?: $appointment->patient->name),
+                'service_name' => $appointment->service === null ? 'Serviço removido' : $appointment->service->name,
+                'unit_name' => $appointment->unit === null ? 'Unidade removida' : $appointment->unit->name,
             ])->values(),
         ];
     }
@@ -355,7 +355,7 @@ class DashboardController extends Controller
 
         return [
             'professional_id' => $first->professional_id,
-            'professional_name' => $first->professional?->display_name ?? 'Sem profissional definido',
+            'professional_name' => $first->professional === null ? 'Sem profissional definido' : $first->professional->display_name,
             'count' => $requests->count(),
             'requests' => $requests->take(5)->map(fn (AppointmentRequest $appointmentRequest) => [
                 'id' => $appointmentRequest->id,

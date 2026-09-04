@@ -130,7 +130,7 @@ jobs:
       - name: Wait for PostgreSQL
         run: |
           for i in $(seq 1 30); do
-            if pg_isready -h 127.0.0.1 -p 5432 -U gestao_clinicas; then
+            if pg_isready -h 127.0.0.1 -p 5432 -U gestao_clinicas -d gestao_clinicas_test; then
               exit 0
             fi
             sleep 2
