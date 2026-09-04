@@ -66,6 +66,7 @@ function makeRequest(
         updated_at: '2026-07-20T10:00:00Z',
         professional_id: 'prof-1',
         professional_name: 'Dra Juliana Cruz',
+        professional_removed: false,
         unit_id: null,
         unit_name: null,
         preferred_service_id: null,
@@ -236,6 +237,45 @@ describe('settings/site/appointment-requests/Index', () => {
         ]);
 
         expect(wrapper.text()).toContain('Profissional: Dra Juliana Cruz');
+    });
+
+    it('warns and offers reassignment when the requested professional no longer exists in the system', async () => {
+        const wrapper = mountIndex([
+            makeRequest({
+                professional_name: 'Dra Juliana Cruz',
+                professional_removed: true,
+            }),
+        ]);
+
+        expect(wrapper.text()).toContain(
+            'Profissional "Dra Juliana Cruz" não faz mais parte da equipe.',
+        );
+        expect(wrapper.text()).not.toContain('Profissional: Dra Juliana Cruz');
+
+        const selects = wrapper.findAllComponents({ name: 'SelectRoot' });
+        expect(selects).toHaveLength(2);
+        await selects[0].vm.$emit('update:modelValue', 'prof-2');
+
+        expect(routerMock.patch).toHaveBeenCalledWith(
+            expect.stringContaining('/professional'),
+            { professional_id: 'prof-2' },
+            expect.objectContaining({ preserveScroll: true }),
+        );
+    });
+
+    it('submits a null professional_id when reassigning to "sem profissional definido"', async () => {
+        const wrapper = mountIndex([
+            makeRequest({ professional_removed: true }),
+        ]);
+
+        const selects = wrapper.findAllComponents({ name: 'SelectRoot' });
+        await selects[0].vm.$emit('update:modelValue', 'none');
+
+        expect(routerMock.patch).toHaveBeenCalledWith(
+            expect.stringContaining('/professional'),
+            { professional_id: null },
+            expect.objectContaining({ preserveScroll: true }),
+        );
     });
 
     it('lists the professionals in the filter select and submits professional_id', async () => {

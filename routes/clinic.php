@@ -693,6 +693,8 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
             ->name('settings.site.appointment-requests.status');
         Route::patch('settings/site/appointment-requests/{appointmentRequest}/notes', [AppointmentRequestController::class, 'updateNotes'])
             ->name('settings.site.appointment-requests.notes');
+        Route::patch('settings/site/appointment-requests/{appointmentRequest}/professional', [AppointmentRequestController::class, 'updateProfessional'])
+            ->name('settings.site.appointment-requests.professional');
 
         Route::get('settings/audit', [AuditLogController::class, 'index'])
             ->name('settings.audit.index');

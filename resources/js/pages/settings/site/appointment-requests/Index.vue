@@ -26,6 +26,7 @@ import { create as createAppointment } from '@/routes/settings/appointments';
 import {
     index,
     notes,
+    professional as professionalRoute,
     status,
 } from '@/routes/settings/site/appointment-requests';
 import type {
@@ -133,6 +134,7 @@ const notesDrafts = reactive<Record<string, string>>(
     ),
 );
 const savingNotesId = ref<string | null>(null);
+const savingProfessionalId = ref<string | null>(null);
 
 function applyFilters() {
     router.get(
@@ -157,6 +159,21 @@ function updateStatus(
         status(request.id).url,
         { status: value },
         { preserveScroll: true, onFinish: () => (processingId.value = null) },
+    );
+}
+
+function reassignProfessional(
+    request: AppointmentRequestSummary,
+    professionalId: string | null,
+) {
+    savingProfessionalId.value = request.id;
+    router.patch(
+        professionalRoute(request.id).url,
+        { professional_id: professionalId },
+        {
+            preserveScroll: true,
+            onFinish: () => (savingProfessionalId.value = null),
+        },
     );
 }
 
@@ -309,12 +326,55 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                                     · {{ request.email }}</template
                                 >
                             </p>
-                            <p class="text-muted-foreground text-sm">
+                            <p
+                                v-if="!request.professional_removed"
+                                class="text-muted-foreground text-sm"
+                            >
                                 Profissional:
                                 {{
                                     request.professional_name ?? 'Não definido'
                                 }}
                             </p>
+                            <div v-else class="grid gap-1.5">
+                                <p class="text-destructive text-sm">
+                                    Profissional "{{
+                                        request.professional_name
+                                    }}" não faz mais parte da equipe.
+                                </p>
+                                <Select
+                                    :disabled="
+                                        savingProfessionalId === request.id
+                                    "
+                                    @update:model-value="
+                                        (value) =>
+                                            reassignProfessional(
+                                                request,
+                                                value === 'none'
+                                                    ? null
+                                                    : (value as string),
+                                            )
+                                    "
+                                >
+                                    <SelectTrigger class="w-full sm:w-64">
+                                        <SelectValue
+                                            placeholder="Reatribuir profissional"
+                                        />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none"
+                                            >Sem profissional
+                                            definido</SelectItem
+                                        >
+                                        <SelectItem
+                                            v-for="professional in professionals"
+                                            :key="professional.id"
+                                            :value="professional.id"
+                                        >
+                                            {{ professional.display_name }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <p
                                 v-if="request.service_name"
                                 class="text-muted-foreground text-sm"
