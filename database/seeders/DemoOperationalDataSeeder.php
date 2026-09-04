@@ -58,6 +58,19 @@ class DemoOperationalDataSeeder extends Seeder
             return;
         }
 
+        // Mesma trava de DemoOrganizationSeeder: sem a senha do admin da
+        // clínica configurada, ninguém consegue logar para ver esses dados
+        // mesmo assim — então nem os cria. Garante que `db:seed` "puro"
+        // (sem .env de desenvolvimento configurado, ex.: em CI) nunca cria
+        // usuário nenhum (ver tests/Feature/Console/DatabaseSeederTest.php).
+        if (blank(config('demo_environment.clinic_admin_password'))) {
+            $this->command->warn(
+                'DemoOperationalDataSeeder pulado — defina DEMO_CLINIC_ADMIN_PASSWORD no .env para popular dados operacionais de demonstração.',
+            );
+
+            return;
+        }
+
         $organization = Organization::query()->first();
 
         if (! $organization) {

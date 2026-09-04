@@ -16,6 +16,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Service;
 use App\Models\Specialty;
+use App\Models\User;
 use App\Models\WaitlistEntry;
 use Database\Seeders\DemoOperationalDataSeeder;
 use Database\Seeders\DemoOrganizationSeeder;
@@ -35,6 +36,8 @@ it('does nothing in production', function () {
 });
 
 it('does nothing when there is no demo organization yet', function () {
+    config(['demo_environment.clinic_admin_password' => 'senha-segura-123']);
+
     $this->seed(DemoOperationalDataSeeder::class);
 
     expect(Organization::query()->count())->toBe(0)
@@ -42,7 +45,20 @@ it('does nothing when there is no demo organization yet', function () {
         ->and(Specialty::query()->count())->toBe(0);
 });
 
+it('does nothing — and creates no user — when the clinic admin password is not configured', function () {
+    config(['demo_environment.clinic_admin_password' => null]);
+
+    $this->seed(DemoOrganizationSeeder::class);
+    $this->seed(DemoOperationalDataSeeder::class);
+
+    expect(Organization::query()->count())->toBe(1)
+        ->and(User::query()->count())->toBe(0)
+        ->and(Specialty::query()->count())->toBe(0)
+        ->and(Professional::query()->count())->toBe(0);
+});
+
 it('creates a coherent set of operational data for the demo organization', function () {
+    config(['demo_environment.clinic_admin_password' => 'senha-segura-123']);
     $this->seed(DemoOrganizationSeeder::class);
     $this->seed(DemoOperationalDataSeeder::class);
 
@@ -89,6 +105,7 @@ it('creates a coherent set of operational data for the demo organization', funct
 });
 
 it('is idempotent — running it twice does not create duplicate records', function () {
+    config(['demo_environment.clinic_admin_password' => 'senha-segura-123']);
     $this->seed(DemoOrganizationSeeder::class);
     $this->seed(DemoOperationalDataSeeder::class);
 
