@@ -40,7 +40,7 @@ const mobileOpen = ref(false);
 
 <template>
     <header
-        class="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70"
+        class="border-border/60 bg-background/90 supports-[backdrop-filter]:bg-background/70 sticky top-0 z-40 border-b backdrop-blur"
     >
         <div
             class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6"
@@ -54,21 +54,21 @@ const mobileOpen = ref(false);
                 />
                 <AppLogoIcon
                     v-else
-                    class="size-9 rounded-lg fill-current text-primary"
+                    class="text-primary size-9 rounded-lg fill-current"
                     aria-hidden="true"
                 />
                 <span class="truncate">{{ title }}</span>
             </a>
 
             <nav
-                class="hidden items-center gap-6 text-sm font-medium text-muted-foreground lg:flex"
+                class="text-muted-foreground hidden items-center gap-6 text-sm font-medium lg:flex"
                 aria-label="Seções da página"
             >
                 <a
                     v-for="link in navLinks"
                     :key="link.type"
                     :href="`#${link.type}`"
-                    class="transition-colors hover:text-foreground"
+                    class="hover:text-foreground transition-colors"
                 >
                     {{ link.label }}
                 </a>
@@ -112,7 +112,7 @@ const mobileOpen = ref(false);
                     >
                         <a
                             :href="`#${link.type}`"
-                            class="rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+                            class="hover:bg-muted rounded-md px-3 py-2 text-sm font-medium"
                         >
                             {{ link.label }}
                         </a>

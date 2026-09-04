@@ -44,7 +44,7 @@ function submit() {
     <div class="flex flex-col space-y-6">
         <div>
             <h1 class="text-xl font-semibold">Editar entidade legal</h1>
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 {{ legalEntity.document }}
             </p>
         </div>

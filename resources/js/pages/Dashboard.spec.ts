@@ -159,10 +159,7 @@ describe('Dashboard', () => {
             .find('select')
             .findAll('option')
             .map((option) => option.text());
-        expect(options).toEqual([
-            'Todos os profissionais',
-            'Dra Juliana Cruz',
-        ]);
+        expect(options).toEqual(['Todos os profissionais', 'Dra Juliana Cruz']);
     });
 
     it('hides the organization agenda card when orgAgenda is null', () => {

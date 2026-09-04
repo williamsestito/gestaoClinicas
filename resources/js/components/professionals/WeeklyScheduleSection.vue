@@ -231,7 +231,7 @@ function submitCopy() {
         <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
                 <h3 class="text-sm font-semibold">{{ unit.unit.name }}</h3>
-                <p class="text-xs text-muted-foreground">
+                <p class="text-muted-foreground text-xs">
                     Fuso: {{ unit.unit.timezone }}
                     <span v-if="unit.unit_link_status === 'inactive'">
                         · Vínculo inativo</span
@@ -252,7 +252,7 @@ function submitCopy() {
         <div class="overflow-x-auto rounded-md border">
             <table class="w-full text-sm">
                 <thead
-                    class="border-b bg-muted/50 text-left text-muted-foreground"
+                    class="bg-muted/50 text-muted-foreground border-b text-left"
                 >
                     <tr>
                         <th class="px-3 py-2 font-medium">Dia da semana</th>
@@ -275,7 +275,7 @@ function submitCopy() {
                             </td>
                             <td
                                 colspan="3"
-                                class="px-3 py-2.5 align-top text-muted-foreground"
+                                class="text-muted-foreground px-3 py-2.5 align-top"
                             >
                                 {{
                                     openingHoursFor(day.value).length === 0
@@ -532,7 +532,7 @@ function submitCopy() {
                 <div
                     v-if="copyErrors.length > 0"
                     role="alert"
-                    class="grid gap-1 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+                    class="border-destructive/50 bg-destructive/10 text-destructive grid gap-1 rounded-md border p-3 text-sm"
                 >
                     <p v-for="(message, index) in copyErrors" :key="index">
                         {{ message }}

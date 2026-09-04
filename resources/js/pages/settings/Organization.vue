@@ -50,7 +50,7 @@ function submit() {
             description="Dados gerais da sua organização"
         />
 
-        <p v-if="!canUpdate" class="text-sm text-muted-foreground">
+        <p v-if="!canUpdate" class="text-muted-foreground text-sm">
             Você não tem permissão para alterar estes dados.
         </p>
 
@@ -106,7 +106,7 @@ function submit() {
                     <Label for="org-allow-overlap"
                         >Permitir encaixe na agenda</Label
                     >
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         Quando ativado, a agenda deixa de bloquear sobreposição
                         de horário do mesmo profissional (ex.: encaixe de
                         urgência). Recursos (salas/equipamentos) continuam

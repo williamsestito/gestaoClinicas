@@ -102,7 +102,7 @@ function restore(link: SpecialtyLink) {
 
 <template>
     <div class="grid gap-4">
-        <div v-if="links.length === 0" class="text-sm text-muted-foreground">
+        <div v-if="links.length === 0" class="text-muted-foreground text-sm">
             Nenhuma especialidade vinculada ainda.
         </div>
 
@@ -117,11 +117,11 @@ function restore(link: SpecialtyLink) {
                         {{ link.specialty.name }}
                         <span
                             v-if="link.is_primary"
-                            class="ml-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
+                            class="bg-primary/10 text-primary ml-1 rounded px-1.5 py-0.5 text-xs"
                             >Principal</span
                         >
                     </p>
-                    <p class="text-xs text-muted-foreground">
+                    <p class="text-muted-foreground text-xs">
                         {{
                             link.deleted_at
                                 ? 'Excluído'
@@ -192,7 +192,7 @@ function restore(link: SpecialtyLink) {
                 <select
                     id="specialty-select"
                     v-model="form.specialty_id"
-                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
                 >
                     <option value="">Selecione uma especialidade</option>
                     <option
@@ -212,7 +212,7 @@ function restore(link: SpecialtyLink) {
                 Adicionar
             </Button>
         </form>
-        <p v-else class="text-sm text-muted-foreground">
+        <p v-else class="text-muted-foreground text-sm">
             Não há especialidades ativas disponíveis para adicionar.
         </p>
 

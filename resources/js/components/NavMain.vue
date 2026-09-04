@@ -93,7 +93,7 @@ function setGroupOpen(group: NavGroup, value: boolean) {
                             <component :is="item.icon" />
                             <span>{{ item.title }}</span>
                             <span
-                                class="ml-auto rounded bg-sidebar-accent px-1.5 py-0.5 text-[10px] font-medium text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden"
+                                class="bg-sidebar-accent text-sidebar-accent-foreground ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium group-data-[collapsible=icon]:hidden"
                             >
                                 Em breve
                             </span>

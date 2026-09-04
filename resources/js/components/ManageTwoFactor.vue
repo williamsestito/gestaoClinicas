@@ -39,7 +39,7 @@ onUnmounted(() => clearTwoFactorAuthData());
             v-if="!twoFactorEnabled"
             class="flex flex-col items-start justify-start space-y-4"
         >
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 Ao ativar a autenticação de dois fatores, você será solicitado a
                 informar um PIN seguro durante o login. Esse PIN pode ser obtido
                 em um aplicativo compatível com TOTP no seu celular.
@@ -63,7 +63,7 @@ onUnmounted(() => clearTwoFactorAuthData());
         </div>
 
         <div v-else class="flex flex-col items-start justify-start space-y-4">
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 Você será solicitado a informar um PIN seguro e aleatório
                 durante o login, que pode ser obtido no aplicativo compatível
                 com TOTP no seu celular.

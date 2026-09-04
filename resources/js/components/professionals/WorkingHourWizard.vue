@@ -161,7 +161,7 @@ function submit() {
         <WizardSteps :steps="STEP_TITLES" :current="step" />
 
         <div v-if="step === 0" class="grid gap-4">
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 Defina o período em que esses horários valem. Fora dessa
                 vigência, o profissional não aparece como disponível.
             </p>
@@ -188,7 +188,7 @@ function submit() {
         </div>
 
         <div v-else-if="step === 1" class="grid gap-4">
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 Segunda a sexta já vem marcado como sugestão. Marque sábado e/ou
                 domingo somente se o profissional atender nesses dias.
             </p>
@@ -216,7 +216,7 @@ function submit() {
         </div>
 
         <div v-else-if="step === 2" class="grid gap-4">
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 Esses intervalos se aplicam a todos os dias selecionados na
                 etapa anterior. Adicione mais de um intervalo para representar
                 um intervalo de almoço, por exemplo.
@@ -290,7 +290,7 @@ function submit() {
                     {{ estimatedDays }}
                 </p>
             </div>
-            <p class="text-xs text-muted-foreground">
+            <p class="text-muted-foreground text-xs">
                 Essa estimativa considera só os dias da semana escolhidos dentro
                 da vigência — bloqueios de data já cadastrados são aplicados
                 automaticamente na disponibilidade final, sem precisar

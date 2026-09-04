@@ -185,13 +185,13 @@ function restore(entity: EditableLegalEntity) {
         >
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-sm text-muted-foreground">Total</p>
+                    <p class="text-muted-foreground text-sm">Total</p>
                     <p class="text-2xl font-semibold">{{ indicators.total }}</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-sm text-muted-foreground">Ativas</p>
+                    <p class="text-muted-foreground text-sm">Ativas</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.active }}
                     </p>
@@ -199,7 +199,7 @@ function restore(entity: EditableLegalEntity) {
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-sm text-muted-foreground">Inativas</p>
+                    <p class="text-muted-foreground text-sm">Inativas</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.inactive }}
                     </p>
@@ -207,7 +207,7 @@ function restore(entity: EditableLegalEntity) {
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-sm text-muted-foreground">Removidas</p>
+                    <p class="text-muted-foreground text-sm">Removidas</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.deleted }}
                     </p>
@@ -221,7 +221,7 @@ function restore(entity: EditableLegalEntity) {
         >
             <div class="relative sm:max-w-xs sm:flex-1">
                 <Search
-                    class="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground"
+                    class="text-muted-foreground pointer-events-none absolute left-2.5 top-2.5 size-4"
                 />
                 <Input
                     v-model="search"
@@ -234,7 +234,7 @@ function restore(entity: EditableLegalEntity) {
             <select
                 v-model="statusFilter"
                 aria-label="Filtrar entidades legais por status"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option value="all">Todas</option>
                 <option value="active">Ativas</option>
@@ -243,12 +243,12 @@ function restore(entity: EditableLegalEntity) {
             </select>
 
             <label
-                class="flex items-center gap-2 text-sm text-muted-foreground"
+                class="text-muted-foreground flex items-center gap-2 text-sm"
             >
                 <input
                     v-model="onlyPrimary"
                     type="checkbox"
-                    class="size-4 rounded border-input"
+                    class="border-input size-4 rounded"
                 />
                 Somente principal
             </label>
@@ -276,7 +276,7 @@ function restore(entity: EditableLegalEntity) {
             <div class="hidden overflow-x-auto rounded-md border md:block">
                 <table class="w-full text-sm">
                     <thead
-                        class="border-b bg-muted/50 text-left text-muted-foreground"
+                        class="bg-muted/50 text-muted-foreground border-b text-left"
                     >
                         <tr>
                             <th class="px-4 py-2 font-medium">
@@ -300,10 +300,10 @@ function restore(entity: EditableLegalEntity) {
                             <td class="px-4 py-3 font-medium">
                                 {{ entity.legal_name }}
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 {{ entity.document }}
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 <template v-if="entity.address">
                                     {{ entity.address.city }}/{{
                                         entity.address.state
@@ -311,7 +311,7 @@ function restore(entity: EditableLegalEntity) {
                                 </template>
                                 <template v-else>—</template>
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 {{ entity.phone || entity.email || '—' }}
                             </td>
                             <td class="px-4 py-3">
@@ -351,7 +351,7 @@ function restore(entity: EditableLegalEntity) {
                                 <p class="font-medium">
                                     {{ entity.legal_name }}
                                 </p>
-                                <p class="text-sm text-muted-foreground">
+                                <p class="text-muted-foreground text-sm">
                                     {{ entity.document }}
                                 </p>
                             </div>
@@ -376,7 +376,7 @@ function restore(entity: EditableLegalEntity) {
                             />
                         </div>
 
-                        <p class="text-sm text-muted-foreground">
+                        <p class="text-muted-foreground text-sm">
                             <template v-if="entity.address"
                                 >{{ entity.address.city }}/{{
                                     entity.address.state
@@ -394,7 +394,7 @@ function restore(entity: EditableLegalEntity) {
 
         <p
             v-if="hasAnyEntities && hasActiveFilters"
-            class="text-sm text-muted-foreground"
+            class="text-muted-foreground text-sm"
         >
             {{ filteredEntities.length }} de {{ indicators.total }} entidades
             legais

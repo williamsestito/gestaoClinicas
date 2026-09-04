@@ -121,7 +121,7 @@ function submit() {
                         v-model="form.official_domain"
                         placeholder="clinicaexemplo.com.br"
                     />
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         Apenas o domínio, sem "https://". Em ambiente local, a
                         URL de desenvolvimento é usada no lugar deste campo.
                     </p>
@@ -154,7 +154,7 @@ function submit() {
                 <div class="grid gap-2">
                     <Label for="meta_title">Título para buscadores</Label>
                     <Input id="meta_title" v-model="form.meta_title" />
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         Se vazio, usa o título da página inicial.
                     </p>
                     <InputError :message="form.errors.meta_title" />
@@ -189,7 +189,7 @@ function submit() {
                         v-model="form.focus_keywords"
                         rows="2"
                     />
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         Não é a antiga meta tag "keywords" — serve só para
                         orientar títulos e conteúdo.
                     </p>
@@ -220,7 +220,7 @@ function submit() {
                             </SelectItem>
                         </SelectContent>
                     </Select>
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         Em ambiente local, a indexação é sempre bloqueada,
                         independentemente desta configuração.
                     </p>
@@ -321,7 +321,7 @@ function submit() {
 
             <section class="space-y-4">
                 <h2 class="text-lg font-semibold">Marketing</h2>
-                <p class="text-sm text-muted-foreground">
+                <p class="text-muted-foreground text-sm">
                     Nenhum script é ativado sem configuração válida e sem marcar
                     a opção correspondente como ativa.
                 </p>
@@ -344,7 +344,7 @@ function submit() {
                             </SelectItem>
                         </SelectContent>
                     </Select>
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         Evite instalar Google Tag e Google Tag Manager ao mesmo
                         tempo sem uma estratégia definida.
                     </p>

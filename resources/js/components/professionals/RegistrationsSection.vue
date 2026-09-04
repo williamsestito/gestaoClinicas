@@ -163,7 +163,7 @@ async function revealNumber(registration: RegistrationRow) {
     <div class="grid gap-4">
         <div
             v-if="registrations.length === 0"
-            class="text-sm text-muted-foreground"
+            class="text-muted-foreground text-sm"
         >
             Nenhum registro profissional cadastrado ainda.
         </div>
@@ -182,11 +182,11 @@ async function revealNumber(registration: RegistrationRow) {
                         >
                         <span
                             v-if="registration.is_primary"
-                            class="ml-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
+                            class="bg-primary/10 text-primary ml-1 rounded px-1.5 py-0.5 text-xs"
                             >Principal</span
                         >
                     </p>
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         {{
                             revealedNumbers[registration.id] ??
                             registration.masked_registration_number
@@ -197,7 +197,7 @@ async function revealNumber(registration: RegistrationRow) {
                                 !revealedNumbers[registration.id]
                             "
                             type="button"
-                            class="ml-1 text-xs text-primary underline"
+                            class="text-primary ml-1 text-xs underline"
                             @click="revealNumber(registration)"
                         >
                             Ver número completo

@@ -38,7 +38,7 @@ function selectProfessional(professional: PublicProfessional) {
             <div
                 v-for="professional in professionals"
                 :key="professional.id"
-                class="flex flex-col items-center rounded-(--landing-radius-md) border border-border bg-card p-6 text-center shadow-sm"
+                class="rounded-(--landing-radius-md) border-border bg-card flex flex-col items-center border p-6 text-center shadow-sm"
             >
                 <img
                     v-if="professional.photo_url"
@@ -49,30 +49,30 @@ function selectProfessional(professional: PublicProfessional) {
                 />
                 <div
                     v-else
-                    class="flex size-24 items-center justify-center rounded-full bg-muted text-muted-foreground"
+                    class="bg-muted text-muted-foreground flex size-24 items-center justify-center rounded-full"
                 >
                     <User class="size-10" />
                 </div>
 
                 <h3 class="mt-4 font-semibold">{{ professional.name }}</h3>
-                <p v-if="professional.role_title" class="text-sm text-primary">
+                <p v-if="professional.role_title" class="text-primary text-sm">
                     {{ professional.role_title }}
                 </p>
                 <p
                     v-if="professional.specialty"
-                    class="text-sm text-muted-foreground"
+                    class="text-muted-foreground text-sm"
                 >
                     {{ professional.specialty }}
                 </p>
                 <p
                     v-if="professional.professional_register"
-                    class="text-xs text-muted-foreground"
+                    class="text-muted-foreground text-xs"
                 >
                     {{ professional.professional_register }}
                 </p>
                 <p
                     v-if="professional.bio"
-                    class="mt-2 text-sm text-muted-foreground"
+                    class="text-muted-foreground mt-2 text-sm"
                 >
                     {{ professional.bio }}
                 </p>
@@ -83,7 +83,7 @@ function selectProfessional(professional: PublicProfessional) {
                         professional.instagram_url ||
                         professional.linkedin_url
                     "
-                    class="mt-3 flex justify-center gap-3 text-muted-foreground"
+                    class="text-muted-foreground mt-3 flex justify-center gap-3"
                 >
                     <a
                         v-if="professional.facebook_url"

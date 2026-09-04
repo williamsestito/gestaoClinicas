@@ -147,14 +147,14 @@ function chooseTimeForScheduling(slot: {
 
 <template>
     <div
-        class="mb-10 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8"
+        class="border-border bg-card mb-10 rounded-2xl border p-6 shadow-sm sm:p-8"
     >
         <div class="mb-6">
             <p class="landing-eyebrow mb-2">Consulte a disponibilidade</p>
             <h3 class="text-xl font-semibold tracking-tight">
                 Encontre um horário
             </h3>
-            <p class="mt-1 text-sm text-muted-foreground">
+            <p class="text-muted-foreground mt-1 text-sm">
                 Selecione a unidade, a especialidade e o serviço para ver as
                 datas e horários teoricamente disponíveis.
             </p>
@@ -162,7 +162,7 @@ function chooseTimeForScheduling(slot: {
 
         <div
             v-if="units.length === 0 && !isLoading('units')"
-            class="text-sm text-muted-foreground"
+            class="text-muted-foreground text-sm"
         >
             Nenhuma unidade disponível para consulta no momento.
         </div>
@@ -260,7 +260,7 @@ function chooseTimeForScheduling(slot: {
                         services.length === 0 &&
                         !isLoading('services')
                     "
-                    class="text-xs text-muted-foreground"
+                    class="text-muted-foreground text-xs"
                 >
                     Nenhum serviço disponível para os filtros selecionados.
                 </p>
@@ -330,7 +330,7 @@ function chooseTimeForScheduling(slot: {
 
                 <div
                     v-if="isLoading('dates')"
-                    class="flex items-center gap-2 text-sm text-muted-foreground"
+                    class="text-muted-foreground flex items-center gap-2 text-sm"
                     aria-live="polite"
                 >
                     <Loader2 class="size-4 animate-spin" />
@@ -341,7 +341,7 @@ function chooseTimeForScheduling(slot: {
                     <span
                         v-for="label in ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']"
                         :key="label"
-                        class="text-xs font-medium text-muted-foreground"
+                        class="text-muted-foreground text-xs font-medium"
                         >{{ label }}</span
                     >
                     <template
@@ -362,8 +362,8 @@ function chooseTimeForScheduling(slot: {
                             class="rounded-md py-1.5 text-sm"
                             :class="[
                                 cell.isAvailable
-                                    ? 'cursor-pointer bg-primary/10 hover:bg-primary/20'
-                                    : 'cursor-not-allowed text-muted-foreground/50',
+                                    ? 'bg-primary/10 hover:bg-primary/20 cursor-pointer'
+                                    : 'text-muted-foreground/50 cursor-not-allowed',
                                 selectedDate === cell.date &&
                                     'bg-primary text-primary-foreground hover:bg-primary',
                             ]"
@@ -383,7 +383,7 @@ function chooseTimeForScheduling(slot: {
 
                 <div
                     v-if="isLoading('times')"
-                    class="flex items-center gap-2 text-sm text-muted-foreground"
+                    class="text-muted-foreground flex items-center gap-2 text-sm"
                     aria-live="polite"
                 >
                     <Loader2 class="size-4 animate-spin" />
@@ -392,7 +392,7 @@ function chooseTimeForScheduling(slot: {
 
                 <p
                     v-else-if="times.length === 0"
-                    class="text-sm text-muted-foreground"
+                    class="text-muted-foreground text-sm"
                 >
                     Nenhum horário disponível para os filtros selecionados.
                 </p>
@@ -417,7 +417,7 @@ function chooseTimeForScheduling(slot: {
 
                 <p
                     v-if="times.length > 0"
-                    class="text-xs text-muted-foreground"
+                    class="text-muted-foreground text-xs"
                 >
                     Escolha um horário para preencher automaticamente seus dados
                     de contato abaixo. Nada é reservado agora — o
@@ -426,7 +426,7 @@ function chooseTimeForScheduling(slot: {
                 </p>
             </div>
 
-            <p v-if="error" role="alert" class="text-sm text-destructive">
+            <p v-if="error" role="alert" class="text-destructive text-sm">
                 {{ error }}
             </p>
         </div>

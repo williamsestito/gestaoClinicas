@@ -68,11 +68,7 @@ describe('settings/patients/Index', () => {
             .findAll('option')
             .map((option) => option.text());
 
-        expect(options).toEqual([
-            'Todos',
-            'Dra Juliana Cruz',
-            'Dr João Paiva',
-        ]);
+        expect(options).toEqual(['Todos', 'Dra Juliana Cruz', 'Dr João Paiva']);
     });
 
     it('submits the search/status/professional filters via router.get', async () => {

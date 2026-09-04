@@ -82,7 +82,7 @@ function statusVariant(
         <div v-else class="overflow-x-auto rounded-lg border">
             <table class="w-full text-sm">
                 <thead
-                    class="bg-muted/50 text-left text-xs text-muted-foreground uppercase"
+                    class="bg-muted/50 text-muted-foreground text-left text-xs uppercase"
                 >
                     <tr>
                         <th class="px-4 py-3">Paciente</th>
@@ -98,7 +98,7 @@ function statusVariant(
                         <td class="px-4 py-3 font-medium">
                             {{ sale.patient_name }}
                         </td>
-                        <td class="px-4 py-3 text-muted-foreground">
+                        <td class="text-muted-foreground px-4 py-3">
                             {{ sale.unit_name }}
                         </td>
                         <td class="px-4 py-3">
@@ -106,16 +106,16 @@ function statusVariant(
                                 {{ sale.status_label }}
                             </Badge>
                         </td>
-                        <td class="px-4 py-3 text-muted-foreground">
+                        <td class="text-muted-foreground px-4 py-3">
                             {{ formatCurrencyBrl(sale.total_cents) }}
                         </td>
-                        <td class="px-4 py-3 text-muted-foreground">
+                        <td class="text-muted-foreground px-4 py-3">
                             {{ formatDateTimeBr(sale.created_at) }}
                         </td>
                         <td class="px-4 py-3 text-right">
                             <Link
                                 :href="show(sale.id).url"
-                                class="text-sm font-medium text-primary hover:underline"
+                                class="text-primary text-sm font-medium hover:underline"
                             >
                                 Ver
                             </Link>
@@ -147,7 +147,7 @@ function statusVariant(
                 </Link>
                 <span
                     v-else
-                    class="pointer-events-none rounded-md px-3 py-1 text-sm text-muted-foreground opacity-50"
+                    class="text-muted-foreground pointer-events-none rounded-md px-3 py-1 text-sm opacity-50"
                     aria-disabled="true"
                     v-html="link.label"
                 />

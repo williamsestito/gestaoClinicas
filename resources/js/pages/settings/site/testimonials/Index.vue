@@ -219,7 +219,7 @@ function confirmDelete() {
                                 </span>
                             </div>
                             <p
-                                class="line-clamp-1 text-sm text-muted-foreground"
+                                class="text-muted-foreground line-clamp-1 text-sm"
                             >
                                 {{ item.content }}
                             </p>

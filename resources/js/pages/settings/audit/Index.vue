@@ -93,7 +93,7 @@ function formatValue(value: unknown): string {
             <div class="grid gap-2">
                 <label
                     for="audit-search"
-                    class="text-sm font-medium text-muted-foreground"
+                    class="text-muted-foreground text-sm font-medium"
                 >
                     Usuário
                 </label>
@@ -107,14 +107,14 @@ function formatValue(value: unknown): string {
             <div class="grid gap-2">
                 <label
                     for="audit-action"
-                    class="text-sm font-medium text-muted-foreground"
+                    class="text-muted-foreground text-sm font-medium"
                 >
                     Ação
                 </label>
                 <select
                     id="audit-action"
                     v-model="actionFilter"
-                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
                 >
                     <option value="">Todas</option>
                     <option
@@ -130,7 +130,7 @@ function formatValue(value: unknown): string {
             <div class="grid gap-2">
                 <label
                     for="audit-from"
-                    class="text-sm font-medium text-muted-foreground"
+                    class="text-muted-foreground text-sm font-medium"
                 >
                     De
                 </label>
@@ -140,7 +140,7 @@ function formatValue(value: unknown): string {
             <div class="grid gap-2">
                 <label
                     for="audit-to"
-                    class="text-sm font-medium text-muted-foreground"
+                    class="text-muted-foreground text-sm font-medium"
                 >
                     Até
                 </label>
@@ -166,7 +166,7 @@ function formatValue(value: unknown): string {
                     registros no total
                 </caption>
                 <thead
-                    class="border-b bg-muted/50 text-left text-muted-foreground"
+                    class="bg-muted/50 text-muted-foreground border-b text-left"
                 >
                     <tr>
                         <th class="px-4 py-2 font-medium">Usuário</th>
@@ -184,16 +184,16 @@ function formatValue(value: unknown): string {
                         class="border-b align-top last:border-0"
                     >
                         <td class="px-4 py-3 font-medium">{{ log.actor }}</td>
-                        <td class="px-4 py-3 text-muted-foreground">
+                        <td class="text-muted-foreground px-4 py-3">
                             {{ log.action_label }}
                         </td>
-                        <td class="px-4 py-3 text-muted-foreground">
+                        <td class="text-muted-foreground px-4 py-3">
                             {{ log.entity }}
                         </td>
-                        <td class="px-4 py-3 text-muted-foreground">
+                        <td class="text-muted-foreground px-4 py-3">
                             {{ log.unit ?? '—' }}
                         </td>
-                        <td class="px-4 py-3 text-muted-foreground">
+                        <td class="text-muted-foreground px-4 py-3">
                             {{
                                 log.created_at
                                     ? new Date(log.created_at).toLocaleString(
@@ -202,7 +202,7 @@ function formatValue(value: unknown): string {
                                     : '—'
                             }}
                         </td>
-                        <td class="px-4 py-3 text-xs text-muted-foreground">
+                        <td class="text-muted-foreground px-4 py-3 text-xs">
                             <Card v-if="log.after" class="mb-1">
                                 <CardContent class="space-y-0.5 p-2">
                                     <p
@@ -242,7 +242,7 @@ function formatValue(value: unknown): string {
                 </Link>
                 <span
                     v-else
-                    class="pointer-events-none rounded-md px-3 py-1 text-sm text-muted-foreground opacity-50"
+                    class="text-muted-foreground pointer-events-none rounded-md px-3 py-1 text-sm opacity-50"
                     aria-disabled="true"
                     v-html="link.label"
                 />

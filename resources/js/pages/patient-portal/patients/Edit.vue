@@ -89,7 +89,7 @@ function submitPhoto() {
             <CardContent
                 class="flex flex-col items-center gap-4 py-6 text-center sm:flex-row sm:text-left"
             >
-                <Avatar class="size-20 border border-border">
+                <Avatar class="border-border size-20 border">
                     <AvatarImage
                         v-if="patient.photo_url"
                         :src="patient.photo_url"
@@ -101,10 +101,10 @@ function submitPhoto() {
                 </Avatar>
                 <div>
                     <h1 class="text-xl font-semibold">{{ patient.name }}</h1>
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         Nascimento: {{ formatDateBr(patient.birth_date) }}
                     </p>
-                    <p class="mt-1 text-sm text-muted-foreground">
+                    <p class="text-muted-foreground mt-1 text-sm">
                         Mantenha seus dados sempre atualizados — é assim que a
                         clínica entra em contato com você.
                     </p>
@@ -115,7 +115,7 @@ function submitPhoto() {
         <Card>
             <CardHeader>
                 <CardTitle class="flex items-center gap-2 text-base">
-                    <User class="size-4 text-muted-foreground" />
+                    <User class="text-muted-foreground size-4" />
                     Foto de perfil
                 </CardTitle>
             </CardHeader>
@@ -144,7 +144,7 @@ function submitPhoto() {
             <Card>
                 <CardHeader>
                     <CardTitle class="flex items-center gap-2 text-base">
-                        <IdCard class="size-4 text-muted-foreground" />
+                        <IdCard class="text-muted-foreground size-4" />
                         Dados pessoais
                     </CardTitle>
                 </CardHeader>
@@ -181,7 +181,7 @@ function submitPhoto() {
             <Card>
                 <CardHeader>
                     <CardTitle class="flex items-center gap-2 text-base">
-                        <Phone class="size-4 text-muted-foreground" />
+                        <Phone class="text-muted-foreground size-4" />
                         Contato
                     </CardTitle>
                 </CardHeader>
@@ -207,7 +207,7 @@ function submitPhoto() {
             <Card>
                 <CardHeader>
                     <CardTitle class="flex items-center gap-2 text-base">
-                        <MapPin class="size-4 text-muted-foreground" />
+                        <MapPin class="text-muted-foreground size-4" />
                         Endereço (opcional)
                     </CardTitle>
                 </CardHeader>

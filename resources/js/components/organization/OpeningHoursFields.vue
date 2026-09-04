@@ -24,7 +24,7 @@ function removeRow(index: number) {
 
 <template>
     <div class="grid gap-3">
-        <div v-if="hours.length === 0" class="text-sm text-muted-foreground">
+        <div v-if="hours.length === 0" class="text-muted-foreground text-sm">
             Nenhum horário de funcionamento cadastrado ainda.
         </div>
 
@@ -35,7 +35,7 @@ function removeRow(index: number) {
         >
             <select
                 v-model.number="hour.day_of_week"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option
                     v-for="day in WEEKDAYS"
@@ -47,7 +47,7 @@ function removeRow(index: number) {
             </select>
 
             <Input v-model="hour.opens_at" type="time" class="w-32" />
-            <span class="text-sm text-muted-foreground">às</span>
+            <span class="text-muted-foreground text-sm">às</span>
             <Input v-model="hour.closes_at" type="time" class="w-32" />
 
             <Button

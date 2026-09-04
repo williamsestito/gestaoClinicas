@@ -186,7 +186,7 @@ function confirmAssetRemoval() {
         </PageHeader>
 
         <div class="flex items-center gap-2">
-            <span class="text-sm text-muted-foreground">Status:</span>
+            <span class="text-muted-foreground text-sm">Status:</span>
             <Badge :variant="site?.is_published ? 'default' : 'secondary'">
                 {{ site?.is_published ? 'Publicado' : 'Não publicado' }}
             </Badge>
@@ -196,9 +196,9 @@ function confirmAssetRemoval() {
             <p class="font-medium">Contato exibido publicamente</p>
             <p class="text-muted-foreground">
                 Vem da unidade matriz — para alterar, edite em
-                <span class="font-medium text-foreground">Unidades</span>.
+                <span class="text-foreground font-medium">Unidades</span>.
             </p>
-            <ul class="mt-2 space-y-1 text-muted-foreground">
+            <ul class="text-muted-foreground mt-2 space-y-1">
                 <li v-if="contact.phone">Telefone: {{ contact.phone }}</li>
                 <li v-if="contact.whatsapp">
                     WhatsApp: {{ contact.whatsapp }}
@@ -243,7 +243,7 @@ function confirmAssetRemoval() {
                 type="button"
                 variant="ghost"
                 size="sm"
-                class="-mt-4 w-fit text-destructive hover:text-destructive"
+                class="text-destructive hover:text-destructive -mt-4 w-fit"
                 @click="assetPendingRemoval = 'hero_image'"
             >
                 Remover banner desktop atual
@@ -262,7 +262,7 @@ function confirmAssetRemoval() {
                 type="button"
                 variant="ghost"
                 size="sm"
-                class="-mt-4 w-fit text-destructive hover:text-destructive"
+                class="text-destructive hover:text-destructive -mt-4 w-fit"
                 @click="assetPendingRemoval = 'hero_image_mobile'"
             >
                 Remover banner mobile atual
@@ -281,7 +281,7 @@ function confirmAssetRemoval() {
                 type="button"
                 variant="ghost"
                 size="sm"
-                class="-mt-4 w-fit text-destructive hover:text-destructive"
+                class="text-destructive hover:text-destructive -mt-4 w-fit"
                 @click="assetPendingRemoval = 'logo'"
             >
                 Remover logotipo atual
@@ -300,7 +300,7 @@ function confirmAssetRemoval() {
                 type="button"
                 variant="ghost"
                 size="sm"
-                class="-mt-4 w-fit text-destructive hover:text-destructive"
+                class="text-destructive hover:text-destructive -mt-4 w-fit"
                 @click="assetPendingRemoval = 'favicon'"
             >
                 Remover favicon atual

@@ -206,7 +206,7 @@ function closePackage(packageId: string) {
         <section class="grid gap-4">
             <div>
                 <h3 class="text-sm font-medium">Responsáveis</h3>
-                <p class="text-sm text-muted-foreground">
+                <p class="text-muted-foreground text-sm">
                     Responsável legal, financeiro e/ou representante autorizado.
                 </p>
             </div>
@@ -218,7 +218,7 @@ function closePackage(packageId: string) {
             >
                 <div>
                     <p class="font-medium">{{ responsible.name }}</p>
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         {{ responsible.relationship }} — {{ responsible.phone }}
                     </p>
                 </div>
@@ -325,7 +325,7 @@ function closePackage(packageId: string) {
         <section class="grid gap-4">
             <div>
                 <h3 class="text-sm font-medium">Contatos de emergência</h3>
-                <p class="text-sm text-muted-foreground">
+                <p class="text-muted-foreground text-sm">
                     Ao menos um é obrigatório.
                 </p>
             </div>
@@ -337,7 +337,7 @@ function closePackage(packageId: string) {
             >
                 <div>
                     <p class="font-medium">{{ contact.name }}</p>
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         {{ contact.relationship }} — {{ contact.phone_primary }}
                     </p>
                 </div>
@@ -415,7 +415,7 @@ function closePackage(packageId: string) {
         <section class="grid gap-4">
             <div>
                 <h3 class="text-sm font-medium">Pacotes de sessões</h3>
-                <p class="text-sm text-muted-foreground">
+                <p class="text-muted-foreground text-sm">
                     Sem cobrança/pagamento vinculado nesta etapa — apenas
                     contagem de sessões.
                 </p>
@@ -434,7 +434,7 @@ function closePackage(packageId: string) {
                             — {{ pkg.service_name }}</span
                         >
                     </p>
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         <span v-if="pkg.expires_at">
                             Expira em {{ pkg.expires_at }}
                         </span>
@@ -469,7 +469,7 @@ function closePackage(packageId: string) {
                         <select
                             id="new-package-service"
                             v-model="sessionPackageForm.service_id"
-                            class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                            class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
                         >
                             <option value="">Qualquer serviço</option>
                             <option

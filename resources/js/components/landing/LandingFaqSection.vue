@@ -24,7 +24,7 @@ defineProps<{
             </h2>
         </div>
 
-        <div class="divide-y divide-border rounded-2xl border border-border">
+        <div class="divide-border border-border divide-y rounded-2xl border">
             <Collapsible
                 v-for="faq in faqs"
                 :key="faq.id"
@@ -33,16 +33,16 @@ defineProps<{
                 class="px-5"
             >
                 <CollapsibleTrigger
-                    class="flex w-full items-center justify-between gap-4 rounded-sm py-4 text-left font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    class="focus-visible:ring-ring/50 flex w-full items-center justify-between gap-4 rounded-sm py-4 text-left font-medium outline-none focus-visible:ring-[3px]"
                 >
                     {{ faq.question }}
                     <ChevronDown
-                        class="size-4 shrink-0 text-muted-foreground transition-transform"
+                        class="text-muted-foreground size-4 shrink-0 transition-transform"
                         :class="{ 'rotate-180': open }"
                     />
                 </CollapsibleTrigger>
                 <CollapsibleContent
-                    class="pb-4 text-sm whitespace-pre-line text-muted-foreground"
+                    class="text-muted-foreground whitespace-pre-line pb-4 text-sm"
                 >
                     {{ faq.answer }}
                 </CollapsibleContent>

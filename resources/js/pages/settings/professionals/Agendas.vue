@@ -199,7 +199,7 @@ function goToDetails(row: AgendaRow) {
             <select
                 v-model="unitFilter"
                 aria-label="Filtrar agendas por unidade"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option value="all">Todas as unidades</option>
                 <option
@@ -214,7 +214,7 @@ function goToDetails(row: AgendaRow) {
             <select
                 v-model="specialtyFilter"
                 aria-label="Filtrar agendas por especialidade"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option value="all">Todas as especialidades</option>
                 <option
@@ -229,7 +229,7 @@ function goToDetails(row: AgendaRow) {
             <select
                 v-model="serviceFilter"
                 aria-label="Filtrar agendas por serviço"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option value="all">Todos os serviços</option>
                 <option
@@ -244,7 +244,7 @@ function goToDetails(row: AgendaRow) {
             <select
                 v-model="statusFilter"
                 aria-label="Filtrar agendas por status do profissional"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option value="all">Status: todos</option>
                 <option value="active">Ativos</option>
@@ -254,7 +254,7 @@ function goToDetails(row: AgendaRow) {
             <select
                 v-model="workingHoursFilter"
                 aria-label="Filtrar agendas por jornada"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option value="all">Com ou sem jornada</option>
                 <option value="with">Com jornada</option>
@@ -264,7 +264,7 @@ function goToDetails(row: AgendaRow) {
             <select
                 v-model="ongoingAbsenceFilter"
                 aria-label="Filtrar agendas por bloqueio em andamento"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option value="all">Com ou sem bloqueio</option>
                 <option value="with">Com bloqueio em andamento</option>
@@ -304,7 +304,7 @@ function goToDetails(row: AgendaRow) {
         <div v-else class="overflow-x-auto rounded-md border">
             <table class="w-full text-sm">
                 <thead
-                    class="border-b bg-muted/50 text-left text-muted-foreground"
+                    class="bg-muted/50 text-muted-foreground border-b text-left"
                 >
                     <tr>
                         <th class="px-4 py-2 font-medium">Profissional</th>
@@ -326,7 +326,7 @@ function goToDetails(row: AgendaRow) {
                     <tr
                         v-for="row in filteredProfessionals"
                         :key="row.id"
-                        class="cursor-pointer border-b last:border-0 hover:bg-muted/30"
+                        class="hover:bg-muted/30 cursor-pointer border-b last:border-0"
                         @click="goToDetails(row)"
                     >
                         <td class="px-4 py-3 font-medium">
@@ -339,19 +339,19 @@ function goToDetails(row: AgendaRow) {
                                 ⚠ sem jornada
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-muted-foreground">
+                        <td class="text-muted-foreground px-4 py-3">
                             {{ row.primary_specialty_name ?? '—' }}
                         </td>
-                        <td class="px-4 py-3 text-muted-foreground">
+                        <td class="text-muted-foreground px-4 py-3">
                             {{ row.unit_names.join(', ') || '—' }}
                         </td>
-                        <td class="px-4 py-3 text-muted-foreground">
+                        <td class="text-muted-foreground px-4 py-3">
                             {{ weekdayLabels(row.weekdays) }}
                         </td>
-                        <td class="px-4 py-3 text-muted-foreground">
+                        <td class="text-muted-foreground px-4 py-3">
                             {{ formatVigency(row) }}
                         </td>
-                        <td class="px-4 py-3 text-muted-foreground">
+                        <td class="text-muted-foreground px-4 py-3">
                             {{ row.ongoing_time_blocks_count }}
                         </td>
                         <td class="px-4 py-3">
@@ -363,7 +363,7 @@ function goToDetails(row: AgendaRow) {
                                 "
                                 :deleted-at="null"
                             />
-                            <p class="mt-1 text-xs text-muted-foreground">
+                            <p class="text-muted-foreground mt-1 text-xs">
                                 {{
                                     OPERATIONAL_STATUS_LABELS[
                                         row.operational_status
@@ -376,7 +376,7 @@ function goToDetails(row: AgendaRow) {
             </table>
         </div>
 
-        <p v-if="hasAny" class="text-sm text-muted-foreground">
+        <p v-if="hasAny" class="text-muted-foreground text-sm">
             {{ filteredProfessionals.length }} de {{ professionals.length }}
             agendas
         </p>

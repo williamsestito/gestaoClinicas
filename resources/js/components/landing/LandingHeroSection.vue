@@ -58,11 +58,11 @@ const heroBackgroundVars = computed(() => {
             aria-hidden="true"
         >
             <div
-                class="absolute -top-24 -left-24 size-96 rounded-full opacity-20 blur-3xl"
+                class="absolute -left-24 -top-24 size-96 rounded-full opacity-20 blur-3xl"
                 style="background-color: var(--landing-primary)"
             />
             <div
-                class="absolute -right-24 -bottom-24 size-96 rounded-full opacity-20 blur-3xl"
+                class="absolute -bottom-24 -right-24 size-96 rounded-full opacity-20 blur-3xl"
                 style="background-color: var(--landing-primary-dark)"
             />
         </div>
@@ -79,7 +79,7 @@ const heroBackgroundVars = computed(() => {
             class="relative py-16 sm:py-24"
             :class="
                 hasHeroImage &&
-                'md:flex md:min-h-[520px] md:items-center md:[background-image:var(--hero-bg-image)] md:bg-cover md:bg-center md:py-0 lg:min-h-[620px]'
+                'md:flex md:min-h-[520px] md:items-center md:bg-cover md:bg-center md:py-0 md:[background-image:var(--hero-bg-image)] lg:min-h-[620px]'
             "
             :style="heroBackgroundVars"
         >
@@ -99,13 +99,13 @@ const heroBackgroundVars = computed(() => {
                     </span>
 
                     <h1
-                        class="text-4xl leading-[0.98] font-bold tracking-tight text-balance sm:text-5xl"
+                        class="text-balance text-4xl font-bold leading-[0.98] tracking-tight sm:text-5xl"
                     >
                         {{ site.title }}
                     </h1>
                     <p
                         v-if="site.description"
-                        class="mx-auto max-w-2xl text-lg text-balance"
+                        class="mx-auto max-w-2xl text-balance text-lg"
                         :class="
                             hasHeroImage
                                 ? 'md:mx-0 md:text-white/90'
@@ -221,7 +221,7 @@ const heroBackgroundVars = computed(() => {
                     :src="site.hero_image_url ?? undefined"
                     :alt="site.title"
                     fetchpriority="high"
-                    class="aspect-4/5 w-full rounded-2xl border border-border object-cover shadow-lg sm:aspect-16/9"
+                    class="aspect-4/5 border-border sm:aspect-16/9 w-full rounded-2xl border object-cover shadow-lg"
                     @error="heroImageFailedToLoad = true"
                 />
             </picture>

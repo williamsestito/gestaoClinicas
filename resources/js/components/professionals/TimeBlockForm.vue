@@ -115,7 +115,7 @@ function submit() {
             <select
                 id="time-block-type"
                 v-model="form.type"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option
                     v-for="option in TYPE_OPTIONS"
@@ -156,7 +156,7 @@ function submit() {
             <select
                 id="time-block-unit"
                 v-model="form.unit_id"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option value="">Selecione uma unidade</option>
                 <option
@@ -169,7 +169,7 @@ function submit() {
             </select>
             <InputError :message="form.errors.unit_id" />
         </div>
-        <p v-else class="text-xs text-muted-foreground">
+        <p v-else class="text-muted-foreground text-xs">
             Datas e horários para todas as unidades usam o fuso da unidade
             principal do profissional.
         </p>

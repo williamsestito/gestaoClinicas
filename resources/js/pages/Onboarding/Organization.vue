@@ -197,7 +197,7 @@ const errorSummary = computed(() =>
             <h1 class="text-xl font-semibold">
                 Vamos configurar sua organização
             </h1>
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 Essas informações criam sua organização e a primeira unidade
                 (matriz).
             </p>
@@ -217,7 +217,7 @@ const errorSummary = computed(() =>
                 <div
                     v-if="errorSummary.length > 0"
                     role="alert"
-                    class="mb-4 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+                    class="border-destructive/50 bg-destructive/10 text-destructive mb-4 rounded-md border p-3 text-sm"
                 >
                     <p class="font-medium">
                         Corrija os campos abaixo antes de continuar:

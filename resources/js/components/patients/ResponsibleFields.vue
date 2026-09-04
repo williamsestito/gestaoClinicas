@@ -46,12 +46,12 @@ function removeRow(index: number) {
 
 <template>
     <div class="grid gap-4">
-        <p v-if="required" class="text-sm text-muted-foreground">
+        <p v-if="required" class="text-muted-foreground text-sm">
             Paciente menor de 18 anos — informe ao menos um responsável legal.
         </p>
         <div
             v-if="responsibles.length === 0"
-            class="text-sm text-muted-foreground"
+            class="text-muted-foreground text-sm"
         >
             Nenhum responsável adicionado ainda.
         </div>

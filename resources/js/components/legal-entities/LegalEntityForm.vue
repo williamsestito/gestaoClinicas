@@ -133,7 +133,7 @@ function submit() {
                 />
                 <InputError :message="createForm.errors.document" />
             </div>
-            <p v-else-if="legalEntity" class="text-sm text-muted-foreground">
+            <p v-else-if="legalEntity" class="text-muted-foreground text-sm">
                 {{ legalEntity.document }}
             </p>
 
@@ -199,7 +199,7 @@ function submit() {
         <div v-if="mode === 'create'" class="grid gap-4">
             <div>
                 <h3 class="text-sm font-medium">Endereço</h3>
-                <p class="text-sm text-muted-foreground">
+                <p class="text-muted-foreground text-sm">
                     Informe o CEP para preencher automaticamente; ajuste o que
                     for necessário.
                 </p>
@@ -221,7 +221,7 @@ function submit() {
         <div v-else-if="legalEntity" class="grid gap-4">
             <h3 class="text-sm font-medium">Endereço</h3>
             <Card v-if="legalEntity.address">
-                <CardContent class="py-4 text-sm text-muted-foreground">
+                <CardContent class="text-muted-foreground py-4 text-sm">
                     {{ legalEntity.address.street }},
                     {{ legalEntity.address.number }} —
                     {{ legalEntity.address.city }}/{{
@@ -229,10 +229,10 @@ function submit() {
                     }}
                 </CardContent>
             </Card>
-            <p v-else class="text-sm text-muted-foreground">
+            <p v-else class="text-muted-foreground text-sm">
                 Endereço não cadastrado.
             </p>
-            <p class="text-xs text-muted-foreground">
+            <p class="text-muted-foreground text-xs">
                 Endereço não é editável por aqui nesta etapa.
             </p>
         </div>

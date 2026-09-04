@@ -91,7 +91,7 @@ function submit() {
                 class="space-y-2"
             >
                 <p
-                    class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                    class="text-muted-foreground text-xs font-semibold uppercase tracking-wide"
                 >
                     {{ group }}
                 </p>
@@ -111,7 +111,7 @@ function submit() {
             </div>
             <InputError :message="form.errors.permissions" />
         </div>
-        <p v-else class="text-sm text-muted-foreground">
+        <p v-else class="text-muted-foreground text-sm">
             As permissões do papel "Proprietário" não podem ser alteradas — ele
             sempre tem acesso total à clínica.
         </p>

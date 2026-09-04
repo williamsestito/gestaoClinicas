@@ -145,7 +145,7 @@ function submit() {
     <div class="flex flex-col gap-6">
         <div>
             <h1 class="text-xl font-medium">Novo agendamento</h1>
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 Para {{ patient.name }}. A clínica confirma o horário antes de
                 ele valer como marcado.
             </p>
@@ -153,11 +153,11 @@ function submit() {
 
         <form class="flex max-w-2xl flex-col gap-6" @submit.prevent="submit">
             <div
-                class="grid gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm"
+                class="border-border bg-card grid gap-4 rounded-2xl border p-6 shadow-sm"
             >
                 <div
                     v-if="units.length === 0 && !isLoading('units')"
-                    class="text-sm text-muted-foreground"
+                    class="text-muted-foreground text-sm"
                 >
                     Nenhuma unidade disponível para agendamento no momento.
                 </div>
@@ -269,7 +269,7 @@ function submit() {
                                 services.length === 0 &&
                                 !isLoading('services')
                             "
-                            class="text-xs text-muted-foreground"
+                            class="text-muted-foreground text-xs"
                         >
                             Nenhum serviço disponível para os filtros
                             selecionados.
@@ -342,7 +342,7 @@ function submit() {
 
                         <div
                             v-if="isLoading('dates')"
-                            class="flex items-center gap-2 text-sm text-muted-foreground"
+                            class="text-muted-foreground flex items-center gap-2 text-sm"
                             aria-live="polite"
                         >
                             <Loader2 class="size-4 animate-spin" />
@@ -364,7 +364,7 @@ function submit() {
                                     'S',
                                 ]"
                                 :key="label"
-                                class="text-xs font-medium text-muted-foreground"
+                                class="text-muted-foreground text-xs font-medium"
                                 >{{ label }}</span
                             >
                             <template
@@ -385,8 +385,8 @@ function submit() {
                                     class="rounded-md py-1.5 text-sm"
                                     :class="[
                                         cell.isAvailable
-                                            ? 'cursor-pointer bg-primary/10 hover:bg-primary/20'
-                                            : 'cursor-not-allowed text-muted-foreground/50',
+                                            ? 'bg-primary/10 hover:bg-primary/20 cursor-pointer'
+                                            : 'text-muted-foreground/50 cursor-not-allowed',
                                         selectedDate === cell.date &&
                                             'bg-primary text-primary-foreground hover:bg-primary',
                                     ]"
@@ -409,7 +409,7 @@ function submit() {
 
                         <div
                             v-if="isLoading('times')"
-                            class="flex items-center gap-2 text-sm text-muted-foreground"
+                            class="text-muted-foreground flex items-center gap-2 text-sm"
                             aria-live="polite"
                         >
                             <Loader2 class="size-4 animate-spin" />
@@ -418,7 +418,7 @@ function submit() {
 
                         <p
                             v-else-if="times.length === 0"
-                            class="text-sm text-muted-foreground"
+                            class="text-muted-foreground text-sm"
                         >
                             Nenhum horário disponível para os filtros
                             selecionados.
@@ -451,7 +451,7 @@ function submit() {
                     <p
                         v-if="error"
                         role="alert"
-                        class="text-sm text-destructive"
+                        class="text-destructive text-sm"
                     >
                         {{ error }}
                     </p>
@@ -462,7 +462,7 @@ function submit() {
 
             <p
                 v-if="form.starts_at"
-                class="text-sm text-muted-foreground"
+                class="text-muted-foreground text-sm"
                 role="status"
             >
                 Horário selecionado: {{ formatSelectedDate() }} às

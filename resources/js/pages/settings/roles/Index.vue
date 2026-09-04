@@ -140,7 +140,7 @@ const hasFilteredResults = computed(() => filteredRoles.value.length > 0);
 
         <div v-if="hasAnyRoles" class="relative sm:max-w-xs">
             <Search
-                class="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground"
+                class="text-muted-foreground pointer-events-none absolute left-2.5 top-2.5 size-4"
             />
             <Input
                 v-model="search"
@@ -172,7 +172,7 @@ const hasFilteredResults = computed(() => filteredRoles.value.length > 0);
             <div class="hidden overflow-x-auto rounded-md border md:block">
                 <table class="w-full text-sm">
                     <thead
-                        class="border-b bg-muted/50 text-left text-muted-foreground"
+                        class="bg-muted/50 text-muted-foreground border-b text-left"
                     >
                         <tr>
                             <th class="px-4 py-2 font-medium">Nome</th>
@@ -194,13 +194,13 @@ const hasFilteredResults = computed(() => filteredRoles.value.length > 0);
                             <td class="px-4 py-3 font-medium">
                                 {{ role.name }}
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 {{ role.description || '—' }}
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 {{ role.permissions.length }}
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 {{ role.organization_memberships_count }}
                             </td>
                             <td class="px-4 py-3">
@@ -261,7 +261,7 @@ const hasFilteredResults = computed(() => filteredRoles.value.length > 0);
                                 <p class="font-medium">{{ role.name }}</p>
                                 <p
                                     v-if="role.description"
-                                    class="text-sm text-muted-foreground"
+                                    class="text-muted-foreground text-sm"
                                 >
                                     {{ role.description }}
                                 </p>
@@ -271,7 +271,7 @@ const hasFilteredResults = computed(() => filteredRoles.value.length > 0);
                             </Badge>
                         </div>
 
-                        <p class="text-sm text-muted-foreground">
+                        <p class="text-muted-foreground text-sm">
                             {{ role.permissions.length }} permissões ·
                             {{ role.organization_memberships_count }} usuário(s)
                         </p>

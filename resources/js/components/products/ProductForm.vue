@@ -106,7 +106,7 @@ function submit() {
 
         <div class="grid gap-4">
             <h3 class="text-sm font-medium">Preço e desconto</h3>
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 Modo simplificado: custo + margem desejada ajudam a calcular o
                 preço, mas o preço praticado é sempre o valor informado abaixo.
                 O desconto máximo é o limite que um desconto pode ultrapassar

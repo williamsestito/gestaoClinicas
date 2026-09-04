@@ -186,7 +186,7 @@ function confirmDelete() {
                         <p class="font-medium">{{ item.title }}</p>
                         <p
                             v-if="item.description"
-                            class="text-sm text-muted-foreground"
+                            class="text-muted-foreground text-sm"
                         >
                             {{ item.description }}
                         </p>

@@ -78,7 +78,7 @@ function submit() {
             <select
                 id="working-hour-weekday"
                 v-model.number="form.weekday"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option
                     v-for="option in WEEKDAY_OPTIONS"

@@ -272,7 +272,7 @@ function submitCopy() {
                                 <p class="font-medium">{{ item.name }}</p>
                                 <p
                                     v-if="item.role_title"
-                                    class="text-sm text-muted-foreground"
+                                    class="text-muted-foreground text-sm"
                                 >
                                     {{ item.role_title }}
                                 </p>
@@ -301,8 +301,8 @@ function submitCopy() {
                         />
                     </div>
 
-                    <div class="rounded-md border bg-muted/30 p-3 text-sm">
-                        <p class="mb-2 text-xs text-muted-foreground">
+                    <div class="bg-muted/30 rounded-md border p-3 text-sm">
+                        <p class="text-muted-foreground mb-2 text-xs">
                             O conteúdo público acima continua sendo gerenciado
                             de forma independente do cadastro operacional.
                         </p>
@@ -349,7 +349,7 @@ function submitCopy() {
                             <select
                                 v-model="linkSelection[item.id]"
                                 :aria-label="`Vincular ${item.name} a um profissional operacional`"
-                                class="h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 flex-1 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
                             >
                                 <option value="">
                                     Selecionar profissional operacional…

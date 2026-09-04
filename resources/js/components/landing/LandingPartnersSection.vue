@@ -19,7 +19,7 @@ defineProps<{
             </p>
 
             <div
-                class="flex [scrollbar-width:none] items-center gap-10 overflow-x-auto pb-2 sm:flex-wrap sm:justify-center [&::-webkit-scrollbar]:hidden"
+                class="flex items-center gap-10 overflow-x-auto pb-2 [scrollbar-width:none] sm:flex-wrap sm:justify-center [&::-webkit-scrollbar]:hidden"
             >
                 <component
                     :is="partner.url ? 'a' : 'div'"
@@ -39,7 +39,7 @@ defineProps<{
                     />
                     <span
                         v-else
-                        class="text-sm font-medium text-muted-foreground"
+                        class="text-muted-foreground text-sm font-medium"
                         >{{ partner.name }}</span
                     >
                 </component>

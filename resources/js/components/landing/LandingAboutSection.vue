@@ -23,7 +23,7 @@ const highlightedBenefits = computed(() => props.benefits.slice(0, 3));
     <section
         v-if="site.about_text"
         id="about"
-        class="scroll-mt-16 bg-muted/40 py-16"
+        class="bg-muted/40 scroll-mt-16 py-16"
     >
         <div
             class="mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2"
@@ -33,7 +33,7 @@ const highlightedBenefits = computed(() => props.benefits.slice(0, 3));
                 :src="site.hero_image_url"
                 :alt="site.title"
                 loading="lazy"
-                class="aspect-4/3 w-full rounded-2xl border border-border object-cover shadow-sm lg:order-first"
+                class="aspect-4/3 border-border w-full rounded-2xl border object-cover shadow-sm lg:order-first"
                 @error="heroImageFailedToLoad = true"
             />
 
@@ -55,7 +55,7 @@ const highlightedBenefits = computed(() => props.benefits.slice(0, 3));
                     >
                         <component
                             :is="benefitIconFor(benefit.icon)"
-                            class="mt-0.5 size-4 shrink-0 text-primary"
+                            class="text-primary mt-0.5 size-4 shrink-0"
                             aria-hidden="true"
                         />
                         <span>{{ benefit.title }}</span>
@@ -68,19 +68,19 @@ const highlightedBenefits = computed(() => props.benefits.slice(0, 3));
                 >
                     <div
                         v-if="site.mission_text"
-                        class="rounded-2xl border border-border bg-card p-5"
+                        class="border-border bg-card rounded-2xl border p-5"
                     >
                         <p class="landing-eyebrow mb-2">Missão</p>
-                        <p class="text-sm text-muted-foreground">
+                        <p class="text-muted-foreground text-sm">
                             {{ site.mission_text }}
                         </p>
                     </div>
                     <div
                         v-if="site.vision_text"
-                        class="rounded-2xl border border-border bg-card p-5"
+                        class="border-border bg-card rounded-2xl border p-5"
                     >
                         <p class="landing-eyebrow mb-2">Visão</p>
-                        <p class="text-sm text-muted-foreground">
+                        <p class="text-muted-foreground text-sm">
                             {{ site.vision_text }}
                         </p>
                     </div>

@@ -44,7 +44,7 @@ withDefaults(
                         <component :is="icon" class="size-4" />
                         <span
                             v-if="count > 0"
-                            class="absolute top-1 right-1 flex size-2 rounded-full bg-primary"
+                            class="bg-primary absolute right-1 top-1 flex size-2 rounded-full"
                             aria-hidden="true"
                         />
                     </Button>

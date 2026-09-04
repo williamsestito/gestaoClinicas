@@ -54,7 +54,7 @@ defineOptions({
     <div class="flex flex-col gap-6">
         <div>
             <h1 class="text-xl font-semibold">Bem-vindo(a) de volta</h1>
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 Acompanhe seus agendamentos e os de quem você cuida.
             </p>
         </div>
@@ -69,7 +69,7 @@ defineOptions({
                             :href="patientPortal.patients.edit(patient.id)"
                             class="group flex flex-1 items-center gap-3"
                         >
-                            <Avatar class="size-12 border border-border">
+                            <Avatar class="border-border size-12 border">
                                 <AvatarImage
                                     v-if="patient.photo_url"
                                     :src="patient.photo_url"
@@ -85,10 +85,10 @@ defineOptions({
                                 >
                                     {{ patient.name }}
                                     <ChevronRight
-                                        class="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                                        class="text-muted-foreground size-4 transition-transform group-hover:translate-x-0.5"
                                     />
                                 </p>
-                                <p class="text-sm text-muted-foreground">
+                                <p class="text-muted-foreground text-sm">
                                     Nascimento:
                                     {{ formatDateBr(patient.birth_date) }}
                                 </p>
@@ -100,11 +100,11 @@ defineOptions({
                     </div>
 
                     <div
-                        class="grid gap-3 border-t border-border pt-4 sm:grid-cols-2"
+                        class="border-border grid gap-3 border-t pt-4 sm:grid-cols-2"
                     >
                         <div>
                             <p
-                                class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                                class="text-muted-foreground text-xs font-medium uppercase tracking-wide"
                             >
                                 Próxima consulta
                             </p>
@@ -117,13 +117,13 @@ defineOptions({
                                 ·
                                 {{ patient.next_appointment.status_label }}
                             </p>
-                            <p v-else class="text-sm text-muted-foreground">
+                            <p v-else class="text-muted-foreground text-sm">
                                 Nenhuma agendada
                             </p>
                         </div>
                         <div>
                             <p
-                                class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                                class="text-muted-foreground text-xs font-medium uppercase tracking-wide"
                             >
                                 Última consulta
                             </p>
@@ -135,19 +135,19 @@ defineOptions({
                                     )
                                 }}
                             </p>
-                            <p v-else class="text-sm text-muted-foreground">
+                            <p v-else class="text-muted-foreground text-sm">
                                 Ainda sem histórico
                             </p>
                         </div>
                     </div>
 
                     <div
-                        class="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between"
+                        class="border-border flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between"
                     >
                         <Link
                             v-if="patient.pending_requests_count > 0"
                             :href="patientPortal.appointments.index(patient.id)"
-                            class="text-sm text-primary underline underline-offset-2"
+                            class="text-primary text-sm underline underline-offset-2"
                         >
                             {{ patient.pending_requests_count }}
                             pré-agendamento(s) aguardando confirmação
@@ -178,7 +178,7 @@ defineOptions({
             >
                 <div>
                     <p class="font-medium">Fale conosco</p>
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         {{ clinicContact.name }}
                     </p>
                 </div>

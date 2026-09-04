@@ -105,7 +105,7 @@ function formatPreferredDate(value: string | null): string | null {
                 >
                     <div class="space-y-1">
                         <p class="font-medium">{{ entry.patient_name }}</p>
-                        <p class="text-sm text-muted-foreground">
+                        <p class="text-muted-foreground text-sm">
                             {{ entry.service_name }}
                             <template v-if="entry.professional_name">
                                 — {{ entry.professional_name }}</template
@@ -114,18 +114,18 @@ function formatPreferredDate(value: string | null): string | null {
                         </p>
                         <p
                             v-if="formatPreferredDate(entry.preferred_date)"
-                            class="text-sm text-muted-foreground"
+                            class="text-muted-foreground text-sm"
                         >
                             Preferência:
                             {{ formatPreferredDate(entry.preferred_date) }}
                         </p>
                         <p
                             v-if="entry.notes"
-                            class="text-sm text-muted-foreground"
+                            class="text-muted-foreground text-sm"
                         >
                             "{{ entry.notes }}"
                         </p>
-                        <p class="text-xs text-muted-foreground">
+                        <p class="text-muted-foreground text-xs">
                             Adicionado em {{ formatDate(entry.created_at) }}
                         </p>
                     </div>
@@ -171,7 +171,7 @@ function formatPreferredDate(value: string | null): string | null {
                     <select
                         id="waitlist-unit"
                         v-model="form.unit_id"
-                        class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
                     >
                         <option value="" disabled>Selecione</option>
                         <option
@@ -189,7 +189,7 @@ function formatPreferredDate(value: string | null): string | null {
                     <select
                         id="waitlist-service"
                         v-model="form.service_id"
-                        class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
                     >
                         <option value="" disabled>Selecione</option>
                         <option
@@ -209,7 +209,7 @@ function formatPreferredDate(value: string | null): string | null {
                     <select
                         id="waitlist-professional"
                         v-model="form.professional_id"
-                        class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
                     >
                         <option value="">Qualquer profissional</option>
                         <option

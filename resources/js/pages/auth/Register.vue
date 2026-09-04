@@ -32,13 +32,13 @@ const accountType = ref<'clinic' | 'patient' | null>(null);
 
     <div v-if="accountType === null" class="grid gap-4">
         <Card
-            class="cursor-pointer transition-colors hover:border-primary"
+            class="hover:border-primary cursor-pointer transition-colors"
             data-test="account-type-clinic"
             @click="accountType = 'clinic'"
         >
             <CardContent class="py-4">
                 <p class="font-medium">Criar uma conta para minha clínica</p>
-                <p class="text-sm text-muted-foreground">
+                <p class="text-muted-foreground text-sm">
                     Cadastre sua clínica, empresa ou consultório para começar a
                     usar a plataforma.
                 </p>
@@ -46,10 +46,10 @@ const accountType = ref<'clinic' | 'patient' | null>(null);
         </Card>
 
         <Link :href="patientPortal.register()" data-test="account-type-patient">
-            <Card class="cursor-pointer transition-colors hover:border-primary">
+            <Card class="hover:border-primary cursor-pointer transition-colors">
                 <CardContent class="py-4">
                     <p class="font-medium">Acessar como paciente</p>
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         Cadastre-se para acompanhar seus dados e os de seus
                         dependentes.
                     </p>
@@ -57,7 +57,7 @@ const accountType = ref<'clinic' | 'patient' | null>(null);
             </Card>
         </Link>
 
-        <div class="text-center text-sm text-muted-foreground">
+        <div class="text-muted-foreground text-center text-sm">
             Já tem uma conta?
             <TextLink :href="login()" class="underline underline-offset-4"
                 >Entrar</TextLink
@@ -143,7 +143,7 @@ const accountType = ref<'clinic' | 'patient' | null>(null);
         </div>
 
         <div
-            class="flex justify-center gap-1 text-center text-sm text-muted-foreground"
+            class="text-muted-foreground flex justify-center gap-1 text-center text-sm"
         >
             <button
                 type="button"

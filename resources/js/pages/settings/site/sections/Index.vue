@@ -65,7 +65,7 @@ function submit() {
         <div class="max-w-2xl overflow-x-auto rounded-md border">
             <table class="w-full text-sm">
                 <thead
-                    class="border-b bg-muted/50 text-left text-muted-foreground"
+                    class="bg-muted/50 text-muted-foreground border-b text-left"
                 >
                     <tr>
                         <th class="px-3 py-2 font-medium">

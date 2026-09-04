@@ -23,10 +23,10 @@ defineProps<{
             <div
                 v-for="benefit in benefits"
                 :key="benefit.id"
-                class="rounded-2xl border border-border bg-card p-6 shadow-sm"
+                class="border-border bg-card rounded-2xl border p-6 shadow-sm"
             >
                 <div
-                    class="mb-4 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                    class="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-xl"
                 >
                     <component
                         :is="benefitIconFor(benefit.icon)"
@@ -36,7 +36,7 @@ defineProps<{
                 <h3 class="font-semibold">{{ benefit.title }}</h3>
                 <p
                     v-if="benefit.description"
-                    class="mt-1 text-sm text-muted-foreground"
+                    class="text-muted-foreground mt-1 text-sm"
                 >
                     {{ benefit.description }}
                 </p>

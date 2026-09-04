@@ -62,7 +62,7 @@ defineProps<{
             </div>
         </Form>
 
-        <div class="space-x-1 text-center text-sm text-muted-foreground">
+        <div class="text-muted-foreground space-x-1 text-center text-sm">
             <span>Ou, volte para</span>
             <TextLink :href="login()">entrar</TextLink>
         </div>

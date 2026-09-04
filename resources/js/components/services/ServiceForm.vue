@@ -203,7 +203,7 @@ function submit() {
 
         <div class="grid gap-4">
             <h3 class="text-sm font-medium">Preço e desconto</h3>
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 Modo simplificado: custo + margem desejada ajudam a calcular o
                 preço, mas o preço praticado é sempre o valor informado abaixo.
                 O desconto máximo é o limite que um desconto pode ultrapassar
@@ -271,7 +271,7 @@ function submit() {
             <h3 class="text-sm font-medium">Especialidades associadas</h3>
             <p
                 v-if="specialties.length === 0"
-                class="text-sm text-muted-foreground"
+                class="text-muted-foreground text-sm"
             >
                 Nenhuma especialidade ativa cadastrada ainda.
             </p>
@@ -283,7 +283,7 @@ function submit() {
                 >
                     <input
                         type="checkbox"
-                        class="size-4 rounded border-input"
+                        class="border-input size-4 rounded"
                         :checked="form.specialty_ids.includes(specialty.id)"
                         @change="
                             toggleSpecialty(
@@ -302,7 +302,7 @@ function submit() {
 
         <div class="grid gap-4">
             <h3 class="text-sm font-medium">Disponibilidade por unidade</h3>
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 Define em quais unidades este serviço poderá ser oferecido nas
                 próximas etapas (agenda). Isso não cria horários nem
                 disponibilidade de agenda agora.
@@ -343,7 +343,7 @@ function submit() {
                 >
                     <input
                         type="checkbox"
-                        class="size-4 rounded border-input"
+                        class="border-input size-4 rounded"
                         :checked="form.unit_ids.includes(unit.id)"
                         @change="
                             toggleUnit(
@@ -355,7 +355,7 @@ function submit() {
                     {{ unit.name }}
                     <span
                         v-if="!unit.is_active"
-                        class="text-xs text-muted-foreground"
+                        class="text-muted-foreground text-xs"
                         >(inativa)</span
                     >
                 </label>
@@ -367,7 +367,7 @@ function submit() {
 
         <div class="grid gap-4">
             <h3 class="text-sm font-medium">Configuração pública futura</h3>
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
                 Estas opções apenas preparam o serviço para integração futura
                 com o site da clínica — não publicam nada automaticamente.
             </p>
@@ -375,7 +375,7 @@ function submit() {
                 <input
                     v-model="form.is_public"
                     type="checkbox"
-                    class="size-4 rounded border-input"
+                    class="border-input size-4 rounded"
                 />
                 Exibir publicamente no futuro
             </label>
@@ -383,7 +383,7 @@ function submit() {
                 <input
                     v-model="form.requires_manual_confirmation"
                     type="checkbox"
-                    class="size-4 rounded border-input"
+                    class="border-input size-4 rounded"
                 />
                 Exige confirmação manual
             </label>
@@ -395,7 +395,7 @@ function submit() {
             <Label for="service-internal-notes"
                 >Observações internas (opcional)</Label
             >
-            <p class="text-xs text-muted-foreground">
+            <p class="text-muted-foreground text-xs">
                 Visíveis apenas para a equipe da clínica — nunca aparecem no
                 site público.
             </p>

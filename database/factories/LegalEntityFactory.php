@@ -43,8 +43,37 @@ class LegalEntityFactory extends Factory
         return $this->state(fn (array $attributes) => ['is_primary' => true]);
     }
 
-    /** Gera um CPF numericamente válido (dígitos verificadores corretos), para uso exclusivo em testes/factories. */
+    /** @var array<string, true> */
+    private static array $issuedCpfs = [];
+
+    /** @var array<string, true> */
+    private static array $issuedCnpjs = [];
+
+    /** Gera um CPF numericamente válido (dígitos verificadores corretos) e único no processo, para uso exclusivo em testes/factories. */
     public static function validCpf(): string
+    {
+        do {
+            $cpf = self::generateCpf();
+        } while (isset(self::$issuedCpfs[$cpf]));
+
+        self::$issuedCpfs[$cpf] = true;
+
+        return $cpf;
+    }
+
+    /** Gera um CNPJ numericamente válido e único no processo, para uso exclusivo em testes/factories. */
+    public static function validCnpj(): string
+    {
+        do {
+            $cnpj = self::generateCnpj();
+        } while (isset(self::$issuedCnpjs[$cnpj]));
+
+        self::$issuedCnpjs[$cnpj] = true;
+
+        return $cnpj;
+    }
+
+    private static function generateCpf(): string
     {
         $digits = [];
         for ($i = 0; $i < 9; $i++) {
@@ -67,8 +96,7 @@ class LegalEntityFactory extends Factory
         return implode('', $digits);
     }
 
-    /** Gera um CNPJ numericamente válido, para uso exclusivo em testes/factories. */
-    public static function validCnpj(): string
+    private static function generateCnpj(): string
     {
         $digits = [];
         for ($i = 0; $i < 12; $i++) {

@@ -187,7 +187,7 @@ function removePhoto() {
                     <InputError :message="form.errors.email" />
                     <p
                         v-if="form.isDirty && form.email !== user.email"
-                        class="text-sm text-muted-foreground"
+                        class="text-muted-foreground text-sm"
                     >
                         Ao salvar, você precisará confirmar o novo e-mail
                         novamente antes de usá-lo para entrar.
@@ -195,12 +195,12 @@ function removePhoto() {
                 </div>
 
                 <div v-if="mustVerifyEmail && !user.email_verified_at">
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-muted-foreground text-sm">
                         Seu endereço de e-mail não foi verificado.
                         <Link
                             :href="send()"
                             as="button"
-                            class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                            class="text-foreground hover:decoration-current! underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out dark:decoration-neutral-500"
                         >
                             Clique aqui para reenviar o e-mail de verificação.
                         </Link>
@@ -221,7 +221,7 @@ function removePhoto() {
                     <InputError :message="form.errors.phone" />
                 </div>
 
-                <div class="grid gap-2 sm:max-w-70">
+                <div class="sm:max-w-70 grid gap-2">
                     <Label for="cpf">CPF</Label>
                     <Input
                         id="cpf"
@@ -264,7 +264,7 @@ function removePhoto() {
 
             <div class="rounded-md border p-4">
                 <p class="text-sm font-medium">Senha</p>
-                <p class="mt-1 text-sm text-muted-foreground">
+                <p class="text-muted-foreground mt-1 text-sm">
                     Para alterar sua senha, dois fatores de autenticação ou
                     passkeys, acesse as configurações de segurança.
                 </p>

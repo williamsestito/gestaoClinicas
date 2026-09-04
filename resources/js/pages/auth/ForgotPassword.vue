@@ -106,7 +106,7 @@ const inputEmail = ref(props.confirmedEmail ?? '');
             </div>
         </Form>
 
-        <div class="space-x-1 text-center text-sm text-muted-foreground">
+        <div class="text-muted-foreground space-x-1 text-center text-sm">
             <TextLink :href="login()">Usar outro e-mail</TextLink>
         </div>
     </div>
@@ -142,7 +142,7 @@ const inputEmail = ref(props.confirmedEmail ?? '');
             </div>
         </Form>
 
-        <div class="space-x-1 text-center text-sm text-muted-foreground">
+        <div class="text-muted-foreground space-x-1 text-center text-sm">
             <span>Ou, volte para</span>
             <TextLink :href="login()">entrar</TextLink>
         </div>
@@ -181,7 +181,7 @@ const inputEmail = ref(props.confirmedEmail ?? '');
             </div>
         </Form>
 
-        <div class="space-x-1 text-center text-sm text-muted-foreground">
+        <div class="text-muted-foreground space-x-1 text-center text-sm">
             <span>Ou, volte para</span>
             <TextLink :href="login()">entrar</TextLink>
         </div>

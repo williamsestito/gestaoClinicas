@@ -178,13 +178,13 @@ function formatDate(value: string): string {
         <div v-if="hasAny" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-sm text-muted-foreground">Total</p>
+                    <p class="text-muted-foreground text-sm">Total</p>
                     <p class="text-2xl font-semibold">{{ indicators.total }}</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-sm text-muted-foreground">Ativos</p>
+                    <p class="text-muted-foreground text-sm">Ativos</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.active }}
                     </p>
@@ -192,7 +192,7 @@ function formatDate(value: string): string {
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-sm text-muted-foreground">Inativos</p>
+                    <p class="text-muted-foreground text-sm">Inativos</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.inactive }}
                     </p>
@@ -200,7 +200,7 @@ function formatDate(value: string): string {
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-sm text-muted-foreground">Excluídos</p>
+                    <p class="text-muted-foreground text-sm">Excluídos</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.deleted }}
                     </p>
@@ -214,7 +214,7 @@ function formatDate(value: string): string {
         >
             <div class="relative sm:max-w-xs sm:flex-1">
                 <Search
-                    class="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground"
+                    class="text-muted-foreground pointer-events-none absolute left-2.5 top-2.5 size-4"
                 />
                 <Input
                     v-model="search"
@@ -227,7 +227,7 @@ function formatDate(value: string): string {
             <select
                 v-model="statusFilter"
                 aria-label="Filtrar recursos por status"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option value="all">Todos</option>
                 <option value="active">Ativos</option>
@@ -258,7 +258,7 @@ function formatDate(value: string): string {
             <div class="hidden overflow-x-auto rounded-md border md:block">
                 <table class="w-full text-sm">
                     <thead
-                        class="border-b bg-muted/50 text-left text-muted-foreground"
+                        class="bg-muted/50 text-muted-foreground border-b text-left"
                     >
                         <tr>
                             <th class="px-4 py-2 font-medium">Recurso</th>
@@ -281,13 +281,13 @@ function formatDate(value: string): string {
                             <td class="px-4 py-3 font-medium">
                                 {{ resource.name }}
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 {{ resource.unit_name }}
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 {{ resource.type || '—' }}
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 {{ resource.appointments_count }}
                             </td>
                             <td class="px-4 py-3">
@@ -296,7 +296,7 @@ function formatDate(value: string): string {
                                     :deleted-at="resource.deleted_at"
                                 />
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">
+                            <td class="text-muted-foreground px-4 py-3">
                                 {{ formatDate(resource.updated_at) }}
                             </td>
                             <td class="px-4 py-3 text-right">
@@ -321,7 +321,7 @@ function formatDate(value: string): string {
                         <div class="flex items-start justify-between gap-2">
                             <div>
                                 <p class="font-medium">{{ resource.name }}</p>
-                                <p class="text-sm text-muted-foreground">
+                                <p class="text-muted-foreground text-sm">
                                     {{ resource.unit_name }}
                                 </p>
                             </div>
@@ -341,7 +341,7 @@ function formatDate(value: string): string {
                             :deleted-at="resource.deleted_at"
                         />
 
-                        <p class="text-sm text-muted-foreground">
+                        <p class="text-muted-foreground text-sm">
                             {{ resource.appointments_count }} agendamento(s)
                         </p>
                     </CardContent>

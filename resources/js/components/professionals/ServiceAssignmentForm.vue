@@ -92,7 +92,7 @@ function submit() {
             <select
                 id="service-assignment-service"
                 v-model="form.service_id"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
             >
                 <option value="">Selecione um serviço</option>
                 <option
@@ -270,7 +270,7 @@ function submit() {
                 </label>
                 <p
                     v-if="professionalUnits.length === 0"
-                    class="text-sm text-muted-foreground"
+                    class="text-muted-foreground text-sm"
                 >
                     O profissional não possui unidades de atuação ativas.
                 </p>

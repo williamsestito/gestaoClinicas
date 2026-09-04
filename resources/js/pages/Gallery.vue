@@ -74,7 +74,7 @@ function goToPage(url: string | null) {
     <Head :title="`Galeria — ${siteTitle}`" />
 
     <div
-        class="landing-theme flex min-h-screen flex-col bg-background text-foreground"
+        class="landing-theme bg-background text-foreground flex min-h-screen flex-col"
     >
         <header class="border-b">
             <div
@@ -119,7 +119,7 @@ function goToPage(url: string | null) {
                             v-for="(item, index) in items"
                             :key="item.id"
                             type="button"
-                            class="group overflow-hidden rounded-xl border border-border text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            class="border-border focus-visible:ring-ring group overflow-hidden rounded-xl border text-left focus-visible:outline-none focus-visible:ring-2"
                             :aria-label="`Ver imagem: ${item.caption || item.alt_text || 'imagem da galeria'}`"
                             @click="open(index)"
                         >
@@ -131,7 +131,7 @@ function goToPage(url: string | null) {
                             />
                             <p
                                 v-if="item.caption"
-                                class="truncate px-2 py-1.5 text-xs text-muted-foreground"
+                                class="text-muted-foreground truncate px-2 py-1.5 text-xs"
                             >
                                 {{ item.caption }}
                             </p>
@@ -163,7 +163,7 @@ function goToPage(url: string | null) {
             </div>
         </main>
 
-        <footer class="border-t py-6 text-center text-sm text-muted-foreground">
+        <footer class="text-muted-foreground border-t py-6 text-center text-sm">
             <Link href="/" class="hover:underline">{{ siteTitle }}</Link>
         </footer>
     </div>
@@ -192,7 +192,7 @@ function goToPage(url: string | null) {
                 </p>
 
                 <DialogClose
-                    class="absolute top-2 right-2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
+                    class="absolute right-2 top-2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
                     aria-label="Fechar"
                 >
                     <X class="size-4" />
@@ -201,7 +201,7 @@ function goToPage(url: string | null) {
                 <button
                     v-if="items.length > 1"
                     type="button"
-                    class="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
+                    class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
                     aria-label="Imagem anterior"
                     @click="previous"
                 >
@@ -210,7 +210,7 @@ function goToPage(url: string | null) {
                 <button
                     v-if="items.length > 1"
                     type="button"
-                    class="absolute top-1/2 right-2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
                     aria-label="Próxima imagem"
                     @click="next"
                 >

@@ -23,7 +23,7 @@ defineProps<{
             <figure
                 v-for="testimonial in testimonials"
                 :key="testimonial.id"
-                class="flex flex-col gap-3 rounded-2xl border border-border bg-card p-6 shadow-sm"
+                class="border-border bg-card flex flex-col gap-3 rounded-2xl border p-6 shadow-sm"
             >
                 <div
                     v-if="testimonial.rating"
@@ -43,7 +43,7 @@ defineProps<{
                     />
                 </div>
 
-                <blockquote class="flex-1 text-sm text-muted-foreground">
+                <blockquote class="text-muted-foreground flex-1 text-sm">
                     "{{ testimonial.content }}"
                 </blockquote>
 
@@ -57,7 +57,7 @@ defineProps<{
                     />
                     <div
                         v-else
-                        class="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground"
+                        class="bg-muted text-muted-foreground flex size-10 items-center justify-center rounded-full"
                     >
                         <User class="size-4" />
                     </div>
@@ -67,7 +67,7 @@ defineProps<{
                         </p>
                         <p
                             v-if="testimonial.related_service_name"
-                            class="text-xs text-muted-foreground"
+                            class="text-muted-foreground text-xs"
                         >
                             {{ testimonial.related_service_name }}
                         </p>
