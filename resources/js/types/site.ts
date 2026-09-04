@@ -142,6 +142,11 @@ export interface AppointmentRequestSummary {
     appointment_status_label?: string | null;
     professional_id: string | null;
     professional_name: string | null;
+    // true quando o profissional preferido pelo paciente foi excluído
+    // logicamente do sistema — o nome acima ainda é exibido (histórico),
+    // mas a preferência não é mais válida e precisa ser reatribuída ou o
+    // pré-agendamento cancelado.
+    professional_removed?: boolean;
     // Estruturados (unidade/serviço reais + horário exato) — só presentes
     // quando o lead veio de um horário específico escolhido na busca de
     // disponibilidade da landing. Quando os três estão presentes, "Agendar"

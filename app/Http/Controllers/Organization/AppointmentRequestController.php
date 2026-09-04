@@ -9,6 +9,7 @@ use App\Enums\AuditAction;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Organization\UpdateAppointmentRequestNotesRequest;
+use App\Http\Requests\Organization\UpdateAppointmentRequestProfessionalRequest;
 use App\Http\Requests\Organization\UpdateAppointmentRequestStatusRequest;
 use App\Models\Appointment;
 use App\Models\AppointmentRequest;
@@ -41,7 +42,12 @@ class AppointmentRequestController extends Controller
         $requests = AppointmentRequest::query()
             ->with([
                 'service:id,name',
-                'professional:id,display_name',
+                // withTrashed(): um lead pode ter sido criado apontando para
+                // um profissional excluído logicamente depois — o nome real
+                // continua exibido (histórico preservado), mas o front
+                // precisa de `professional_removed` para saber que essa
+                // preferência não é mais válida e oferecer reatribuição.
+                'professional' => fn ($query) => $query->withTrashed()->select(['id', 'display_name', 'status', 'deleted_at']),
                 'unit:id,name',
                 'preferredService:id,name',
                 'patient:id,name,preferred_name',
@@ -94,6 +100,11 @@ class AppointmentRequestController extends Controller
                 'appointment_status_label' => $request->appointment?->status->label(),
                 'professional_id' => $request->professional_id,
                 'professional_name' => $request->professional?->display_name,
+                // true quando o profissional preferido pelo paciente não
+                // existe mais na equipe (excluído logicamente) — o front usa
+                // isso para sinalizar que é preciso reatribuir ou cancelar.
+                'professional_removed' => $request->professional_id !== null
+                    && ($request->professional === null || $request->professional->trashed() || $request->professional->status !== RecordStatus::Active),
                 // Estruturados (unidade/serviço reais + horário exato) — só
                 // presentes quando o lead veio de um horário específico
                 // escolhido na busca de disponibilidade da landing. Mesmo
@@ -140,6 +151,37 @@ class AppointmentRequestController extends Controller
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Status atualizado.']);
+
+        return back();
+    }
+
+    /**
+     * Reatribui (ou remove) o profissional preferido do lead — usado
+     * principalmente quando o profissional originalmente escolhido pelo
+     * paciente foi excluído logicamente do sistema (ver
+     * `professional_removed` em index()), para admin/atendimento apontar
+     * outro profissional ou deixar em aberto até decidir (ou cancelar o
+     * pré-agendamento pelo endpoint de status já existente).
+     */
+    public function updateProfessional(
+        UpdateAppointmentRequestProfessionalRequest $request,
+        AppointmentRequest $appointmentRequest,
+        AuditLogger $auditLogger,
+        TenantContext $tenant,
+    ): RedirectResponse {
+        abort_unless($appointmentRequest->organization_id === $tenant->organization()?->id, 404);
+
+        $before = $appointmentRequest->only(['professional_id']);
+        $appointmentRequest->update(['professional_id' => $request->validated('professional_id')]);
+
+        $auditLogger->log(
+            AuditAction::Updated,
+            auditable: $appointmentRequest,
+            before: $before,
+            after: $appointmentRequest->only(['professional_id']),
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Profissional atualizado.']);
 
         return back();
     }

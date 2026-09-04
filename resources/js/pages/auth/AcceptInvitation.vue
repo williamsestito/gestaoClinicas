@@ -30,7 +30,7 @@ defineOptions({
     <Head title="Aceitar convite" />
 
     <div v-if="!valid" class="space-y-4 text-center">
-        <p class="text-muted-foreground text-sm">
+        <p class="text-sm text-muted-foreground">
             Este convite não é mais válido — pode já ter sido usado, cancelado
             ou expirado. Solicite um novo convite ao administrador da clínica.
         </p>
@@ -44,7 +44,7 @@ defineOptions({
         v-slot="{ errors, processing }"
         class="flex flex-col gap-6"
     >
-        <p class="text-muted-foreground text-sm">
+        <p class="text-sm text-muted-foreground">
             Você foi convidado para fazer parte de
             <strong>{{ organizationName }}</strong
             >. Crie sua senha para concluir o acesso.

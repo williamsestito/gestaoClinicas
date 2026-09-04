@@ -283,7 +283,17 @@ class DashboardController extends Controller
         $professionalId = $request->string('agenda_professional_id')->value() ?: null;
 
         $appointments = $organization->appointments()
-            ->with(['professional:id,display_name', 'patient:id,name,preferred_name', 'service:id,name', 'unit:id,name'])
+            ->with([
+                // withTrashed(): um agendamento antigo pode apontar para um
+                // profissional excluído logicamente depois — o nome real
+                // continua exibido (histórico preservado, ver
+                // App\Actions\Organization\DeleteProfessionalAction), em vez
+                // de estourar ao acessar a relação.
+                'professional' => fn ($query) => $query->withTrashed()->select(['id', 'display_name']),
+                'patient' => fn ($query) => $query->withTrashed()->select(['id', 'name', 'preferred_name']),
+                'service' => fn ($query) => $query->withTrashed()->select(['id', 'name']),
+                'unit' => fn ($query) => $query->withTrashed()->select(['id', 'name']),
+            ])
             ->whereDate('starts_at', $date->toDateString())
             ->when($professionalId, fn ($query) => $query->where('professional_id', $professionalId))
             ->orderBy('starts_at')
@@ -302,10 +312,12 @@ class DashboardController extends Controller
                 'ends_at' => $appointment->ends_at->toIso8601String(),
                 'status' => $appointment->status->value,
                 'status_label' => $appointment->status->label(),
-                'professional_name' => $appointment->professional->display_name,
-                'patient_name' => $appointment->patient->preferred_name ?: $appointment->patient->name,
-                'service_name' => $appointment->service->name,
-                'unit_name' => $appointment->unit->name,
+                'professional_name' => $appointment->professional === null ? 'Profissional removido' : $appointment->professional->display_name,
+                'patient_name' => $appointment->patient === null
+                    ? 'Paciente removido'
+                    : ($appointment->patient->preferred_name ?: $appointment->patient->name),
+                'service_name' => $appointment->service === null ? 'Serviço removido' : $appointment->service->name,
+                'unit_name' => $appointment->unit === null ? 'Unidade removida' : $appointment->unit->name,
             ])->values(),
         ];
     }
@@ -343,9 +355,7 @@ class DashboardController extends Controller
 
         return [
             'professional_id' => $first->professional_id,
-            'professional_name' => $first->professional_id !== null
-                ? $first->professional->display_name
-                : 'Sem profissional definido',
+            'professional_name' => $first->professional === null ? 'Sem profissional definido' : $first->professional->display_name,
             'count' => $requests->count(),
             'requests' => $requests->take(5)->map(fn (AppointmentRequest $appointmentRequest) => [
                 'id' => $appointmentRequest->id,

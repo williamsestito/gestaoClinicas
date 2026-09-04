@@ -8,6 +8,20 @@ vi.mock('@inertiajs/vue3', () => ({
 }));
 
 describe('LandingNavbar', () => {
+    it('never shows the clinic name next to the logo — it got truncated and looked broken on longer names', () => {
+        const wrapper = mount(LandingNavbar, {
+            props: {
+                title: 'Espaço Duda Almeida',
+                logoUrl: null,
+                activeTypes: ['hero', 'about'],
+            },
+        });
+
+        expect(wrapper.find('a[href="#hero"]').text()).not.toContain(
+            'Espaço Duda Almeida',
+        );
+    });
+
     it('does not show a FAQ link when faq is not among the active types', () => {
         const wrapper = mount(LandingNavbar, {
             props: {

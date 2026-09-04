@@ -96,4 +96,34 @@ describe('LandingProfessionalsSection', () => {
         expect(wrapper.find('img').exists()).toBe(false);
         expect(wrapper.find('svg').exists()).toBe(true);
     });
+
+    it('opens the photo full-size in a dialog when clicked', async () => {
+        const wrapper = mount(LandingProfessionalsSection, {
+            props: {
+                professionals: [
+                    makeProfessional({
+                        name: 'Dra. Ana Souza',
+                        photo_url: 'https://example.com/ana.jpg',
+                    }),
+                ],
+            },
+            attachTo: document.body,
+        });
+
+        expect(document.body.querySelector('[role="dialog"]')).toBeNull();
+
+        await wrapper
+            .find(
+                'button[aria-label="Ver foto de Dra. Ana Souza em tamanho maior"]',
+            )
+            .trigger('click');
+        await wrapper.vm.$nextTick();
+
+        const dialogImage = document.body.querySelector('[role="dialog"] img');
+        expect(dialogImage?.getAttribute('src')).toBe(
+            'https://example.com/ana.jpg',
+        );
+
+        wrapper.unmount();
+    });
 });

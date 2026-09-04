@@ -142,7 +142,7 @@ const registerHref = computed(() => {
             </Button>
         </div>
 
-        <div class="text-muted-foreground text-center text-sm">
+        <div class="text-center text-sm text-muted-foreground">
             Não tem uma conta?
             <TextLink :href="registerHref" :tabindex="5">Cadastre-se</TextLink>
         </div>

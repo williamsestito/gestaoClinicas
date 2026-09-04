@@ -228,7 +228,7 @@ function statusVariant(
                     </div>
                     <p
                         v-else-if="item.requires_approval && item.approved_at"
-                        class="text-muted-foreground text-xs"
+                        class="text-xs text-muted-foreground"
                     >
                         Desconto aprovado por {{ item.approver_name }} em
                         {{ formatDateTimeBr(item.approved_at) }} —

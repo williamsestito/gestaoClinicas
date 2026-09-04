@@ -39,7 +39,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v5
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -49,28 +49,20 @@ jobs:
           coverage: none
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: npm
 
       - name: Cache Composer packages
-        uses: actions/cache@v6
+        uses: actions/cache@v4
         with:
           path: vendor
           key: composer-${{ hashFiles('composer.lock') }}
           restore-keys: composer-
 
-      - name: Cache npm packages
-        uses: actions/cache@v6
-        with:
-          path: ~/.npm
-          key: npm-${{ hashFiles('package-lock.json') }}
-          restore-keys: npm-
-
       # Gerado ANTES do composer install: alguns hooks do post-autoload-dump
-      # (ex.: filament:upgrade) inicializam o Laravel e precisam de um .env
-      # válido. Escrito do zero (nao copiado de .env.example + append) para
-      # nunca conter chaves duplicadas.
+      # inicializam o Laravel e precisam de um .env valido.
       - name: Prepare .env.testing
         run: |
           cat > .env.testing <<'EOF'
@@ -127,15 +119,18 @@ jobs:
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Install npm dependencies
-        run: npm ci
+        run: npm ci --include=dev
 
       - name: Generate application key
         run: php artisan key:generate --env=testing --ansi
 
+      - name: Build frontend assets
+        run: npm run build
+
       - name: Wait for PostgreSQL
         run: |
           for i in $(seq 1 30); do
-            if pg_isready -h 127.0.0.1 -p 5432 -U gestao_clinicas; then
+            if pg_isready -h 127.0.0.1 -p 5432 -U gestao_clinicas -d gestao_clinicas_test; then
               exit 0
             fi
             sleep 2
@@ -166,6 +161,3 @@ jobs:
 
       - name: Vitest
         run: npm run test:run
-
-      - name: Build frontend
-        run: npm run build

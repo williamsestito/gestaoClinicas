@@ -17,6 +17,13 @@ const heroImageFailedToLoad = ref(false);
 // lista de diferenciais desta seção institucional, em vez de um cadastro
 // duplicado só para "sobre".
 const highlightedBenefits = computed(() => props.benefits.slice(0, 3));
+
+// Prefere o banner mobile aqui: o card desta seção é mais próximo de um
+// retrato (aspect-4/3) do que o banner desktop, tipicamente bem mais
+// largo — usar o desktop cortava o conteúdo do banner de forma estranha.
+const aboutImageUrl = computed(
+    () => props.site.hero_image_mobile_url || props.site.hero_image_url,
+);
 </script>
 
 <template>
@@ -29,8 +36,8 @@ const highlightedBenefits = computed(() => props.benefits.slice(0, 3));
             class="mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2"
         >
             <img
-                v-if="site.hero_image_url && !heroImageFailedToLoad"
-                :src="site.hero_image_url"
+                v-if="aboutImageUrl && !heroImageFailedToLoad"
+                :src="aboutImageUrl"
                 :alt="site.title"
                 loading="lazy"
                 class="aspect-4/3 w-full rounded-2xl border border-border object-cover shadow-sm lg:order-first"

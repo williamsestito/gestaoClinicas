@@ -190,12 +190,12 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
         />
 
         <label
-            class="text-muted-foreground flex w-fit items-center gap-2 text-sm"
+            class="flex w-fit items-center gap-2 text-sm text-muted-foreground"
         >
             <input
                 type="checkbox"
                 :checked="showCancelled"
-                class="border-input size-4 rounded"
+                class="size-4 rounded border-input"
                 @change="
                     toggleShowCancelled(
                         ($event.target as HTMLInputElement).checked,
@@ -226,7 +226,7 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
                         >
                             <div class="space-y-1">
                                 <p class="font-medium">{{ request.name }}</p>
-                                <p class="text-muted-foreground text-sm">
+                                <p class="text-sm text-muted-foreground">
                                     {{ request.phone }}
                                     <template v-if="request.email">
                                         · {{ request.email }}</template
@@ -234,7 +234,7 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
                                 </p>
                                 <p
                                     v-if="request.service_name"
-                                    class="text-muted-foreground text-sm"
+                                    class="text-sm text-muted-foreground"
                                 >
                                     Serviço: {{ request.service_name }}
                                 </p>
@@ -244,7 +244,7 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
                                             request.preferred_date,
                                         ) || request.preferred_period
                                     "
-                                    class="text-muted-foreground text-sm"
+                                    class="text-sm text-muted-foreground"
                                 >
                                     Preferência:
                                     <template
@@ -273,11 +273,11 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
                                 </p>
                                 <p
                                     v-if="request.notes"
-                                    class="text-muted-foreground text-sm"
+                                    class="text-sm text-muted-foreground"
                                 >
                                     "{{ request.notes }}"
                                 </p>
-                                <p class="text-muted-foreground text-xs">
+                                <p class="text-xs text-muted-foreground">
                                     Recebido em
                                     {{ formatDate(request.created_at) }}
                                 </p>
@@ -416,7 +416,7 @@ function whatsappLink(request: MyAppointmentRequest): string | null {
                     </Link>
                     <span
                         v-else
-                        class="text-muted-foreground pointer-events-none rounded-md px-3 py-1 text-sm opacity-50"
+                        class="pointer-events-none rounded-md px-3 py-1 text-sm text-muted-foreground opacity-50"
                         aria-disabled="true"
                         v-html="link.label"
                     />

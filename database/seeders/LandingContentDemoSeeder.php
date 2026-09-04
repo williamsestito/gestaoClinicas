@@ -17,14 +17,18 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
- * Modelo fictício de landing page ("Clínica Essenza") para demonstrar a
- * estrutura da página pública em ambiente local. Bloqueado em produção.
- * Idempotente por coleção: nunca duplica itens já existentes, e só toca no
- * conteúdo do SiteSetting se ele ainda estiver com os valores padrão do
- * SiteSettingSeeder (nunca sobrescreve edições reais de um administrador).
+ * Modelo fictício de landing page ("Espaço Duda Almeida — Saúde e Beleza",
+ * uma clínica de podologia) para demonstrar a estrutura da página pública
+ * em ambiente local. Bloqueado em produção. Idempotente por coleção: nunca
+ * duplica itens já existentes, e só toca no conteúdo do SiteSetting se ele
+ * ainda estiver com um dos títulos padrão gerados por seeder (nunca
+ * sobrescreve edições reais de um administrador).
  */
 class LandingContentDemoSeeder extends Seeder
 {
+    /** Títulos considerados "ainda no padrão de demonstração" — nunca um título editado por um administrador real. */
+    private const DEFAULT_TITLES = ['Gestão de Clínicas', 'Clínica Essenza'];
+
     public function run(): void
     {
         if (app()->isProduction()) {
@@ -44,25 +48,31 @@ class LandingContentDemoSeeder extends Seeder
 
     private function seedSiteSetting(): void
     {
-        $siteSetting = SiteSetting::query()->first();
+        $siteSettings = SiteSetting::query()->orderBy('id')->get();
+        $siteSetting = $siteSettings->first();
 
-        // Só substitui o conteúdo se ainda for exatamente o placeholder
-        // genérico criado pelo SiteSettingSeeder — nunca sobrescreve uma
-        // edição real feita por um administrador.
-        if ($siteSetting && $siteSetting->title !== 'Gestão de Clínicas') {
+        // Só substitui o conteúdo se ainda for um dos placeholders gerados
+        // por seeder — nunca sobrescreve uma edição real feita por um
+        // administrador.
+        if ($siteSetting && ! in_array($siteSetting->title, self::DEFAULT_TITLES, true)) {
             return;
         }
 
+        // A tabela deveria ter no máximo um registro (é um singleton de
+        // configuração); remove eventuais duplicatas de teste antes de
+        // gravar o conteúdo de demonstração.
+        $siteSettings->skip(1)->each(fn (SiteSetting $extra) => $extra->delete());
+
         $record = $siteSetting ?? new SiteSetting;
         $record->fill([
-            'title' => 'Clínica Essenza',
-            'description' => 'Cuidado, saúde e autoestima em cada detalhe.',
-            'hero_image_path' => $this->placeholderImage('Clínica Essenza'),
-            'primary_color' => '#0F766E',
-            'secondary_color' => '#F59E0B',
-            'cta_text' => 'Agendar uma avaliação',
-            'cta_url' => 'https://wa.me/554732221122',
-            'about_text' => 'A Clínica Essenza nasceu para oferecer uma experiência completa de cuidado, unindo saúde, estética, tecnologia e atendimento humanizado em um ambiente acolhedor.',
+            'title' => 'Espaço Duda Almeida',
+            'description' => 'Cuidar dos seus pés é cuidar da sua qualidade de vida.',
+            'hero_image_path' => $this->placeholderImage('Espaço Duda Almeida'),
+            'primary_color' => '#B08D3E',
+            'secondary_color' => '#3E2C1C',
+            'cta_text' => 'Agende sua avaliação',
+            'cta_url' => 'https://wa.me/554799999999',
+            'about_text' => 'Mais do que um cuidado estético, é sobre bem-estar e autoestima em cada detalhe. Tratamentos especializados, tecnologia e um atendimento humanizado para você se sentir bem em cada passo.',
             'footer_text' => null,
             'is_published' => true,
             'sections_config' => LandingSections::normalize(null),
@@ -76,10 +86,10 @@ class LandingContentDemoSeeder extends Seeder
         }
 
         $items = [
-            ['icon' => 'heart-handshake', 'title' => 'Atendimento humanizado', 'description' => 'Cada pessoa é acompanhada de forma próxima e individual, do primeiro contato ao pós-tratamento.'],
-            ['icon' => 'graduation-cap', 'title' => 'Equipe especializada', 'description' => 'Profissionais qualificados e em constante atualização nas áreas de saúde e estética.'],
-            ['icon' => 'shield-check', 'title' => 'Tecnologia e segurança', 'description' => 'Equipamentos modernos e protocolos seguros em todos os procedimentos.'],
-            ['icon' => 'sparkles', 'title' => 'Planos personalizados', 'description' => 'Tratamentos pensados para os objetivos e o momento de vida de cada paciente.'],
+            ['icon' => 'heart-handshake', 'title' => 'Atendimento humanizado', 'description' => 'Cada paciente é acompanhado de forma próxima e individual, do diagnóstico ao pós-tratamento.'],
+            ['icon' => 'graduation-cap', 'title' => 'Equipe especializada', 'description' => 'Podólogas, ortopedista e dermatologista dedicados à saúde e à estética dos seus pés.'],
+            ['icon' => 'sparkles', 'title' => 'Tecnologia de ponta', 'description' => 'Equipamentos modernos para tratamentos a laser, unhas encravadas e micoses.'],
+            ['icon' => 'shield-check', 'title' => 'Ambiente acolhedor', 'description' => 'Um espaço pensado para o seu bem-estar em cada etapa do atendimento.'],
         ];
 
         foreach ($items as $order => $item) {
@@ -94,14 +104,11 @@ class LandingContentDemoSeeder extends Seeder
         }
 
         $items = [
-            ['name' => 'Avaliação estética', 'short_description' => 'Diagnóstico completo para indicar o melhor tratamento.', 'category' => 'Estética', 'duration_minutes' => 40, 'starting_price_cents' => null],
-            ['name' => 'Limpeza de pele', 'short_description' => 'Limpeza profunda com extração e hidratação.', 'category' => 'Estética', 'duration_minutes' => 60, 'starting_price_cents' => 12000],
-            ['name' => 'Harmonização facial', 'short_description' => 'Procedimentos para equilíbrio e naturalidade dos traços.', 'category' => 'Estética', 'duration_minutes' => 50, 'starting_price_cents' => 45000],
-            ['name' => 'Tratamentos corporais', 'short_description' => 'Protocolos para firmeza, contorno e bem-estar.', 'category' => 'Estética', 'duration_minutes' => 60, 'starting_price_cents' => 18000],
-            ['name' => 'Fisioterapia', 'short_description' => 'Reabilitação e prevenção de lesões com acompanhamento individual.', 'category' => 'Saúde', 'duration_minutes' => 50, 'starting_price_cents' => 15000],
-            ['name' => 'Nutrição', 'short_description' => 'Acompanhamento nutricional personalizado.', 'category' => 'Saúde', 'duration_minutes' => 45, 'starting_price_cents' => 20000],
-            ['name' => 'Dermatologia', 'short_description' => 'Consultas e tratamentos dermatológicos clínicos e estéticos.', 'category' => 'Saúde', 'duration_minutes' => 30, 'starting_price_cents' => 25000],
-            ['name' => 'Terapias integradas', 'short_description' => 'Abordagens complementares para saúde e bem-estar.', 'category' => 'Bem-estar', 'duration_minutes' => 60, 'starting_price_cents' => 16000],
+            ['name' => 'Podologia clínica', 'short_description' => 'Avaliação e cuidados completos para a saúde dos seus pés.', 'category' => 'Podologia', 'duration_minutes' => 50, 'starting_price_cents' => 12000],
+            ['name' => 'Tratamento a laser', 'short_description' => 'Tecnologia a laser para tratamento de micoses e unhas.', 'category' => 'Podologia', 'duration_minutes' => 40, 'starting_price_cents' => 18000],
+            ['name' => 'Unha encravada', 'short_description' => 'Tratamento especializado para unhas encravadas, sem dor.', 'category' => 'Podologia', 'duration_minutes' => 45, 'starting_price_cents' => 15000],
+            ['name' => 'Tratamento de micoses', 'short_description' => 'Diagnóstico e tratamento de micoses de pele e unha.', 'category' => 'Podologia', 'duration_minutes' => 40, 'starting_price_cents' => 16000],
+            ['name' => 'Prevenção e bem-estar', 'short_description' => 'Cuidados preventivos para manter seus pés sempre saudáveis.', 'category' => 'Bem-estar', 'duration_minutes' => 50, 'starting_price_cents' => 11000],
         ];
 
         foreach ($items as $order => $item) {
@@ -124,9 +131,10 @@ class LandingContentDemoSeeder extends Seeder
         }
 
         $items = [
-            ['name' => 'Dra. Camila Andrade', 'role_title' => 'Dermatologista', 'specialty' => 'Dermatologia clínica e estética', 'professional_register' => 'CRM/SC 12345', 'bio' => 'Mais de 10 anos de experiência em saúde e estética da pele.'],
-            ['name' => 'Dr. Rafael Souza', 'role_title' => 'Fisioterapeuta', 'specialty' => 'Reabilitação e performance', 'professional_register' => 'CREFITO 6789', 'bio' => 'Atendimento personalizado para recuperação e prevenção de lesões.'],
-            ['name' => 'Marina Torres', 'role_title' => 'Esteticista', 'specialty' => 'Tratamentos faciais e corporais', 'professional_register' => null, 'bio' => 'Especialista em protocolos de harmonização e cuidados com a pele.'],
+            ['name' => 'Duda Almeida', 'role_title' => 'Podóloga especialista', 'specialty' => 'Podologia clínica e tratamentos a laser', 'professional_register' => null, 'bio' => 'Especialista em podologia, dedicada a unir cuidado técnico e bem-estar em cada atendimento.'],
+            ['name' => 'Fernanda', 'role_title' => 'Podóloga', 'specialty' => 'Podologia clínica', 'professional_register' => null, 'bio' => 'Cuidado próximo e humanizado para a saúde dos seus pés.'],
+            ['name' => 'Dr. Rafael Martins', 'role_title' => 'Ortopedista', 'specialty' => 'Especialista em pés', 'professional_register' => 'CRM/SC 45678', 'bio' => 'Acompanhamento ortopédico especializado para a saúde e o movimento dos pés.'],
+            ['name' => 'Dra. Juliana Costa', 'role_title' => 'Dermatologista', 'specialty' => 'Dermatologia e estética', 'professional_register' => 'CRM/SC 78912', 'bio' => 'Tratamentos dermatológicos e estéticos com foco na saúde da pele dos pés.'],
         ];
 
         foreach ($items as $order => $item) {
@@ -148,8 +156,8 @@ class LandingContentDemoSeeder extends Seeder
         $items = [
             ['caption' => 'Recepção', 'category' => 'Estrutura', 'is_cover' => true],
             ['caption' => 'Sala de atendimento', 'category' => 'Estrutura', 'is_cover' => false],
-            ['caption' => 'Equipe Essenza', 'category' => 'Equipe', 'is_cover' => false],
-            ['caption' => 'Equipamentos', 'category' => 'Equipamentos', 'is_cover' => false],
+            ['caption' => 'Equipe Espaço Duda Almeida', 'category' => 'Equipe', 'is_cover' => false],
+            ['caption' => 'Equipamentos de podologia', 'category' => 'Equipamentos', 'is_cover' => false],
         ];
 
         foreach ($items as $order => $item) {
@@ -172,9 +180,9 @@ class LandingContentDemoSeeder extends Seeder
         // Depoimentos ilustrativos para demonstração — substitua por
         // avaliações reais de pacientes antes de publicar em produção.
         $items = [
-            ['author_name' => 'Juliana R. (depoimento ilustrativo)', 'rating' => 5, 'content' => 'Atendimento excelente, me senti muito bem cuidada do início ao fim.'],
-            ['author_name' => 'Marcos T. (depoimento ilustrativo)', 'rating' => 5, 'content' => 'Profissionais atenciosos e ambiente muito agradável. Recomendo!'],
-            ['author_name' => 'Beatriz L. (depoimento ilustrativo)', 'rating' => 4, 'content' => 'Resultado ótimo no tratamento e equipe muito qualificada.'],
+            ['author_name' => 'Marcos T. (depoimento ilustrativo)', 'rating' => 5, 'content' => 'Tratei uma unha encravada que me incomodava há meses. Equipe cuidadosa e resultado excelente!'],
+            ['author_name' => 'Renata S. (depoimento ilustrativo)', 'rating' => 5, 'content' => 'Atendimento humanizado, ambiente agradável e muito profissionalismo da Duda e da equipe.'],
+            ['author_name' => 'Carlos A. (depoimento ilustrativo)', 'rating' => 4, 'content' => 'Fiz o tratamento a laser para micose e já vejo resultado. Recomendo o Espaço Duda Almeida.'],
         ];
 
         foreach ($items as $order => $item) {
@@ -194,10 +202,10 @@ class LandingContentDemoSeeder extends Seeder
         }
 
         $items = [
-            ['question' => 'Como faço para agendar uma consulta?', 'answer' => 'Você pode agendar diretamente pelo formulário desta página, ou entrar em contato pelo telefone/WhatsApp informado na seção de contato.'],
-            ['question' => 'Quais formas de pagamento são aceitas?', 'answer' => 'Aceitamos cartão de crédito, débito e Pix. Consulte condições especiais com a recepção.'],
-            ['question' => 'A clínica atende convênios?', 'answer' => 'Consulte a recepção para verificar a disponibilidade de convênios para o seu tratamento.'],
-            ['question' => 'Preciso de encaminhamento médico?', 'answer' => 'Para a maioria dos tratamentos estéticos não é necessário. Para procedimentos de saúde específicos, nossa equipe orienta durante a avaliação inicial.'],
+            ['question' => 'Preciso de indicação médica para fazer podologia?', 'answer' => 'Não, você pode agendar uma avaliação diretamente. Para casos que exigem acompanhamento ortopédico ou dermatológico, nossa equipe orienta durante a consulta.'],
+            ['question' => 'Quais formas de pagamento são aceitas?', 'answer' => 'Aceitamos cartão de crédito, débito e Pix.'],
+            ['question' => 'O tratamento a laser dói?', 'answer' => 'É um procedimento pouco invasivo e bem tolerado pela maioria dos pacientes. Nossa equipe explica todo o processo antes de iniciar.'],
+            ['question' => 'Com que frequência devo fazer podologia preventiva?', 'answer' => 'Recomendamos avaliações periódicas, geralmente a cada 4 a 6 semanas, ajustadas conforme a necessidade de cada paciente.'],
         ];
 
         foreach ($items as $order => $item) {
@@ -208,7 +216,7 @@ class LandingContentDemoSeeder extends Seeder
     private function placeholderImage(string $label): string
     {
         $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600">'
-            .'<rect width="100%" height="100%" fill="#0F766E"/>'
+            .'<rect width="100%" height="100%" fill="#B08D3E"/>'
             .'<text x="50%" y="50%" font-family="sans-serif" font-size="32" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">'
             .e($label)
             .'</text></svg>';

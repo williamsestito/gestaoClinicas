@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
         $this->call(PlatformAdminSeeder::class);
         $this->call(SiteSettingSeeder::class);
         $this->call(DemoOrganizationSeeder::class);
+        $this->call(DemoOperationalDataSeeder::class);
         $this->call(LandingContentDemoSeeder::class);
     }
 }

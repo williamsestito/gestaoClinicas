@@ -82,6 +82,111 @@ it('lets the owner save an internal note without exposing it publicly', function
     expect($request->fresh()->internal_notes)->toBe('Já ligamos duas vezes, sem retorno.');
 });
 
+it('lets the owner reassign the professional of a request', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = Organization::find(session('active_organization_id'));
+    $request = AppointmentRequest::factory()->for($organization)->create();
+    $newProfessional = Professional::factory()->for($organization)->create(['status' => RecordStatus::Active]);
+
+    $this->actingAs($user)->patch("/settings/site/appointment-requests/{$request->id}/professional", [
+        'professional_id' => $newProfessional->id,
+    ])->assertRedirect();
+
+    expect($request->fresh()->professional_id)->toBe($newProfessional->id);
+});
+
+it('lets the owner clear the professional of a request, leaving it unassigned', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = Organization::find(session('active_organization_id'));
+    $professional = Professional::factory()->for($organization)->create();
+    $request = AppointmentRequest::factory()->for($organization)->create(['professional_id' => $professional->id]);
+
+    $this->actingAs($user)->patch("/settings/site/appointment-requests/{$request->id}/professional", [
+        'professional_id' => null,
+    ])->assertRedirect();
+
+    expect($request->fresh()->professional_id)->toBeNull();
+});
+
+it('rejects reassigning to a professional that was logically deleted — exactly the scenario that needs a manual fix', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = Organization::find(session('active_organization_id'));
+    $deletedProfessional = Professional::factory()->for($organization)->create();
+    $deletedProfessional->delete();
+    $request = AppointmentRequest::factory()->for($organization)->create();
+
+    $this->actingAs($user)->patch("/settings/site/appointment-requests/{$request->id}/professional", [
+        'professional_id' => $deletedProfessional->id,
+    ])->assertSessionHasErrors('professional_id');
+
+    expect($request->fresh()->professional_id)->toBeNull();
+});
+
+it('rejects reassigning to a professional from another organization', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = Organization::find(session('active_organization_id'));
+    $foreignProfessional = Professional::factory()->for(Organization::factory()->create())->create();
+    $request = AppointmentRequest::factory()->for($organization)->create();
+
+    $this->actingAs($user)->patch("/settings/site/appointment-requests/{$request->id}/professional", [
+        'professional_id' => $foreignProfessional->id,
+    ])->assertSessionHasErrors('professional_id');
+});
+
+it('blocks reassigning the professional once the lead has already been converted into a real appointment', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = Organization::find(session('active_organization_id'));
+    $originalProfessional = Professional::factory()->for($organization)->create();
+    $newProfessional = Professional::factory()->for($organization)->create();
+    $request = AppointmentRequest::factory()->for($organization)->create([
+        'professional_id' => $originalProfessional->id,
+        'appointment_id' => Appointment::factory()->for($organization)->create()->id,
+    ]);
+
+    $this->actingAs($user)->patch("/settings/site/appointment-requests/{$request->id}/professional", [
+        'professional_id' => $newProfessional->id,
+    ])->assertSessionHasErrors('professional_id');
+
+    expect($request->fresh()->professional_id)->toBe($originalProfessional->id);
+});
+
+it('blocks a non-owner without site.appointments.manage from reassigning the professional', function () {
+    actingOwnerWithActiveContext();
+    $organization = Organization::find(session('active_organization_id'));
+    $request = AppointmentRequest::factory()->for($organization)->create();
+    $member = User::factory()->create();
+    OrganizationMembership::factory()->for($organization)->for($member)->create();
+
+    $this->actingAs($member)->patch("/settings/site/appointment-requests/{$request->id}/professional", [
+        'professional_id' => null,
+    ])->assertForbidden();
+});
+
+it('blocks reassigning the professional of an appointment request that belongs to another organization', function () {
+    $user = actingOwnerWithActiveContext();
+    $professional = Professional::factory()->for($professionalOrganization = Organization::factory()->create())->create();
+    $foreignRequest = AppointmentRequest::factory()->for($professionalOrganization)->create(['professional_id' => $professional->id]);
+
+    $this->actingAs($user)->patch("/settings/site/appointment-requests/{$foreignRequest->id}/professional", [
+        'professional_id' => null,
+    ])->assertNotFound();
+
+    expect($foreignRequest->fresh()->professional_id)->toBe($professional->id);
+});
+
+it('flags professional_removed so the front-end can offer reassignment when the requested professional no longer exists', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = Organization::find(session('active_organization_id'));
+    $deletedProfessional = Professional::factory()->for($organization)->create(['display_name' => 'Dra Removida']);
+    $deletedProfessional->delete();
+    AppointmentRequest::factory()->for($organization)->create(['professional_id' => $deletedProfessional->id]);
+
+    $this->actingAs($user)->get('/settings/site/appointment-requests')
+        ->assertInertia(fn ($page) => $page
+            ->where('requests.data.0.professional_name', 'Dra Removida')
+            ->where('requests.data.0.professional_removed', true));
+});
+
 it('filters appointment requests by status', function () {
     $user = actingOwnerWithActiveContext();
     $organization = Organization::find(session('active_organization_id'));
@@ -183,7 +288,8 @@ it('exposes which professional a lead was requested for, and the structured fiel
     $this->actingAs($user)->get('/settings/site/appointment-requests')
         ->assertInertia(fn ($page) => $page
             ->where('requests.data.0.professional_id', $professional->id)
-            ->where('requests.data.0.professional_name', 'Dra Juliana Cruz'));
+            ->where('requests.data.0.professional_name', 'Dra Juliana Cruz')
+            ->where('requests.data.0.professional_removed', false));
 });
 
 it('hides cancelled requests from the default listing, but shows them when explicitly filtered', function () {
