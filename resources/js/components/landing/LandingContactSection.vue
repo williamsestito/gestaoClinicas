@@ -48,16 +48,16 @@ const whatsappUrl = computed(() => buildWhatsAppUrl(props.contact.whatsapp));
 
         <div class="grid gap-8 lg:grid-cols-2">
             <div
-                class="border-border bg-card space-y-4 rounded-2xl border p-6 shadow-sm"
+                class="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm"
             >
                 <div v-if="contact.address" class="flex gap-3">
-                    <MapPin class="text-primary mt-0.5 size-5 shrink-0" />
+                    <MapPin class="mt-0.5 size-5 shrink-0 text-primary" />
                     <div>
                         <p class="font-medium">
                             {{ contact.address.street }},
                             {{ contact.address.number }}
                         </p>
-                        <p class="text-muted-foreground text-sm">
+                        <p class="text-sm text-muted-foreground">
                             {{ contact.address.city }}/{{
                                 contact.address.state
                             }}
@@ -66,14 +66,14 @@ const whatsappUrl = computed(() => buildWhatsAppUrl(props.contact.whatsapp));
                 </div>
 
                 <div v-if="contact.phone" class="flex items-center gap-3">
-                    <Phone class="text-primary size-5 shrink-0" />
+                    <Phone class="size-5 shrink-0 text-primary" />
                     <a :href="`tel:${contact.phone}`" class="hover:underline">
                         {{ contact.phone }}
                     </a>
                 </div>
 
                 <div v-if="contact.email" class="flex items-center gap-3">
-                    <Mail class="text-primary size-5 shrink-0" />
+                    <Mail class="size-5 shrink-0 text-primary" />
                     <a
                         :href="`mailto:${contact.email}`"
                         class="hover:underline"
@@ -86,7 +86,7 @@ const whatsappUrl = computed(() => buildWhatsAppUrl(props.contact.whatsapp));
                     <p class="mb-2 text-sm font-medium">
                         Horário de atendimento
                     </p>
-                    <ul class="text-muted-foreground space-y-1 text-sm">
+                    <ul class="space-y-1 text-sm text-muted-foreground">
                         <li
                             v-for="hour in sortedHours"
                             :key="`${hour.day_of_week}-${hour.opens_at}`"
@@ -125,13 +125,13 @@ const whatsappUrl = computed(() => buildWhatsAppUrl(props.contact.whatsapp));
 
             <div
                 v-if="mapsSearchUrl"
-                class="border-border overflow-hidden rounded-2xl border"
+                class="overflow-hidden rounded-2xl border border-border"
             >
                 <a
                     :href="mapsSearchUrl"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="bg-muted text-muted-foreground hover:bg-muted/70 flex h-full min-h-64 flex-col items-center justify-center gap-2 transition-colors"
+                    class="flex h-full min-h-64 flex-col items-center justify-center gap-2 bg-muted text-muted-foreground transition-colors hover:bg-muted/70"
                 >
                     <MapPin class="size-8" />
                     <span class="text-sm font-medium"

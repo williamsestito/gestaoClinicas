@@ -83,7 +83,7 @@ function submit() {
 
     <div
         v-if="!organizationConfigured"
-        class="text-muted-foreground text-center text-sm"
+        class="text-center text-sm text-muted-foreground"
     >
         Cadastro indisponível no momento.
     </div>
@@ -177,7 +177,7 @@ function submit() {
             <template v-if="form.registering_for === 'self'">
                 <div class="flex flex-col items-center gap-2">
                     <div class="relative">
-                        <Avatar class="border-border size-20 border">
+                        <Avatar class="size-20 border border-border">
                             <AvatarImage
                                 v-if="photoPreviewUrl"
                                 :src="photoPreviewUrl"
@@ -189,7 +189,7 @@ function submit() {
                         </Avatar>
                         <button
                             type="button"
-                            class="border-border bg-background hover:bg-accent absolute -bottom-1 -right-1 flex size-7 items-center justify-center rounded-full border shadow-sm"
+                            class="absolute -right-1 -bottom-1 flex size-7 items-center justify-center rounded-full border border-border bg-background shadow-sm hover:bg-accent"
                             aria-label="Adicionar foto"
                             @click="pickPhoto"
                         >
@@ -204,7 +204,7 @@ function submit() {
                             @change="onPhotoChange"
                         />
                     </div>
-                    <p class="text-muted-foreground text-xs">Foto (opcional)</p>
+                    <p class="text-xs text-muted-foreground">Foto (opcional)</p>
                     <InputError :message="form.errors.photo" />
                 </div>
 
@@ -303,7 +303,7 @@ function submit() {
             </Button>
         </div>
 
-        <div class="text-muted-foreground text-center text-sm">
+        <div class="text-center text-sm text-muted-foreground">
             Já tem uma conta?
             <TextLink :href="login()">Entrar</TextLink>
         </div>

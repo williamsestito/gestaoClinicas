@@ -75,7 +75,7 @@ function previous() {
     <section
         v-if="items.length > 0"
         id="gallery"
-        class="bg-muted/40 scroll-mt-16 py-16"
+        class="scroll-mt-16 bg-muted/40 py-16"
     >
         <div class="mx-auto max-w-6xl px-4 sm:px-6">
             <div
@@ -96,7 +96,7 @@ function previous() {
             <div class="relative">
                 <div
                     ref="trackRef"
-                    class="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    class="flex snap-x snap-mandatory [scrollbar-width:none] gap-3 overflow-x-auto scroll-smooth pb-2 [&::-webkit-scrollbar]:hidden"
                     role="region"
                     aria-label="Carrossel de imagens da galeria"
                     tabindex="0"
@@ -107,7 +107,7 @@ function previous() {
                         v-for="(item, index) in previewItems"
                         :key="item.id"
                         type="button"
-                        class="border-border focus-visible:ring-ring group w-40 shrink-0 snap-start overflow-hidden rounded-xl border focus-visible:outline-none focus-visible:ring-2 sm:w-56"
+                        class="group w-40 shrink-0 snap-start overflow-hidden rounded-xl border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:w-56"
                         :aria-label="`Ver imagem: ${item.caption || item.alt_text || 'imagem da galeria'}`"
                         @click="open(index)"
                     >
@@ -119,7 +119,7 @@ function previous() {
                         />
                         <p
                             v-if="item.caption"
-                            class="bg-card text-muted-foreground truncate px-2 py-1.5 text-left text-xs"
+                            class="truncate bg-card px-2 py-1.5 text-left text-xs text-muted-foreground"
                         >
                             {{ item.caption }}
                         </p>
@@ -129,7 +129,7 @@ function previous() {
                 <button
                     v-if="previewItems.length > 1"
                     type="button"
-                    class="border-border bg-background hover:bg-muted absolute left-0 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 rounded-full border p-2 shadow-sm sm:block"
+                    class="absolute top-1/2 left-0 hidden -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-background p-2 shadow-sm hover:bg-muted sm:block"
                     aria-label="Deslizar galeria para a esquerda"
                     @click="scrollByAmount(-1)"
                 >
@@ -138,7 +138,7 @@ function previous() {
                 <button
                     v-if="previewItems.length > 1"
                     type="button"
-                    class="border-border bg-background hover:bg-muted absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 rounded-full border p-2 shadow-sm sm:block"
+                    class="absolute top-1/2 right-0 hidden translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-background p-2 shadow-sm hover:bg-muted sm:block"
                     aria-label="Deslizar galeria para a direita"
                     @click="scrollByAmount(1)"
                 >
@@ -173,7 +173,7 @@ function previous() {
                     </p>
 
                     <DialogClose
-                        class="absolute right-2 top-2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
+                        class="absolute top-2 right-2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
                         aria-label="Fechar"
                     >
                         <X class="size-4" />
@@ -182,7 +182,7 @@ function previous() {
                     <button
                         v-if="previewItems.length > 1"
                         type="button"
-                        class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
+                        class="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
                         aria-label="Imagem anterior"
                         @click="previous"
                     >
@@ -191,7 +191,7 @@ function previous() {
                     <button
                         v-if="previewItems.length > 1"
                         type="button"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
+                        class="absolute top-1/2 right-2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
                         aria-label="Próxima imagem"
                         @click="next"
                     >

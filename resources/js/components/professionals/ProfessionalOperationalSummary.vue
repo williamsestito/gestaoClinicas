@@ -67,7 +67,7 @@ function formatDate(value: string): string {
                 <span
                     v-for="reason in summary.reasons"
                     :key="reason"
-                    class="text-muted-foreground text-xs"
+                    class="text-xs text-muted-foreground"
                 >
                     {{ reason }}
                 </span>
@@ -75,27 +75,27 @@ function formatDate(value: string): string {
 
             <div class="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                 <div>
-                    <p class="text-muted-foreground text-xs">
+                    <p class="text-xs text-muted-foreground">
                         Unidade principal
                     </p>
                     <p>{{ summary.primary_unit?.name ?? 'Não definida' }}</p>
-                    <p class="text-muted-foreground text-xs">
+                    <p class="text-xs text-muted-foreground">
                         {{ summary.active_units_count }} unidade(s) ativa(s)
                     </p>
                 </div>
                 <div>
-                    <p class="text-muted-foreground text-xs">
+                    <p class="text-xs text-muted-foreground">
                         Especialidade principal
                     </p>
                     <p>
                         {{ summary.primary_specialty?.name ?? 'Não definida' }}
                     </p>
-                    <p class="text-muted-foreground text-xs">
+                    <p class="text-xs text-muted-foreground">
                         {{ summary.specialties_count }} especialidade(s)
                     </p>
                 </div>
                 <div>
-                    <p class="text-muted-foreground text-xs">
+                    <p class="text-xs text-muted-foreground">
                         Registro principal
                     </p>
                     <p v-if="summary.primary_registration">
@@ -105,9 +105,9 @@ function formatDate(value: string): string {
                     <p v-else>Não definido</p>
                 </div>
                 <div>
-                    <p class="text-muted-foreground text-xs">Serviços ativos</p>
+                    <p class="text-xs text-muted-foreground">Serviços ativos</p>
                     <p>{{ summary.active_services_count }}</p>
-                    <p class="text-muted-foreground text-xs">
+                    <p class="text-xs text-muted-foreground">
                         Jornada
                         {{
                             summary.has_working_hours
@@ -120,7 +120,7 @@ function formatDate(value: string): string {
 
             <p
                 v-if="summary.next_time_block"
-                class="text-muted-foreground text-sm"
+                class="text-sm text-muted-foreground"
             >
                 Próxima ausência:
                 {{

@@ -207,7 +207,7 @@ function submit() {
 
         <div
             v-if="prefill"
-            class="border-primary/30 bg-primary/5 max-w-2xl rounded-lg border p-4 text-sm"
+            class="max-w-2xl rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm"
         >
             <p class="font-medium">
                 {{
@@ -248,7 +248,7 @@ function submit() {
                     <p
                         v-if="isUnitLocked"
                         id="appointment-unit"
-                        class="border-input bg-muted flex h-9 items-center rounded-md border px-3 text-sm"
+                        class="flex h-9 items-center rounded-md border border-input bg-muted px-3 text-sm"
                     >
                         {{ lockedUnitName }}
                     </p>
@@ -256,7 +256,7 @@ function submit() {
                         v-else
                         id="appointment-unit"
                         v-model="form.unit_id"
-                        class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                        class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                     >
                         <option value="" disabled>Selecione</option>
                         <option
@@ -274,7 +274,7 @@ function submit() {
                     <p
                         v-if="isProfessionalLocked"
                         id="appointment-professional"
-                        class="border-input bg-muted flex h-9 items-center rounded-md border px-3 text-sm"
+                        class="flex h-9 items-center rounded-md border border-input bg-muted px-3 text-sm"
                     >
                         {{ lockedProfessionalName }}
                     </p>
@@ -282,7 +282,7 @@ function submit() {
                         v-else
                         id="appointment-professional"
                         v-model="form.professional_id"
-                        class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                        class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                     >
                         <option value="" disabled>Selecione</option>
                         <option
@@ -300,7 +300,7 @@ function submit() {
                     <select
                         id="appointment-service"
                         v-model="form.service_id"
-                        class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                        class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                     >
                         <option value="" disabled>Selecione</option>
                         <option
@@ -321,12 +321,12 @@ function submit() {
 
             <div v-if="date" class="grid gap-2">
                 <Label>Horários disponíveis</Label>
-                <p v-if="loadingSlots" class="text-muted-foreground text-sm">
+                <p v-if="loadingSlots" class="text-sm text-muted-foreground">
                     Buscando horários…
                 </p>
                 <p
                     v-else-if="slots.length === 0"
-                    class="text-muted-foreground text-sm"
+                    class="text-sm text-muted-foreground"
                 >
                     Nenhum horário livre encontrado para os filtros
                     selecionados.
@@ -387,7 +387,7 @@ function submit() {
                 <select
                     id="appointment-session-package"
                     v-model="form.session_package_id"
-                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                     <option value="">Não descontar de pacote</option>
                     <option

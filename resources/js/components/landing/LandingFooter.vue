@@ -35,7 +35,7 @@ const currentYear = new Date().getFullYear();
 </script>
 
 <template>
-    <footer class="border-border bg-muted/30 border-t">
+    <footer class="border-t border-border bg-muted/30">
         <div
             class="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-4"
         >
@@ -49,14 +49,14 @@ const currentYear = new Date().getFullYear();
                     />
                     <AppLogoIcon
                         v-else
-                        class="text-primary size-8 rounded-md fill-current"
+                        class="size-8 rounded-md fill-current text-primary"
                         aria-hidden="true"
                     />
                     <span>{{ site.title }}</span>
                 </div>
                 <p
                     v-if="site.description"
-                    class="text-muted-foreground text-sm"
+                    class="text-sm text-muted-foreground"
                 >
                     {{ site.description }}
                 </p>
@@ -72,7 +72,7 @@ const currentYear = new Date().getFullYear();
                         :href="link.url"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+                        class="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                     >
                         {{ link.label }}
                     </a>
@@ -84,7 +84,7 @@ const currentYear = new Date().getFullYear();
                 aria-label="Navegação do rodapé"
                 class="space-y-2 text-sm"
             >
-                <p class="text-foreground font-medium">Navegação</p>
+                <p class="font-medium text-foreground">Navegação</p>
                 <ul class="space-y-1">
                     <li v-for="link in navLinks" :key="link.type">
                         <a
@@ -97,8 +97,8 @@ const currentYear = new Date().getFullYear();
                 </ul>
             </nav>
 
-            <div v-if="contact" class="text-muted-foreground space-y-2 text-sm">
-                <p class="text-foreground font-medium">Contato</p>
+            <div v-if="contact" class="space-y-2 text-sm text-muted-foreground">
+                <p class="font-medium text-foreground">Contato</p>
                 <p v-if="contact.phone">{{ contact.phone }}</p>
                 <p v-if="contact.email">{{ contact.email }}</p>
                 <p v-if="contact.address">
@@ -107,12 +107,12 @@ const currentYear = new Date().getFullYear();
                 </p>
             </div>
 
-            <div class="text-muted-foreground space-y-2 text-sm">
-                <p class="text-foreground font-medium">Legal</p>
+            <div class="space-y-2 text-sm text-muted-foreground">
+                <p class="font-medium text-foreground">Legal</p>
                 <p>© {{ currentYear }} {{ site.title }}</p>
                 <p class="text-xs">
                     Site gerenciado via
-                    <span class="text-foreground font-medium"
+                    <span class="font-medium text-foreground"
                         >Gestão de Clínicas</span
                     >
                 </p>
@@ -120,7 +120,7 @@ const currentYear = new Date().getFullYear();
         </div>
 
         <div
-            class="border-border text-muted-foreground border-t px-4 py-4 text-center text-xs sm:px-6"
+            class="border-t border-border px-4 py-4 text-center text-xs text-muted-foreground sm:px-6"
         >
             {{ site.footer_text || `© ${currentYear} ${site.title}` }}
         </div>

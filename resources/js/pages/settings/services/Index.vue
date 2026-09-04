@@ -254,13 +254,13 @@ function formatDuration(minutes: number): string {
         <div v-if="hasAny" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-muted-foreground text-sm">Total</p>
+                    <p class="text-sm text-muted-foreground">Total</p>
                     <p class="text-2xl font-semibold">{{ indicators.total }}</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-muted-foreground text-sm">Ativos</p>
+                    <p class="text-sm text-muted-foreground">Ativos</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.active }}
                     </p>
@@ -268,7 +268,7 @@ function formatDuration(minutes: number): string {
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-muted-foreground text-sm">Inativos</p>
+                    <p class="text-sm text-muted-foreground">Inativos</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.inactive }}
                     </p>
@@ -276,7 +276,7 @@ function formatDuration(minutes: number): string {
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-muted-foreground text-sm">Excluídos</p>
+                    <p class="text-sm text-muted-foreground">Excluídos</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.deleted }}
                     </p>
@@ -290,7 +290,7 @@ function formatDuration(minutes: number): string {
         >
             <div class="relative sm:max-w-xs sm:flex-1">
                 <Search
-                    class="text-muted-foreground pointer-events-none absolute left-2.5 top-2.5 size-4"
+                    class="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground"
                 />
                 <Input
                     v-model="search"
@@ -303,7 +303,7 @@ function formatDuration(minutes: number): string {
             <select
                 v-model="statusFilter"
                 aria-label="Filtrar serviços por status"
-                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Todos</option>
                 <option value="active">Ativos</option>
@@ -314,7 +314,7 @@ function formatDuration(minutes: number): string {
             <select
                 v-model="specialtyFilter"
                 aria-label="Filtrar serviços por especialidade"
-                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Todas as especialidades</option>
                 <option
@@ -329,7 +329,7 @@ function formatDuration(minutes: number): string {
             <select
                 v-model="unitFilter"
                 aria-label="Filtrar serviços por unidade"
-                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Todas as unidades</option>
                 <option
@@ -344,7 +344,7 @@ function formatDuration(minutes: number): string {
             <select
                 v-model="professionalsFilter"
                 aria-label="Filtrar serviços por vínculo com profissionais"
-                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Profissionais: todos</option>
                 <option value="with">Com profissionais vinculados</option>
@@ -354,7 +354,7 @@ function formatDuration(minutes: number): string {
             <select
                 v-model="publicFilter"
                 aria-label="Filtrar serviços por exibição pública"
-                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Exibição pública: todos</option>
                 <option value="public">Exibição pública ativada</option>
@@ -364,7 +364,7 @@ function formatDuration(minutes: number): string {
             <select
                 v-model="availabilityFilter"
                 aria-label="Filtrar serviços por disponibilidade operacional"
-                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Disponibilidade: todas</option>
                 <option value="available">Disponível em alguma unidade</option>
@@ -394,7 +394,7 @@ function formatDuration(minutes: number): string {
             <div class="hidden overflow-x-auto rounded-md border md:block">
                 <table class="w-full text-sm">
                     <thead
-                        class="bg-muted/50 text-muted-foreground border-b text-left"
+                        class="border-b bg-muted/50 text-left text-muted-foreground"
                     >
                         <tr>
                             <th class="px-4 py-2 font-medium">Serviço</th>
@@ -420,24 +420,24 @@ function formatDuration(minutes: number): string {
                                 {{ service.name }}
                                 <span
                                     v-if="service.is_public"
-                                    class="text-muted-foreground ml-1 text-xs"
+                                    class="ml-1 text-xs text-muted-foreground"
                                     >(exibição pública futura)</span
                                 >
                             </td>
-                            <td class="text-muted-foreground px-4 py-3">
+                            <td class="px-4 py-3 text-muted-foreground">
                                 {{ service.code }}
                             </td>
-                            <td class="text-muted-foreground px-4 py-3">
+                            <td class="px-4 py-3 text-muted-foreground">
                                 {{
                                     formatDuration(
                                         service.default_duration_minutes,
                                     )
                                 }}
                             </td>
-                            <td class="text-muted-foreground px-4 py-3">
+                            <td class="px-4 py-3 text-muted-foreground">
                                 {{ formatPrice(service.default_price_cents) }}
                             </td>
-                            <td class="text-muted-foreground px-4 py-3">
+                            <td class="px-4 py-3 text-muted-foreground">
                                 {{ service.specialties.join(', ') || '—' }}
                             </td>
                             <td class="px-4 py-3">
@@ -468,7 +468,7 @@ function formatDuration(minutes: number): string {
                         <div class="flex items-start justify-between gap-2">
                             <div>
                                 <p class="font-medium">{{ service.name }}</p>
-                                <p class="text-muted-foreground text-sm">
+                                <p class="text-sm text-muted-foreground">
                                     {{ service.code }}
                                 </p>
                             </div>
@@ -488,7 +488,7 @@ function formatDuration(minutes: number): string {
                             :deleted-at="service.deleted_at"
                         />
 
-                        <p class="text-muted-foreground text-sm">
+                        <p class="text-sm text-muted-foreground">
                             {{
                                 formatDuration(service.default_duration_minutes)
                             }}
@@ -501,7 +501,7 @@ function formatDuration(minutes: number): string {
 
         <p
             v-if="hasAny && hasActiveFilters"
-            class="text-muted-foreground text-sm"
+            class="text-sm text-muted-foreground"
         >
             {{ filteredServices.length }} de {{ indicators.total }} serviços
         </p>

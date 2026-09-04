@@ -183,7 +183,7 @@ function confirmDelete() {
                 class="overflow-hidden rounded-md border"
             >
                 <div
-                    class="bg-muted/40 flex h-24 items-center justify-center p-4"
+                    class="flex h-24 items-center justify-center bg-muted/40 p-4"
                 >
                     <img
                         v-if="item.logo_url"
@@ -191,7 +191,7 @@ function confirmDelete() {
                         :alt="item.name"
                         class="max-h-full max-w-full object-contain"
                     />
-                    <span v-else class="text-muted-foreground text-sm">{{
+                    <span v-else class="text-sm text-muted-foreground">{{
                         item.name
                     }}</span>
                 </div>

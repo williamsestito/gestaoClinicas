@@ -37,7 +37,7 @@ const handleRegisterSuccess = () => {
             description="Gerencie suas chaves de acesso para entrar sem senha"
         />
 
-        <div class="border-border overflow-hidden rounded-lg border">
+        <div class="overflow-hidden rounded-lg border border-border">
             <template v-if="passkeys.length">
                 <PasskeyItem
                     v-for="passkey in passkeys"
@@ -49,12 +49,12 @@ const handleRegisterSuccess = () => {
 
             <div v-else class="p-8 text-center">
                 <div
-                    class="bg-muted mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
+                    class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted"
                 >
-                    <KeyRound class="text-muted-foreground h-7 w-7" />
+                    <KeyRound class="h-7 w-7 text-muted-foreground" />
                 </div>
                 <p class="font-medium">Nenhuma chave de acesso ainda</p>
-                <p class="text-muted-foreground mt-1 text-sm">
+                <p class="mt-1 text-sm text-muted-foreground">
                     Adicione uma chave de acesso para entrar sem senha
                 </p>
             </div>

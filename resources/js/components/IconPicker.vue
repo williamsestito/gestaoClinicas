@@ -65,7 +65,7 @@ function select(key: string) {
 
             <div class="relative">
                 <Search
-                    class="text-muted-foreground pointer-events-none absolute left-2.5 top-2.5 size-4"
+                    class="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground"
                 />
                 <Input
                     v-model="search"
@@ -84,17 +84,17 @@ function select(key: string) {
                     v-for="option in filteredIcons"
                     :key="option.key"
                     type="button"
-                    class="hover:border-border hover:bg-muted flex flex-col items-center gap-1.5 rounded-md border border-transparent p-3 text-center"
+                    class="flex flex-col items-center gap-1.5 rounded-md border border-transparent p-3 text-center hover:border-border hover:bg-muted"
                     :class="{ 'border-primary bg-muted': model === option.key }"
                     @click="select(option.key)"
                 >
                     <component :is="option.icon" class="size-6" />
-                    <span class="text-muted-foreground text-xs">{{
+                    <span class="text-xs text-muted-foreground">{{
                         option.label
                     }}</span>
                 </button>
             </div>
-            <p v-else class="text-muted-foreground py-6 text-center text-sm">
+            <p v-else class="py-6 text-center text-sm text-muted-foreground">
                 Nenhum ícone encontrado para "{{ search }}".
             </p>
         </DialogContent>

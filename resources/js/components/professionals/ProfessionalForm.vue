@@ -120,7 +120,7 @@ function submit() {
                 />
                 <p
                     v-if="mode === 'create'"
-                    class="text-muted-foreground text-xs"
+                    class="text-xs text-muted-foreground"
                 >
                     Usado para o acesso do profissional ao sistema.
                 </p>
@@ -143,7 +143,7 @@ function submit() {
                     :placeholder="professional?.document ?? undefined"
                     @input="onDocumentInput"
                 />
-                <p v-if="mode === 'edit'" class="text-muted-foreground text-xs">
+                <p v-if="mode === 'edit'" class="text-xs text-muted-foreground">
                     Deixe em branco para manter o documento atual.
                 </p>
                 <InputError :message="form.errors.document" />
@@ -186,7 +186,7 @@ function submit() {
                     <InputError :message="form.errors.password_confirmation" />
                 </div>
 
-                <p class="text-muted-foreground text-xs sm:col-span-2">
+                <p class="text-xs text-muted-foreground sm:col-span-2">
                     O profissional já é criado com acesso ao sistema (papel
                     "Profissional") usando o e-mail e a senha informados acima.
                 </p>
@@ -195,7 +195,7 @@ function submit() {
             <div class="grid gap-2 sm:col-span-2">
                 <Label for="professional-bio">Biografia (opcional)</Label>
                 <Textarea id="professional-bio" v-model="form.bio" rows="4" />
-                <p class="text-muted-foreground text-xs">
+                <p class="text-xs text-muted-foreground">
                     Exibida publicamente somente se "Exibir no site" estiver
                     marcado.
                 </p>
@@ -207,7 +207,7 @@ function submit() {
                     <Checkbox v-model:model-value="form.is_public" />
                     Exibir no site público
                 </Label>
-                <p class="text-muted-foreground text-xs">
+                <p class="text-xs text-muted-foreground">
                     Quando marcado, o nome de exibição, a foto e a biografia
                     podem aparecer na página pública da clínica. Nenhum dado
                     sensível é exibido.

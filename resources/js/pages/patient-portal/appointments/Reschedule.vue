@@ -167,7 +167,7 @@ function submit() {
     <div class="flex flex-col gap-6">
         <div>
             <h1 class="text-xl font-medium">Reagendar</h1>
-            <p class="text-muted-foreground text-sm">
+            <p class="text-sm text-muted-foreground">
                 {{ appointment.service_name }} com
                 {{ appointment.professional_name }}.
             </p>
@@ -175,7 +175,7 @@ function submit() {
 
         <form class="flex max-w-2xl flex-col gap-6" @submit.prevent="submit">
             <div
-                class="border-border bg-card grid gap-4 rounded-2xl border p-6 shadow-sm"
+                class="grid gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm"
             >
                 <div class="grid gap-3">
                     <div class="flex items-center justify-between">
@@ -207,7 +207,7 @@ function submit() {
 
                     <div
                         v-if="isLoading('dates')"
-                        class="text-muted-foreground flex items-center gap-2 text-sm"
+                        class="flex items-center gap-2 text-sm text-muted-foreground"
                         aria-live="polite"
                     >
                         <Loader2 class="size-4 animate-spin" />
@@ -221,7 +221,7 @@ function submit() {
                         <span
                             v-for="label in ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']"
                             :key="label"
-                            class="text-muted-foreground text-xs font-medium"
+                            class="text-xs font-medium text-muted-foreground"
                             >{{ label }}</span
                         >
                         <template
@@ -242,8 +242,8 @@ function submit() {
                                 class="rounded-md py-1.5 text-sm"
                                 :class="[
                                     cell.isAvailable
-                                        ? 'bg-primary/10 hover:bg-primary/20 cursor-pointer'
-                                        : 'text-muted-foreground/50 cursor-not-allowed',
+                                        ? 'cursor-pointer bg-primary/10 hover:bg-primary/20'
+                                        : 'cursor-not-allowed text-muted-foreground/50',
                                     selectedDate === cell.date &&
                                         'bg-primary text-primary-foreground hover:bg-primary',
                                 ]"
@@ -265,7 +265,7 @@ function submit() {
 
                     <div
                         v-if="isLoading('times')"
-                        class="text-muted-foreground flex items-center gap-2 text-sm"
+                        class="flex items-center gap-2 text-sm text-muted-foreground"
                         aria-live="polite"
                     >
                         <Loader2 class="size-4 animate-spin" />
@@ -274,7 +274,7 @@ function submit() {
 
                     <p
                         v-else-if="times.length === 0"
-                        class="text-muted-foreground text-sm"
+                        class="text-sm text-muted-foreground"
                     >
                         Nenhum horário disponível para os filtros selecionados.
                     </p>
@@ -298,7 +298,7 @@ function submit() {
                     </div>
                 </div>
 
-                <p v-if="error" role="alert" class="text-destructive text-sm">
+                <p v-if="error" role="alert" class="text-sm text-destructive">
                     {{ error }}
                 </p>
             </div>

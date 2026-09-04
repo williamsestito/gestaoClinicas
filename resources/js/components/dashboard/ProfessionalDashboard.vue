@@ -473,7 +473,7 @@ function dismissFiredAlarm() {
                 role="button"
                 tabindex="0"
                 data-testid="dashboard-counter-card"
-                class="hover:bg-muted/50 cursor-pointer transition-colors"
+                class="cursor-pointer transition-colors hover:bg-muted/50"
                 @click="goToAgenda()"
                 @keydown.enter="goToAgenda()"
             >
@@ -488,7 +488,7 @@ function dismissFiredAlarm() {
                 role="button"
                 tabindex="0"
                 data-testid="dashboard-counter-card"
-                class="hover:bg-muted/50 cursor-pointer transition-colors"
+                class="cursor-pointer transition-colors hover:bg-muted/50"
                 @click="goToAgenda()"
                 @keydown.enter="goToAgenda()"
             >
@@ -503,7 +503,7 @@ function dismissFiredAlarm() {
                 role="button"
                 tabindex="0"
                 data-testid="dashboard-counter-card"
-                class="hover:bg-muted/50 cursor-pointer transition-colors"
+                class="cursor-pointer transition-colors hover:bg-muted/50"
                 @click="goToAgenda()"
                 @keydown.enter="goToAgenda()"
             >
@@ -516,7 +516,7 @@ function dismissFiredAlarm() {
             </Card>
             <Link :href="myAppointmentRequests()" class="block">
                 <Card
-                    class="hover:bg-muted/50 cursor-pointer transition-colors"
+                    class="cursor-pointer transition-colors hover:bg-muted/50"
                 >
                     <CardHeader class="pb-2">
                         <CardDescription>Pré-agendamentos</CardDescription>
@@ -525,7 +525,7 @@ function dismissFiredAlarm() {
                         }}</CardTitle>
                     </CardHeader>
                     <CardContent class="pt-0">
-                        <span class="text-primary text-sm font-medium">
+                        <span class="text-sm font-medium text-primary">
                             Ver pré-agendamentos
                         </span>
                     </CardContent>
@@ -610,7 +610,7 @@ function dismissFiredAlarm() {
                                     'S',
                                 ]"
                                 :key="label"
-                                class="text-muted-foreground text-xs font-medium"
+                                class="text-xs font-medium text-muted-foreground"
                                 >{{ label }}</span
                             >
                             <template
@@ -632,7 +632,7 @@ function dismissFiredAlarm() {
                                     class="flex flex-col items-center gap-0.5 rounded-md py-1.5 text-sm"
                                     :class="[
                                         cell.count > 0
-                                            ? 'bg-primary/10 hover:bg-primary/20 cursor-pointer'
+                                            ? 'cursor-pointer bg-primary/10 hover:bg-primary/20'
                                             : 'text-muted-foreground/50',
                                         selectedCalendarDay === cell.date &&
                                             'bg-primary text-primary-foreground hover:bg-primary',
@@ -658,7 +658,7 @@ function dismissFiredAlarm() {
                             </p>
                             <button
                                 type="button"
-                                class="text-muted-foreground hover:text-foreground underline underline-offset-2"
+                                class="text-muted-foreground underline underline-offset-2 hover:text-foreground"
                                 @click="selectedCalendarDay = null"
                             >
                                 Ver mês inteiro
@@ -668,7 +668,7 @@ function dismissFiredAlarm() {
 
                     <p
                         v-if="visibleAgenda.length === 0"
-                        class="text-muted-foreground py-6 text-center text-sm"
+                        class="py-6 text-center text-sm text-muted-foreground"
                     >
                         Nenhum agendamento neste período.
                     </p>
@@ -799,7 +799,7 @@ function dismissFiredAlarm() {
                     </ul>
                     <p
                         v-if="data.agendaTruncated"
-                        class="text-muted-foreground mt-2 text-xs"
+                        class="mt-2 text-xs text-muted-foreground"
                     >
                         Mostrando os primeiros agendamentos do período — reduza
                         o período para ver a lista completa.
@@ -818,7 +818,7 @@ function dismissFiredAlarm() {
                 <CardContent class="grid gap-4">
                     <p
                         v-if="data.reminders.length === 0"
-                        class="text-muted-foreground text-sm"
+                        class="text-sm text-muted-foreground"
                     >
                         Nenhum lembrete ainda.
                     </p>
@@ -836,7 +836,7 @@ function dismissFiredAlarm() {
                             <span
                                 role="button"
                                 tabindex="-1"
-                                class="text-muted-foreground hover:text-foreground absolute right-1 top-1 rounded p-1"
+                                class="absolute top-1 right-1 rounded p-1 text-muted-foreground hover:text-foreground"
                                 aria-label="Remover lembrete"
                                 @click.stop="removeReminder(reminder)"
                             >
@@ -844,9 +844,9 @@ function dismissFiredAlarm() {
                             </span>
                             <AlarmClock
                                 v-if="reminder.alarm_at"
-                                class="text-muted-foreground mb-1 size-3.5"
+                                class="mb-1 size-3.5 text-muted-foreground"
                             />
-                            <p class="line-clamp-3 whitespace-pre-wrap pr-4">
+                            <p class="line-clamp-3 pr-4 whitespace-pre-wrap">
                                 {{ reminder.body }}
                             </p>
                         </button>
@@ -915,7 +915,7 @@ function dismissFiredAlarm() {
                 </DialogHeader>
                 <p
                     :class="[
-                        'whitespace-pre-wrap rounded-md border p-3 text-sm',
+                        'rounded-md border p-3 text-sm whitespace-pre-wrap',
                         REMINDER_COLORS[expandedReminder.color],
                     ]"
                 >
@@ -952,7 +952,7 @@ function dismissFiredAlarm() {
                 </DialogHeader>
                 <p
                     :class="[
-                        'whitespace-pre-wrap rounded-md border p-3 text-sm',
+                        'rounded-md border p-3 text-sm whitespace-pre-wrap',
                         REMINDER_COLORS[firedAlarmReminder.color],
                     ]"
                 >

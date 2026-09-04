@@ -109,7 +109,7 @@ function restorePatient(patient: PatientRow) {
             <div class="grid gap-2">
                 <label
                     for="patient-search"
-                    class="text-muted-foreground text-sm font-medium"
+                    class="text-sm font-medium text-muted-foreground"
                 >
                     Buscar
                 </label>
@@ -123,14 +123,14 @@ function restorePatient(patient: PatientRow) {
             <div class="grid gap-2">
                 <label
                     for="patient-status"
-                    class="text-muted-foreground text-sm font-medium"
+                    class="text-sm font-medium text-muted-foreground"
                 >
                     Status
                 </label>
                 <select
                     id="patient-status"
                     v-model="statusFilter"
-                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                     <option value="">Todos</option>
                     <option value="active">Ativos</option>
@@ -140,14 +140,14 @@ function restorePatient(patient: PatientRow) {
             <div class="grid gap-2">
                 <label
                     for="patient-professional"
-                    class="text-muted-foreground text-sm font-medium"
+                    class="text-sm font-medium text-muted-foreground"
                 >
                     Profissional
                 </label>
                 <select
                     id="patient-professional"
                     v-model="professionalFilter"
-                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                     <option value="">Todos</option>
                     <option
@@ -171,7 +171,7 @@ function restorePatient(patient: PatientRow) {
         <div v-else class="overflow-x-auto rounded-lg border">
             <table class="w-full text-sm">
                 <thead
-                    class="bg-muted/50 text-muted-foreground text-left text-xs uppercase"
+                    class="bg-muted/50 text-left text-xs text-muted-foreground uppercase"
                 >
                     <tr>
                         <th class="px-4 py-3">Nome</th>
@@ -187,17 +187,17 @@ function restorePatient(patient: PatientRow) {
                         <td class="px-4 py-3">
                             {{ patient.preferred_name || patient.name }}
                         </td>
-                        <td class="text-muted-foreground px-4 py-3">
+                        <td class="px-4 py-3 text-muted-foreground">
                             {{ patient.document ?? '—' }}
                         </td>
-                        <td class="text-muted-foreground px-4 py-3">
+                        <td class="px-4 py-3 text-muted-foreground">
                             {{
                                 new Date(
                                     `${patient.birth_date}T00:00:00`,
                                 ).toLocaleDateString('pt-BR')
                             }}
                         </td>
-                        <td class="text-muted-foreground px-4 py-3">
+                        <td class="px-4 py-3 text-muted-foreground">
                             {{ patient.phone ?? '—' }}
                         </td>
                         <td class="px-4 py-3">
@@ -302,7 +302,7 @@ function restorePatient(patient: PatientRow) {
                 </Link>
                 <span
                     v-else
-                    class="text-muted-foreground pointer-events-none rounded-md px-3 py-1 text-sm opacity-50"
+                    class="pointer-events-none rounded-md px-3 py-1 text-sm text-muted-foreground opacity-50"
                     aria-disabled="true"
                     v-html="link.label"
                 />

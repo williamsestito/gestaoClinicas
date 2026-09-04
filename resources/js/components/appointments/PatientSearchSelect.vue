@@ -138,24 +138,24 @@ function clear() {
                 <li v-for="patient in results" :key="patient.id">
                     <button
                         type="button"
-                        class="hover:bg-muted w-full p-2 text-left"
+                        class="w-full p-2 text-left hover:bg-muted"
                         @click="select(patient)"
                     >
                         {{ patient.name }}
                     </button>
                 </li>
             </ul>
-            <p v-else-if="searchFailed" class="text-destructive text-sm">
+            <p v-else-if="searchFailed" class="text-sm text-destructive">
                 Não foi possível buscar pacientes agora. Tente novamente ou peça
                 a alguém com acesso administrativo.
             </p>
-            <p v-else-if="hasSearched" class="text-muted-foreground text-sm">
+            <p v-else-if="hasSearched" class="text-sm text-muted-foreground">
                 Nenhum paciente encontrado com esse nome/CPF.
                 <a
                     :href="newPatientUrl"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="text-foreground font-medium underline underline-offset-2"
+                    class="font-medium text-foreground underline underline-offset-2"
                 >
                     Cadastre o paciente
                 </a>
@@ -166,7 +166,7 @@ function clear() {
                 :href="newPatientUrl"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="text-muted-foreground w-fit text-xs underline underline-offset-2"
+                class="w-fit text-xs text-muted-foreground underline underline-offset-2"
             >
                 Paciente novo? Cadastrar antes de confirmar
             </a>

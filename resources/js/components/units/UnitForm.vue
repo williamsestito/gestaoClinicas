@@ -98,7 +98,7 @@ function dayLabel(day: number): string {
         <div class="grid gap-4">
             <div>
                 <h3 class="text-sm font-medium">Informações da unidade</h3>
-                <p class="text-muted-foreground text-sm">
+                <p class="text-sm text-muted-foreground">
                     Nome, código e contatos usados para identificar a unidade.
                 </p>
             </div>
@@ -119,7 +119,7 @@ function dayLabel(day: number): string {
                 </div>
                 <p
                     v-else-if="unit"
-                    class="text-muted-foreground self-end text-sm sm:pb-2"
+                    class="self-end text-sm text-muted-foreground sm:pb-2"
                 >
                     Código: {{ unit.code }}
                 </p>
@@ -159,7 +159,7 @@ function dayLabel(day: number): string {
         <div v-if="mode === 'create'" class="grid gap-4">
             <div>
                 <h3 class="text-sm font-medium">Endereço</h3>
-                <p class="text-muted-foreground text-sm">
+                <p class="text-sm text-muted-foreground">
                     Informe o CEP para preencher automaticamente; ajuste o que
                     for necessário.
                 </p>
@@ -181,15 +181,15 @@ function dayLabel(day: number): string {
         <div v-else-if="unit" class="grid gap-4">
             <h3 class="text-sm font-medium">Endereço</h3>
             <Card v-if="unit.address">
-                <CardContent class="text-muted-foreground py-4 text-sm">
+                <CardContent class="py-4 text-sm text-muted-foreground">
                     {{ unit.address.street }}, {{ unit.address.number }} —
                     {{ unit.address.city }}/{{ unit.address.state }}
                 </CardContent>
             </Card>
-            <p v-else class="text-muted-foreground text-sm">
+            <p v-else class="text-sm text-muted-foreground">
                 Endereço não cadastrado.
             </p>
-            <p class="text-muted-foreground text-xs">
+            <p class="text-xs text-muted-foreground">
                 Endereço não é editável por aqui nesta etapa.
             </p>
         </div>
@@ -199,7 +199,7 @@ function dayLabel(day: number): string {
         <div v-if="mode === 'create'" class="grid gap-4">
             <div>
                 <h3 class="text-sm font-medium">Horários de funcionamento</h3>
-                <p class="text-muted-foreground text-sm">
+                <p class="text-sm text-muted-foreground">
                     Opcional — adicione um ou mais intervalos por dia da semana.
                 </p>
             </div>
@@ -212,7 +212,7 @@ function dayLabel(day: number): string {
             <h3 class="text-sm font-medium">Horários de funcionamento</h3>
             <Card v-if="unit.opening_hours.length">
                 <CardContent
-                    class="text-muted-foreground grid gap-1 py-4 text-sm"
+                    class="grid gap-1 py-4 text-sm text-muted-foreground"
                 >
                     <div
                         v-for="(hour, index) in unit.opening_hours"
@@ -223,10 +223,10 @@ function dayLabel(day: number): string {
                     </div>
                 </CardContent>
             </Card>
-            <p v-else class="text-muted-foreground text-sm">
+            <p v-else class="text-sm text-muted-foreground">
                 Nenhum horário de funcionamento cadastrado ainda.
             </p>
-            <p class="text-muted-foreground text-xs">
+            <p class="text-xs text-muted-foreground">
                 Horários não são editáveis por aqui nesta etapa.
             </p>
         </div>

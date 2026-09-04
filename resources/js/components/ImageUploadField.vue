@@ -49,11 +49,11 @@ function clear() {
                 v-if="previewUrl ?? props.currentUrl"
                 :src="previewUrl ?? props.currentUrl ?? undefined"
                 :alt="`Pré-visualização de ${label}`"
-                class="border-border size-12 shrink-0 rounded-md border object-cover"
+                class="size-12 shrink-0 rounded-md border border-border object-cover"
             />
             <button
                 type="button"
-                class="border-input text-muted-foreground hover:border-primary hover:text-foreground flex items-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm transition-colors"
+                class="flex items-center gap-2 rounded-md border border-dashed border-input px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
                 @click="inputRef?.click()"
             >
                 <Upload class="size-4" />
@@ -81,7 +81,7 @@ function clear() {
                 Remover seleção
             </Button>
         </div>
-        <p v-if="helperText" class="text-muted-foreground text-sm">
+        <p v-if="helperText" class="text-sm text-muted-foreground">
             {{ helperText }}
         </p>
     </div>

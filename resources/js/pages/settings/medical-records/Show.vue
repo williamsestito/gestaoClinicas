@@ -374,7 +374,7 @@ function uploadFile() {
             <CardContent class="grid gap-4">
                 <p
                     v-if="medicalRecord.addenda.length === 0"
-                    class="text-muted-foreground text-sm"
+                    class="text-sm text-muted-foreground"
                 >
                     Nenhum adendo registrado.
                 </p>
@@ -385,7 +385,7 @@ function uploadFile() {
                         class="rounded-md border p-3 text-sm"
                     >
                         <p class="whitespace-pre-wrap">{{ addendum.body }}</p>
-                        <p class="text-muted-foreground mt-1 text-xs">
+                        <p class="mt-1 text-xs text-muted-foreground">
                             {{ addendum.author_name }} —
                             {{ formatDateTimeBr(addendum.created_at) }}
                         </p>
@@ -436,7 +436,7 @@ function uploadFile() {
             <CardContent class="grid gap-4">
                 <p
                     v-if="medicalRecord.files.length === 0"
-                    class="text-muted-foreground text-sm"
+                    class="text-sm text-muted-foreground"
                 >
                     Nenhum arquivo anexado.
                 </p>
@@ -450,7 +450,7 @@ function uploadFile() {
                             <p class="font-medium">
                                 {{ file.original_filename }}
                             </p>
-                            <p class="text-muted-foreground text-xs">
+                            <p class="text-xs text-muted-foreground">
                                 {{ file.category_label }} ·
                                 {{ formatDateTimeBr(file.created_at) }}
                             </p>
@@ -496,7 +496,7 @@ function uploadFile() {
                         <div class="flex min-w-0 items-center gap-3">
                             <button
                                 type="button"
-                                class="border-input text-muted-foreground hover:border-primary hover:text-foreground flex shrink-0 items-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm transition-colors"
+                                class="flex shrink-0 items-center gap-2 rounded-md border border-dashed border-input px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
                                 @click="fileInput?.click()"
                             >
                                 <Upload class="size-4" />
@@ -505,7 +505,7 @@ function uploadFile() {
                             <span
                                 v-if="fileForm.file"
                                 :title="fileForm.file.name"
-                                class="text-muted-foreground min-w-0 flex-1 truncate text-sm"
+                                class="min-w-0 flex-1 truncate text-sm text-muted-foreground"
                             >
                                 {{ fileForm.file.name }}
                             </span>

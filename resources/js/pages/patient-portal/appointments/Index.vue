@@ -211,7 +211,7 @@ function confirmCancelPendingRequest() {
         >
             <h2
                 v-if="activePendingRequests.length > 0"
-                class="text-muted-foreground text-sm font-medium"
+                class="text-sm font-medium text-muted-foreground"
             >
                 Pré-agendamentos aguardando confirmação
             </h2>
@@ -227,7 +227,7 @@ function confirmCancelPendingRequest() {
                         </p>
                         <p
                             v-if="request.professional_name"
-                            class="text-muted-foreground text-sm"
+                            class="text-sm text-muted-foreground"
                         >
                             Com {{ request.professional_name }}
                         </p>
@@ -236,7 +236,7 @@ function confirmCancelPendingRequest() {
                                 request.preferred_date ||
                                 request.preferred_period
                             "
-                            class="text-muted-foreground text-sm"
+                            class="text-sm text-muted-foreground"
                         >
                             Preferência:
                             <template v-if="request.preferred_date">
@@ -301,7 +301,7 @@ function confirmCancelPendingRequest() {
                                 </p>
                                 <p
                                     v-if="request.professional_name"
-                                    class="text-muted-foreground text-sm"
+                                    class="text-sm text-muted-foreground"
                                 >
                                     Com {{ request.professional_name }}
                                 </p>
@@ -329,7 +329,7 @@ function confirmCancelPendingRequest() {
         <div v-if="appointments.length > 0" class="grid gap-3">
             <h2
                 v-if="pendingRequests.length > 0"
-                class="text-muted-foreground text-sm font-medium"
+                class="text-sm font-medium text-muted-foreground"
             >
                 Agendamentos confirmados
             </h2>
@@ -341,7 +341,7 @@ function confirmCancelPendingRequest() {
                         <p class="font-medium">
                             {{ formatDateTime(appointment.starts_at) }}
                         </p>
-                        <p class="text-muted-foreground text-sm">
+                        <p class="text-sm text-muted-foreground">
                             {{ appointment.service_name }} ·
                             {{ appointment.professional_name }} ·
                             {{ appointment.unit_name }}
@@ -350,7 +350,7 @@ function confirmCancelPendingRequest() {
                             v-if="
                                 appointment.status === 'awaiting_confirmation'
                             "
-                            class="text-muted-foreground text-sm"
+                            class="text-sm text-muted-foreground"
                         >
                             A clínica propôs este novo horário — confirme ou
                             recuse abaixo.

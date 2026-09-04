@@ -84,7 +84,7 @@ function formatDateTime(iso: string): string {
                     </span>
                     <span
                         v-if="record.professional_name"
-                        class="text-muted-foreground text-sm font-normal"
+                        class="text-sm font-normal text-muted-foreground"
                     >
                         Com {{ record.professional_name }}
                     </span>
@@ -93,10 +93,10 @@ function formatDateTime(iso: string): string {
             <CardContent class="flex flex-col gap-4">
                 <template v-for="section in sections" :key="section.key">
                     <div v-if="record[section.key]">
-                        <p class="text-muted-foreground text-sm font-medium">
+                        <p class="text-sm font-medium text-muted-foreground">
                             {{ section.label }}
                         </p>
-                        <p class="whitespace-pre-line text-sm">
+                        <p class="text-sm whitespace-pre-line">
                             {{ record[section.key] }}
                         </p>
                     </div>
@@ -112,7 +112,7 @@ function formatDateTime(iso: string): string {
                 </div>
 
                 <div v-if="record.addenda.length > 0" class="grid gap-2">
-                    <p class="text-muted-foreground text-sm font-medium">
+                    <p class="text-sm font-medium text-muted-foreground">
                         Observações adicionais
                     </p>
                     <div
@@ -121,14 +121,14 @@ function formatDateTime(iso: string): string {
                         class="rounded-md border p-3 text-sm"
                     >
                         <p class="whitespace-pre-line">{{ addendum.body }}</p>
-                        <p class="text-muted-foreground mt-1 text-xs">
+                        <p class="mt-1 text-xs text-muted-foreground">
                             {{ formatDateTime(addendum.created_at) }}
                         </p>
                     </div>
                 </div>
 
                 <div v-if="record.files.length > 0" class="grid gap-1">
-                    <p class="text-muted-foreground text-sm font-medium">
+                    <p class="text-sm font-medium text-muted-foreground">
                         Documentos e arquivos
                     </p>
                     <ul class="text-sm">

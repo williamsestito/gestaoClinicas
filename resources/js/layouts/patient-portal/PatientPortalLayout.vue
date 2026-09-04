@@ -21,8 +21,8 @@ const myDataHref = computed(() =>
 </script>
 
 <template>
-    <div class="bg-muted/30 flex min-h-svh flex-col">
-        <header class="bg-background border-b">
+    <div class="flex min-h-svh flex-col bg-muted/30">
+        <header class="border-b bg-background">
             <div
                 class="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-4"
             >
@@ -32,7 +32,7 @@ const myDataHref = computed(() =>
                 >
                     <AppLogo />
                     <span
-                        class="text-muted-foreground hidden text-sm font-medium sm:inline"
+                        class="hidden text-sm font-medium text-muted-foreground sm:inline"
                     >
                         Portal do paciente
                     </span>

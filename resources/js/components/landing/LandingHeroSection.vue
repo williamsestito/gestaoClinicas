@@ -57,11 +57,11 @@ const heroBackgroundVars = computed(() => {
             aria-hidden="true"
         >
             <div
-                class="absolute -left-24 -top-24 size-96 rounded-full opacity-20 blur-3xl"
+                class="absolute -top-24 -left-24 size-96 rounded-full opacity-20 blur-3xl"
                 style="background-color: var(--landing-primary)"
             />
             <div
-                class="absolute -bottom-24 -right-24 size-96 rounded-full opacity-20 blur-3xl"
+                class="absolute -right-24 -bottom-24 size-96 rounded-full opacity-20 blur-3xl"
                 style="background-color: var(--landing-primary-dark)"
             />
         </div>
@@ -78,7 +78,7 @@ const heroBackgroundVars = computed(() => {
             class="relative py-16 sm:py-24"
             :class="
                 hasHeroImage &&
-                'md:flex md:min-h-[520px] md:items-center md:bg-cover md:bg-center md:py-0 md:[background-image:var(--hero-bg-image)] lg:min-h-[620px]'
+                'md:flex md:min-h-[520px] md:items-center md:[background-image:var(--hero-bg-image)] md:bg-cover md:bg-center md:py-0 lg:min-h-[620px]'
             "
             :style="heroBackgroundVars"
         >
@@ -106,14 +106,14 @@ const heroBackgroundVars = computed(() => {
                         página sem um heading principal.
                     -->
                     <h1
-                        class="text-balance text-4xl font-bold leading-[0.98] tracking-tight sm:text-5xl"
+                        class="text-4xl leading-[0.98] font-bold tracking-tight text-balance sm:text-5xl"
                         :class="hasHeroImage && 'sr-only'"
                     >
                         {{ site.title }}
                     </h1>
                     <p
                         v-if="site.description && !hasHeroImage"
-                        class="text-muted-foreground mx-auto max-w-2xl text-balance text-lg"
+                        class="mx-auto max-w-2xl text-lg text-balance text-muted-foreground"
                     >
                         {{ site.description }}
                     </p>
@@ -182,7 +182,7 @@ const heroBackgroundVars = computed(() => {
 
                     <ul
                         v-if="quickHighlights.length > 0 && !hasHeroImage"
-                        class="text-muted-foreground flex flex-col flex-wrap items-center justify-center gap-x-6 gap-y-2 pt-2 text-sm sm:flex-row"
+                        class="flex flex-col flex-wrap items-center justify-center gap-x-6 gap-y-2 pt-2 text-sm text-muted-foreground sm:flex-row"
                     >
                         <li
                             v-for="highlight in quickHighlights"
@@ -213,7 +213,7 @@ const heroBackgroundVars = computed(() => {
                     :src="site.hero_image_url ?? undefined"
                     :alt="site.title"
                     fetchpriority="high"
-                    class="aspect-4/5 border-border sm:aspect-16/9 w-full rounded-2xl border object-cover shadow-lg"
+                    class="aspect-4/5 w-full rounded-2xl border border-border object-cover shadow-lg sm:aspect-16/9"
                     @error="heroImageFailedToLoad = true"
                 />
             </picture>

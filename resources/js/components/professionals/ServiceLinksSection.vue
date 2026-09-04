@@ -171,7 +171,7 @@ function restore(link: ServiceLink) {
 
 <template>
     <div class="grid gap-4">
-        <div v-if="links.length === 0" class="text-muted-foreground text-sm">
+        <div v-if="links.length === 0" class="text-sm text-muted-foreground">
             Nenhum serviço vinculado ainda.
         </div>
 
@@ -183,7 +183,7 @@ function restore(link: ServiceLink) {
             >
                 <div>
                     <p class="text-sm font-medium">{{ link.service.name }}</p>
-                    <p class="text-muted-foreground text-xs">
+                    <p class="text-xs text-muted-foreground">
                         {{
                             link.deleted_at
                                 ? 'Excluído'
@@ -203,7 +203,7 @@ function restore(link: ServiceLink) {
                                 : ' (personalizado)'
                         }}
                     </p>
-                    <p class="text-muted-foreground text-xs">
+                    <p class="text-xs text-muted-foreground">
                         {{ unitScopeLabels[link.unit_scope] }}
                         <span v-if="link.compatible_units.length > 0">
                             —

@@ -17,7 +17,7 @@ const whatsappUrl = computed(() => buildWhatsAppUrl(props.contact?.whatsapp));
 <template>
     <section
         id="cta"
-        class="bg-primary text-primary-foreground scroll-mt-16 py-14"
+        class="scroll-mt-16 bg-primary py-14 text-primary-foreground"
     >
         <div
             class="mx-auto flex max-w-4xl flex-col items-center gap-4 px-4 text-center sm:px-6"
@@ -44,7 +44,7 @@ const whatsappUrl = computed(() => buildWhatsAppUrl(props.contact?.whatsapp));
                     <Button
                         size="lg"
                         variant="outline"
-                        class="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10 bg-transparent"
+                        class="border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
                     >
                         <MessageCircle class="size-4" />
                         Falar no WhatsApp

@@ -139,7 +139,7 @@ function submit() {
         <div class="grid gap-4">
             <div>
                 <h3 class="text-sm font-medium">Identificação</h3>
-                <p class="text-muted-foreground text-sm">
+                <p class="text-sm text-muted-foreground">
                     Dados básicos do paciente.
                 </p>
             </div>
@@ -223,7 +223,7 @@ function submit() {
         <div class="grid gap-4">
             <div>
                 <h3 class="text-sm font-medium">Endereço (opcional)</h3>
-                <p class="text-muted-foreground text-sm">
+                <p class="text-sm text-muted-foreground">
                     Informe o CEP para preencher automaticamente. Se preencher,
                     rua, número, bairro, cidade e UF são obrigatórios.
                 </p>
@@ -249,7 +249,7 @@ function submit() {
             <div class="grid gap-4">
                 <div>
                     <h3 class="text-sm font-medium">Contato de emergência</h3>
-                    <p class="text-muted-foreground text-sm">
+                    <p class="text-sm text-muted-foreground">
                         Obrigatório — ao menos um contato de emergência.
                     </p>
                 </div>
@@ -264,7 +264,7 @@ function submit() {
             <div class="grid gap-4">
                 <div>
                     <h3 class="text-sm font-medium">Responsáveis</h3>
-                    <p class="text-muted-foreground text-sm">
+                    <p class="text-sm text-muted-foreground">
                         Obrigatório apenas para pacientes menores de 18 anos.
                     </p>
                 </div>

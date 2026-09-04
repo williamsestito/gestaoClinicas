@@ -23,7 +23,7 @@ function select(unit: Unit) {
     <div class="mx-auto flex max-w-md flex-col gap-6 p-4">
         <div>
             <h1 class="text-xl font-semibold">Escolha uma unidade</h1>
-            <p class="text-muted-foreground text-sm">
+            <p class="text-sm text-muted-foreground">
                 Você tem acesso a mais de uma unidade nesta organização.
             </p>
         </div>
@@ -32,7 +32,7 @@ function select(unit: Unit) {
             <Card
                 v-for="unit in units"
                 :key="unit.id"
-                class="hover:border-primary cursor-pointer transition"
+                class="cursor-pointer transition hover:border-primary"
                 @click="select(unit)"
             >
                 <CardContent class="flex items-center justify-between py-4">

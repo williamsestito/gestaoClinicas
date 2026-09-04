@@ -359,7 +359,7 @@ function submit() {
             <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">
                 Agende sua avaliação
             </h2>
-            <p class="text-muted-foreground mt-2">
+            <p class="mt-2 text-muted-foreground">
                 Preencha seus dados e entraremos em contato para confirmar o
                 melhor horário.
             </p>
@@ -382,7 +382,7 @@ function submit() {
                     {{ index + 1 }}
                 </span>
                 <p class="text-sm font-medium">{{ step.title }}</p>
-                <p class="text-muted-foreground text-xs">
+                <p class="text-xs text-muted-foreground">
                     {{ step.description }}
                 </p>
             </li>
@@ -392,12 +392,12 @@ function submit() {
 
         <div
             v-if="form.recentlySuccessful"
-            class="border-primary/30 bg-primary/5 flex flex-col items-center gap-2 rounded-xl border p-6 text-center"
+            class="flex flex-col items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 p-6 text-center"
             role="status"
         >
-            <CheckCircle2 class="text-primary size-8" />
+            <CheckCircle2 class="size-8 text-primary" />
             <p class="font-medium">Pré-agendamento enviado!</p>
-            <p class="text-muted-foreground text-sm">
+            <p class="text-sm text-muted-foreground">
                 Sua solicitação foi encaminhada à clínica. Você receberá a
                 confirmação do procedimento em breve, pelo telefone ou WhatsApp
                 informado.
@@ -406,14 +406,14 @@ function submit() {
 
         <form
             v-else
-            class="border-border bg-card grid gap-5 rounded-2xl border p-6 shadow-sm sm:p-8"
+            class="grid gap-5 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8"
             @submit.prevent="submit"
         >
             <div
                 v-if="form.errors.service_id || form.errors.professional_id"
                 class="grid gap-2"
             >
-                <p class="text-destructive text-sm">
+                <p class="text-sm text-destructive">
                     {{ form.errors.service_id || form.errors.professional_id }}
                     Você ainda pode enviar o pré-agendamento
                     <button
@@ -472,7 +472,7 @@ function submit() {
                         (v) => (form.document = maskCpf(String(v)))
                     "
                 />
-                <p class="text-muted-foreground text-xs">
+                <p class="text-xs text-muted-foreground">
                     Ajuda a localizar seu cadastro, caso você já seja paciente.
                 </p>
                 <InputError :message="form.errors.document" />
@@ -552,7 +552,7 @@ function submit() {
                 <Spinner v-if="form.processing" />
                 Criar pré-agendamento
             </Button>
-            <p class="text-muted-foreground text-center text-xs">
+            <p class="text-center text-xs text-muted-foreground">
                 O envio não garante reserva do horário — nossa equipe confirmará
                 a disponibilidade pelo telefone ou WhatsApp informado.
             </p>
@@ -564,7 +564,7 @@ function submit() {
         >
             <DialogContent class="sm:max-w-md">
                 <DialogHeader class="items-center text-center">
-                    <CheckCircle2 class="text-primary mb-2 size-8" />
+                    <CheckCircle2 class="mb-2 size-8 text-primary" />
                     <DialogTitle>Pré-agendamento enviado!</DialogTitle>
                     <DialogDescription>
                         Sua solicitação foi encaminhada à clínica. Você receberá
@@ -572,7 +572,7 @@ function submit() {
                         WhatsApp informado.
                     </DialogDescription>
                 </DialogHeader>
-                <p class="text-muted-foreground text-center text-sm">
+                <p class="text-center text-sm text-muted-foreground">
                     Acompanhe o status da sua solicitação pelo portal do
                     paciente.
                 </p>

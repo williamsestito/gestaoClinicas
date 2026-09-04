@@ -58,7 +58,7 @@ defineOptions({
         <div v-else class="overflow-x-auto rounded-lg border">
             <table class="w-full text-sm">
                 <thead
-                    class="bg-muted/50 text-muted-foreground text-left text-xs uppercase"
+                    class="bg-muted/50 text-left text-xs text-muted-foreground uppercase"
                 >
                     <tr>
                         <th class="px-4 py-3">Atendimento</th>
@@ -79,7 +79,7 @@ defineOptions({
                                     : '—'
                             }}
                         </td>
-                        <td class="text-muted-foreground px-4 py-3">
+                        <td class="px-4 py-3 text-muted-foreground">
                             {{ record.professional_name ?? '—' }}
                         </td>
                         <td class="px-4 py-3">
@@ -93,7 +93,7 @@ defineOptions({
                                 {{ record.status_label }}
                             </Badge>
                         </td>
-                        <td class="text-muted-foreground px-4 py-3">
+                        <td class="px-4 py-3 text-muted-foreground">
                             {{
                                 record.finalized_at
                                     ? formatDateTimeBr(record.finalized_at)
@@ -105,7 +105,7 @@ defineOptions({
                                 :href="
                                     showMedicalRecord(record.appointment_id).url
                                 "
-                                class="text-primary text-sm font-medium hover:underline"
+                                class="text-sm font-medium text-primary hover:underline"
                             >
                                 Ver prontuário
                             </Link>
@@ -140,7 +140,7 @@ defineOptions({
                 </Link>
                 <span
                     v-else
-                    class="text-muted-foreground pointer-events-none rounded-md px-3 py-1 text-sm opacity-50"
+                    class="pointer-events-none rounded-md px-3 py-1 text-sm text-muted-foreground opacity-50"
                     aria-disabled="true"
                     v-html="link.label"
                 />

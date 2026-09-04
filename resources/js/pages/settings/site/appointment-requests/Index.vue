@@ -262,7 +262,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                 <select
                     id="request-status"
                     v-model="statusFilter"
-                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                     <option value="">Todos</option>
                     <option
@@ -280,7 +280,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                 <select
                     id="request-professional"
                     v-model="professionalFilter"
-                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                     <option value="">Todos</option>
                     <option
@@ -320,7 +320,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                     >
                         <div class="space-y-1">
                             <p class="font-medium">{{ request.name }}</p>
-                            <p class="text-muted-foreground text-sm">
+                            <p class="text-sm text-muted-foreground">
                                 {{ request.phone }}
                                 <template v-if="request.email">
                                     · {{ request.email }}</template
@@ -328,7 +328,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                             </p>
                             <p
                                 v-if="!request.professional_removed"
-                                class="text-muted-foreground text-sm"
+                                class="text-sm text-muted-foreground"
                             >
                                 Profissional:
                                 {{
@@ -336,7 +336,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                                 }}
                             </p>
                             <div v-else class="grid gap-1.5">
-                                <p class="text-destructive text-sm">
+                                <p class="text-sm text-destructive">
                                     Profissional "{{
                                         request.professional_name
                                     }}" não faz mais parte da equipe.
@@ -377,7 +377,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                             </div>
                             <p
                                 v-if="request.service_name"
-                                class="text-muted-foreground text-sm"
+                                class="text-sm text-muted-foreground"
                             >
                                 Serviço: {{ request.service_name }}
                             </p>
@@ -387,7 +387,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                                         request.preferred_date,
                                     ) || request.preferred_period
                                 "
-                                class="text-muted-foreground text-sm"
+                                class="text-sm text-muted-foreground"
                             >
                                 Preferência:
                                 <template
@@ -414,11 +414,11 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                             </p>
                             <p
                                 v-if="request.notes"
-                                class="text-muted-foreground text-sm"
+                                class="text-sm text-muted-foreground"
                             >
                                 "{{ request.notes }}"
                             </p>
-                            <p class="text-muted-foreground text-xs">
+                            <p class="text-xs text-muted-foreground">
                                 Recebido em {{ formatDate(request.created_at) }}
                             </p>
                             <p
@@ -438,7 +438,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                             </p>
                             <p
                                 v-if="utmEntries(request).length > 0"
-                                class="text-muted-foreground text-xs"
+                                class="text-xs text-muted-foreground"
                             >
                                 Origem:
                                 <span
@@ -566,7 +566,7 @@ function utmEntries(request: AppointmentRequestSummary): [string, string][] {
                 </Link>
                 <span
                     v-else
-                    class="text-muted-foreground pointer-events-none rounded-md px-3 py-1 text-sm opacity-50"
+                    class="pointer-events-none rounded-md px-3 py-1 text-sm text-muted-foreground opacity-50"
                     aria-disabled="true"
                     v-html="link.label"
                 />

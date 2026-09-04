@@ -32,7 +32,7 @@ function removeRow(index: number) {
 
 <template>
     <div class="grid gap-4">
-        <div v-if="contacts.length === 0" class="text-muted-foreground text-sm">
+        <div v-if="contacts.length === 0" class="text-sm text-muted-foreground">
             Nenhum contato de emergência adicionado ainda.
         </div>
 

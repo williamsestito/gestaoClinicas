@@ -145,7 +145,7 @@ function statusVariant(
             <div class="grid gap-2">
                 <label
                     for="appointments-date"
-                    class="text-muted-foreground text-sm font-medium"
+                    class="text-sm font-medium text-muted-foreground"
                 >
                     Data
                 </label>
@@ -159,14 +159,14 @@ function statusVariant(
             <div class="grid gap-2">
                 <label
                     for="appointments-professional"
-                    class="text-muted-foreground text-sm font-medium"
+                    class="text-sm font-medium text-muted-foreground"
                 >
                     Profissional
                 </label>
                 <select
                     id="appointments-professional"
                     v-model="professionalId"
-                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                     @change="applyFilters"
                 >
                     <option value="">Todos</option>
@@ -190,7 +190,7 @@ function statusVariant(
         <div v-else class="overflow-x-auto rounded-lg border">
             <table class="w-full text-sm">
                 <thead
-                    class="bg-muted/50 text-muted-foreground text-left text-xs uppercase"
+                    class="bg-muted/50 text-left text-xs text-muted-foreground uppercase"
                 >
                     <tr>
                         <th class="px-4 py-3">Horário</th>
@@ -215,14 +215,14 @@ function statusVariant(
                             {{ appointment.patient_name }}
                             <Repeat
                                 v-if="appointment.is_recurring"
-                                class="text-muted-foreground inline size-3.5"
+                                class="inline size-3.5 text-muted-foreground"
                                 aria-label="Agendamento recorrente"
                             />
                         </td>
-                        <td class="text-muted-foreground px-4 py-3">
+                        <td class="px-4 py-3 text-muted-foreground">
                             {{ appointment.professional_name }}
                         </td>
-                        <td class="text-muted-foreground px-4 py-3">
+                        <td class="px-4 py-3 text-muted-foreground">
                             {{ appointment.service_name }}
                         </td>
                         <td class="px-4 py-3">
@@ -231,7 +231,7 @@ function statusVariant(
                             </Badge>
                             <p
                                 v-if="appointment.cancellation_reason"
-                                class="text-muted-foreground mt-1 text-xs"
+                                class="mt-1 text-xs text-muted-foreground"
                             >
                                 {{ appointment.cancellation_reason }}
                             </p>

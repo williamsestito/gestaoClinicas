@@ -180,7 +180,7 @@ const tenant = computed(() => page.props.tenant);
                 </CardHeader>
                 <CardContent class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div class="space-y-1">
-                        <p class="text-muted-foreground text-sm">
+                        <p class="text-sm text-muted-foreground">
                             Status da clínica
                         </p>
                         <Badge
@@ -198,17 +198,17 @@ const tenant = computed(() => page.props.tenant);
                         </Badge>
                     </div>
                     <div class="space-y-1">
-                        <p class="text-muted-foreground text-sm">Unidades</p>
+                        <p class="text-sm text-muted-foreground">Unidades</p>
                         <p class="font-medium">{{ unitsCount }}</p>
                     </div>
                     <div class="space-y-1">
-                        <p class="text-muted-foreground text-sm">
+                        <p class="text-sm text-muted-foreground">
                             Entidades legais
                         </p>
                         <p class="font-medium">{{ legalEntitiesCount }}</p>
                     </div>
                     <div class="space-y-1">
-                        <p class="text-muted-foreground text-sm">
+                        <p class="text-sm text-muted-foreground">
                             Entidade legal principal
                         </p>
                         <p class="font-medium">
@@ -220,14 +220,14 @@ const tenant = computed(() => page.props.tenant);
                         </p>
                     </div>
                     <div class="space-y-1">
-                        <p class="text-muted-foreground text-sm">Usuários</p>
+                        <p class="text-sm text-muted-foreground">Usuários</p>
                         <p class="font-medium">
                             {{ usersCount }} ({{ activeUsersCount }} ativos,
                             {{ inactiveUsersCount }} inativos)
                         </p>
                     </div>
                     <div class="space-y-1">
-                        <p class="text-muted-foreground text-sm">
+                        <p class="text-sm text-muted-foreground">
                             Domínio do site
                         </p>
                         <Badge
@@ -243,7 +243,7 @@ const tenant = computed(() => page.props.tenant);
                         </Badge>
                     </div>
                     <div class="space-y-1">
-                        <p class="text-muted-foreground text-sm">SEO</p>
+                        <p class="text-sm text-muted-foreground">SEO</p>
                         <Badge
                             :variant="seoConfigured ? 'default' : 'secondary'"
                         >
@@ -251,7 +251,7 @@ const tenant = computed(() => page.props.tenant);
                         </Badge>
                     </div>
                     <div class="space-y-1">
-                        <p class="text-muted-foreground text-sm">Seu papel</p>
+                        <p class="text-sm text-muted-foreground">Seu papel</p>
                         <p class="font-medium">
                             {{
                                 tenant.isOwner
@@ -339,7 +339,7 @@ const tenant = computed(() => page.props.tenant);
                             :key="activity.id"
                             class="text-muted-foreground"
                         >
-                            <span class="text-foreground font-medium">{{
+                            <span class="font-medium text-foreground">{{
                                 activity.actor
                             }}</span>
                             {{ activity.action.toLowerCase() }}

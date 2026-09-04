@@ -23,7 +23,7 @@ function select(organization: Organization) {
     <div class="mx-auto flex max-w-md flex-col gap-6 p-4">
         <div>
             <h1 class="text-xl font-semibold">Escolha uma organização</h1>
-            <p class="text-muted-foreground text-sm">
+            <p class="text-sm text-muted-foreground">
                 Você tem acesso a mais de uma organização.
             </p>
         </div>
@@ -32,7 +32,7 @@ function select(organization: Organization) {
             <Card
                 v-for="organization in organizations"
                 :key="organization.id"
-                class="hover:border-primary cursor-pointer transition"
+                class="cursor-pointer transition hover:border-primary"
                 @click="select(organization)"
             >
                 <CardContent class="flex items-center justify-between py-4">

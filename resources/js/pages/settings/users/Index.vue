@@ -246,13 +246,13 @@ function resendInvitation(invitation: Invitation) {
         >
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-muted-foreground text-sm">Total</p>
+                    <p class="text-sm text-muted-foreground">Total</p>
                     <p class="text-2xl font-semibold">{{ indicators.total }}</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-muted-foreground text-sm">Ativos</p>
+                    <p class="text-sm text-muted-foreground">Ativos</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.active }}
                     </p>
@@ -260,7 +260,7 @@ function resendInvitation(invitation: Invitation) {
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-muted-foreground text-sm">Inativos</p>
+                    <p class="text-sm text-muted-foreground">Inativos</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.inactive }}
                     </p>
@@ -268,7 +268,7 @@ function resendInvitation(invitation: Invitation) {
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-muted-foreground text-sm">
+                    <p class="text-sm text-muted-foreground">
                         Convites pendentes
                     </p>
                     <p class="text-2xl font-semibold">
@@ -278,7 +278,7 @@ function resendInvitation(invitation: Invitation) {
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-muted-foreground text-sm">Administradores</p>
+                    <p class="text-sm text-muted-foreground">Administradores</p>
                     <p class="text-2xl font-semibold">
                         {{ indicators.admins }}
                     </p>
@@ -286,7 +286,7 @@ function resendInvitation(invitation: Invitation) {
             </Card>
             <Card>
                 <CardContent class="py-4">
-                    <p class="text-muted-foreground text-sm">
+                    <p class="text-sm text-muted-foreground">
                         Todas as unidades
                     </p>
                     <p class="text-2xl font-semibold">
@@ -302,7 +302,7 @@ function resendInvitation(invitation: Invitation) {
         >
             <div class="relative sm:max-w-xs sm:flex-1">
                 <Search
-                    class="text-muted-foreground pointer-events-none absolute left-2.5 top-2.5 size-4"
+                    class="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground"
                 />
                 <Input
                     v-model="search"
@@ -315,7 +315,7 @@ function resendInvitation(invitation: Invitation) {
             <select
                 v-model="statusFilter"
                 aria-label="Filtrar usuários por status"
-                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Todos os status</option>
                 <option value="active">Ativos</option>
@@ -325,7 +325,7 @@ function resendInvitation(invitation: Invitation) {
             <select
                 v-model="roleFilter"
                 aria-label="Filtrar usuários por papel"
-                class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Todos os papéis</option>
                 <option v-for="role in roles" :key="role.id" :value="role.id">
@@ -356,7 +356,7 @@ function resendInvitation(invitation: Invitation) {
             <div class="hidden overflow-x-auto rounded-md border md:block">
                 <table class="w-full text-sm">
                     <thead
-                        class="bg-muted/50 text-muted-foreground border-b text-left"
+                        class="border-b bg-muted/50 text-left text-muted-foreground"
                     >
                         <tr>
                             <th class="px-4 py-2 font-medium">
@@ -397,16 +397,16 @@ function resendInvitation(invitation: Invitation) {
                             <td class="px-4 py-3 font-medium">
                                 {{ membership.user.name }}
                             </td>
-                            <td class="text-muted-foreground px-4 py-3">
+                            <td class="px-4 py-3 text-muted-foreground">
                                 {{ membership.user.email }}
                             </td>
-                            <td class="text-muted-foreground px-4 py-3">
+                            <td class="px-4 py-3 text-muted-foreground">
                                 {{ membership.user.phone || '—' }}
                             </td>
-                            <td class="text-muted-foreground px-4 py-3">
+                            <td class="px-4 py-3 text-muted-foreground">
                                 {{ membership.role?.name ?? '—' }}
                             </td>
-                            <td class="text-muted-foreground px-4 py-3">
+                            <td class="px-4 py-3 text-muted-foreground">
                                 {{ primaryUnitName(membership) }}
                             </td>
                             <td class="px-4 py-3">
@@ -424,7 +424,7 @@ function resendInvitation(invitation: Invitation) {
                                     }}
                                 </Badge>
                             </td>
-                            <td class="text-muted-foreground px-4 py-3">
+                            <td class="px-4 py-3 text-muted-foreground">
                                 {{
                                     membership.user.last_login_at ??
                                     'nunca acessou'
@@ -466,7 +466,7 @@ function resendInvitation(invitation: Invitation) {
                                 <p class="font-medium">
                                     {{ membership.user.name }}
                                 </p>
-                                <p class="text-muted-foreground text-sm">
+                                <p class="text-sm text-muted-foreground">
                                     {{ membership.user.email }}
                                 </p>
                                 <div class="mt-2 flex flex-wrap gap-1">
@@ -490,7 +490,7 @@ function resendInvitation(invitation: Invitation) {
                                         {{ membership.role.name }}
                                     </Badge>
                                 </div>
-                                <p class="text-muted-foreground mt-1 text-xs">
+                                <p class="mt-1 text-xs text-muted-foreground">
                                     Último acesso:
                                     {{
                                         membership.user.last_login_at ??
@@ -512,7 +512,7 @@ function resendInvitation(invitation: Invitation) {
 
         <p
             v-if="hasAnyMemberships && hasActiveFilters"
-            class="text-muted-foreground text-sm"
+            class="text-sm text-muted-foreground"
         >
             {{ filteredMemberships.length }} de {{ indicators.total }} usuários
         </p>

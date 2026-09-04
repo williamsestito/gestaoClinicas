@@ -22,18 +22,18 @@ function decide(value: 'accepted' | 'rejected') {
         v-if="visible"
         role="region"
         aria-label="Consentimento de cookies"
-        class="border-border bg-card fixed bottom-4 left-4 right-4 z-50 mx-auto flex max-w-sm flex-col gap-3 rounded-2xl border p-4 shadow-lg sm:left-auto sm:right-4"
+        class="fixed right-4 bottom-4 left-4 z-50 mx-auto flex max-w-sm flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-lg sm:right-4 sm:left-auto"
     >
         <button
             type="button"
             aria-label="Fechar"
-            class="text-muted-foreground hover:text-foreground absolute right-3 top-3"
+            class="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
             @click="decide('accepted')"
         >
             <X class="size-4" />
         </button>
 
-        <p class="text-muted-foreground pr-6 text-sm">
+        <p class="pr-6 text-sm text-muted-foreground">
             Usamos cookies essenciais para o funcionamento do site. Você pode
             aceitar ou recusar o uso de cookies não essenciais.
         </p>

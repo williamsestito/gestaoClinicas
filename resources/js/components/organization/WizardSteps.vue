@@ -13,7 +13,7 @@ defineProps<{
             class="flex items-center gap-2"
             :class="
                 index === current
-                    ? 'text-foreground font-semibold'
+                    ? 'font-semibold text-foreground'
                     : 'text-muted-foreground'
             "
         >
@@ -32,7 +32,7 @@ defineProps<{
             {{ step }}
             <span
                 v-if="index < steps.length - 1"
-                class="text-muted-foreground/50 mx-1"
+                class="mx-1 text-muted-foreground/50"
                 >›</span
             >
         </li>

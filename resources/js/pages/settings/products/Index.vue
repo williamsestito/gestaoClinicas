@@ -99,7 +99,7 @@ function restore(product: ProductRow) {
         <div v-else class="overflow-x-auto rounded-lg border">
             <table class="w-full text-sm">
                 <thead
-                    class="bg-muted/50 text-muted-foreground text-left text-xs uppercase"
+                    class="bg-muted/50 text-left text-xs text-muted-foreground uppercase"
                 >
                     <tr>
                         <th class="px-4 py-3">Nome</th>
@@ -115,13 +115,13 @@ function restore(product: ProductRow) {
                         <td class="px-4 py-3 font-medium">
                             {{ product.name }}
                         </td>
-                        <td class="text-muted-foreground px-4 py-3">
+                        <td class="px-4 py-3 text-muted-foreground">
                             {{ product.code }}
                         </td>
-                        <td class="text-muted-foreground px-4 py-3">
+                        <td class="px-4 py-3 text-muted-foreground">
                             {{ product.unit_of_measure }}
                         </td>
-                        <td class="text-muted-foreground px-4 py-3">
+                        <td class="px-4 py-3 text-muted-foreground">
                             {{
                                 product.price_cents !== null
                                     ? formatCurrencyBrl(product.price_cents)

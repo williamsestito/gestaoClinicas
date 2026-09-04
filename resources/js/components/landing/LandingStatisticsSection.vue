@@ -11,10 +11,10 @@ defineProps<{
         v-if="statistics.length > 0"
         id="indicadores"
         aria-label="Indicadores"
-        class="border-border bg-card border-b border-t"
+        class="border-t border-b border-border bg-card"
     >
         <div
-            class="divide-border mx-auto grid max-w-6xl divide-y px-4 py-10 sm:px-6 sm:py-12"
+            class="mx-auto grid max-w-6xl divide-y divide-border px-4 py-10 sm:px-6 sm:py-12"
             :class="[
                 statistics.length === 1 && 'grid-cols-1',
                 statistics.length === 2 && 'grid-cols-2 divide-y-0 sm:divide-x',

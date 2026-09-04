@@ -63,7 +63,7 @@ function selectService(id: number) {
 
         <div
             v-if="categories.length > 1"
-            class="mb-8 flex justify-start gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:justify-center [&::-webkit-scrollbar]:hidden"
+            class="mb-8 flex [scrollbar-width:none] justify-start gap-2 overflow-x-auto pb-1 sm:justify-center [&::-webkit-scrollbar]:hidden"
             role="tablist"
             aria-label="Filtrar serviços por categoria"
         >
@@ -89,7 +89,7 @@ function selectService(id: number) {
             <Card
                 v-for="service in filteredServices"
                 :key="service.id"
-                class="rounded-(--landing-radius-md) flex flex-col overflow-hidden py-0"
+                class="flex flex-col overflow-hidden rounded-(--landing-radius-md) py-0"
             >
                 <img
                     v-if="service.image_url"
@@ -107,13 +107,13 @@ function selectService(id: number) {
                     </div>
                     <p
                         v-if="service.short_description"
-                        class="text-muted-foreground text-sm"
+                        class="text-sm text-muted-foreground"
                     >
                         {{ service.short_description }}
                     </p>
 
                     <div
-                        class="text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs"
+                        class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground"
                     >
                         <span v-if="service.duration_minutes"
                             >{{ service.duration_minutes }} min</span

@@ -181,7 +181,7 @@ function confirmDelete() {
                 >
                     <div>
                         <p class="font-medium">{{ item.question }}</p>
-                        <p class="text-muted-foreground line-clamp-1 text-sm">
+                        <p class="line-clamp-1 text-sm text-muted-foreground">
                             {{ item.answer }}
                         </p>
                         <Badge

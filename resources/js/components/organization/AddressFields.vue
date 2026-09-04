@@ -64,7 +64,7 @@ watch(
 
 <template>
     <div class="grid gap-4">
-        <div class="sm:max-w-70 grid gap-2">
+        <div class="grid gap-2 sm:max-w-70">
             <Label for="address-postal-code">CEP</Label>
             <div class="flex gap-2">
                 <Input
@@ -97,26 +97,26 @@ watch(
             </div>
             <p
                 v-if="status === 'loading'"
-                class="text-muted-foreground text-sm"
+                class="text-sm text-muted-foreground"
             >
                 Buscando endereço…
             </p>
             <p
                 v-else-if="status === 'success'"
-                class="text-muted-foreground text-sm"
+                class="text-sm text-muted-foreground"
             >
                 Endereço localizado. Confira os dados antes de continuar.
             </p>
             <p
                 v-else-if="status === 'not-found'"
-                class="text-muted-foreground text-sm"
+                class="text-sm text-muted-foreground"
             >
                 Não foi possível localizar esse CEP automaticamente. Preencha o
                 endereço manualmente.
             </p>
             <p
                 v-else-if="status === 'error'"
-                class="text-muted-foreground text-sm"
+                class="text-sm text-muted-foreground"
             >
                 Não foi possível consultar o CEP neste momento. Você pode
                 preencher o endereço manualmente.
@@ -202,7 +202,7 @@ watch(
                                 (event.target as HTMLSelectElement).value,
                             )
                     "
-                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                    class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                     <option value="" disabled>UF</option>
                     <option v-for="state in states" :key="state" :value="state">

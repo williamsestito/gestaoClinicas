@@ -198,7 +198,7 @@ function submit() {
             description="Monte o carrinho com serviços, produtos e pacotes de sessões"
         />
 
-        <p v-if="unit || legalEntity" class="text-muted-foreground text-sm">
+        <p v-if="unit || legalEntity" class="text-sm text-muted-foreground">
             <span v-if="unit">Unidade: {{ unit.name }}</span>
             <span v-if="unit && legalEntity"> · </span>
             <span v-if="legalEntity"
@@ -237,7 +237,7 @@ function submit() {
                     <div class="overflow-x-auto rounded-lg border">
                         <table class="w-full text-sm">
                             <thead
-                                class="bg-muted/50 text-muted-foreground text-left text-xs uppercase"
+                                class="bg-muted/50 text-left text-xs text-muted-foreground uppercase"
                             >
                                 <tr>
                                     <th class="w-36 px-3 py-2">Tipo</th>
@@ -356,7 +356,7 @@ function submit() {
                                             "
                                         />
                                         <p
-                                            class="text-muted-foreground mt-1 text-xs"
+                                            class="mt-1 text-xs text-muted-foreground"
                                         >
                                             <template
                                                 v-if="hasCatalogPrice(item)"

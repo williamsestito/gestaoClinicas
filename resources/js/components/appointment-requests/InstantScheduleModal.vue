@@ -118,7 +118,7 @@ function formatDate(value: string | null): string {
                     <Label>Paciente</Label>
                     <p
                         v-if="request.patient_id"
-                        class="bg-muted rounded-md border px-3 py-2 text-sm"
+                        class="rounded-md border bg-muted px-3 py-2 text-sm"
                     >
                         {{ request.patient_name }}
                     </p>

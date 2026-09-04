@@ -102,7 +102,7 @@ function submit() {
 
         <div v-else class="grid gap-1">
             <p class="text-sm font-medium">{{ membership?.user.name }}</p>
-            <p class="text-muted-foreground text-sm">
+            <p class="text-sm text-muted-foreground">
                 {{ membership?.user.email }}
             </p>
         </div>

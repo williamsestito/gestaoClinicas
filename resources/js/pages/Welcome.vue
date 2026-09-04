@@ -140,18 +140,18 @@ const schedulingActive = computed(() =>
 
     <a
         href="#main-content"
-        class="focus:bg-primary focus:text-primary-foreground focus:ring-ring sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2"
+        class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none"
     >
         Pular para o conteúdo principal
     </a>
 
     <div
         v-if="!site"
-        class="landing-theme bg-background text-foreground flex min-h-screen flex-col"
+        class="landing-theme flex min-h-screen flex-col bg-background text-foreground"
     >
         <header class="flex justify-center px-6 pt-10">
             <div
-                class="bg-primary text-primary-foreground flex size-14 items-center justify-center rounded-2xl"
+                class="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground"
             >
                 <AppLogoIcon class="size-7 fill-current" aria-hidden="true" />
                 <span class="sr-only">{{ fallbackTitle }}</span>
@@ -166,12 +166,12 @@ const schedulingActive = computed(() =>
             <div class="flex w-full max-w-2xl flex-col items-center gap-8">
                 <div class="space-y-3">
                     <h1
-                        class="text-balance text-3xl font-bold tracking-tight sm:text-4xl"
+                        class="text-3xl font-bold tracking-tight text-balance sm:text-4xl"
                     >
                         {{ fallbackTitle }}
                     </h1>
                     <p
-                        class="text-muted-foreground text-balance text-base sm:text-lg"
+                        class="text-base text-balance text-muted-foreground sm:text-lg"
                     >
                         {{ fallbackDescription }}
                     </p>
@@ -201,14 +201,14 @@ const schedulingActive = computed(() =>
             </div>
         </main>
 
-        <footer class="text-muted-foreground px-6 pb-8 text-center text-xs">
+        <footer class="px-6 pb-8 text-center text-xs text-muted-foreground">
             <p>© {{ new Date().getFullYear() }} {{ fallbackTitle }}</p>
         </footer>
     </div>
 
     <div
         v-else
-        class="landing-theme bg-background text-foreground flex min-h-screen flex-col"
+        class="landing-theme flex min-h-screen flex-col bg-background text-foreground"
         :style="landingThemeStyle"
     >
         <LandingNavbar

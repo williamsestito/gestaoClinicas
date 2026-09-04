@@ -47,12 +47,12 @@ const expandedProfessional = ref<PublicProfessional | null>(null);
             <div
                 v-for="professional in professionals"
                 :key="professional.id"
-                class="rounded-(--landing-radius-md) border-border bg-card flex flex-col items-center border p-6 text-center shadow-sm"
+                class="flex flex-col items-center rounded-(--landing-radius-md) border border-border bg-card p-6 text-center shadow-sm"
             >
                 <button
                     v-if="professional.photo_url"
                     type="button"
-                    class="focus-visible:ring-ring rounded-full focus-visible:outline-none focus-visible:ring-2"
+                    class="rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     :aria-label="`Ver foto de ${professional.name} em tamanho maior`"
                     @click="expandedProfessional = professional"
                 >
@@ -65,30 +65,30 @@ const expandedProfessional = ref<PublicProfessional | null>(null);
                 </button>
                 <div
                     v-else
-                    class="bg-muted text-muted-foreground flex size-24 items-center justify-center rounded-full"
+                    class="flex size-24 items-center justify-center rounded-full bg-muted text-muted-foreground"
                 >
                     <User class="size-10" />
                 </div>
 
                 <h3 class="mt-4 font-semibold">{{ professional.name }}</h3>
-                <p v-if="professional.role_title" class="text-primary text-sm">
+                <p v-if="professional.role_title" class="text-sm text-primary">
                     {{ professional.role_title }}
                 </p>
                 <p
                     v-if="professional.specialty"
-                    class="text-muted-foreground text-sm"
+                    class="text-sm text-muted-foreground"
                 >
                     {{ professional.specialty }}
                 </p>
                 <p
                     v-if="professional.professional_register"
-                    class="text-muted-foreground text-xs"
+                    class="text-xs text-muted-foreground"
                 >
                     {{ professional.professional_register }}
                 </p>
                 <p
                     v-if="professional.bio"
-                    class="text-muted-foreground mt-2 text-sm"
+                    class="mt-2 text-sm text-muted-foreground"
                 >
                     {{ professional.bio }}
                 </p>
@@ -99,7 +99,7 @@ const expandedProfessional = ref<PublicProfessional | null>(null);
                         professional.instagram_url ||
                         professional.linkedin_url
                     "
-                    class="text-muted-foreground mt-3 flex justify-center gap-3"
+                    class="mt-3 flex justify-center gap-3 text-muted-foreground"
                 >
                     <a
                         v-if="professional.facebook_url"
@@ -163,7 +163,7 @@ const expandedProfessional = ref<PublicProfessional | null>(null);
                         class="max-h-[80vh] w-full rounded-lg object-contain"
                     />
                     <DialogClose
-                        class="absolute right-2 top-2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
+                        class="absolute top-2 right-2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
                         aria-label="Fechar"
                     >
                         <X class="size-4" />

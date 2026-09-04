@@ -70,7 +70,7 @@ function confirmUnlink() {
         >
             <div>
                 <p class="text-sm font-medium">{{ linkedUser.name }}</p>
-                <p class="text-muted-foreground text-xs">
+                <p class="text-xs text-muted-foreground">
                     Vincular ou remover o usuário não altera papéis, permissões
                     ou o acesso dele à clínica.
                 </p>
@@ -137,7 +137,7 @@ function confirmUnlink() {
                 <select
                     id="link-user"
                     v-model="form.user_id"
-                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                     <option :value="undefined">Selecione um usuário</option>
                     <option

@@ -116,17 +116,17 @@ function close() {
                 </DialogDescription>
             </DialogHeader>
 
-            <p v-if="loading" class="text-muted-foreground text-sm">
+            <p v-if="loading" class="text-sm text-muted-foreground">
                 Carregando…
             </p>
-            <p v-else-if="failed" class="text-destructive text-sm">
+            <p v-else-if="failed" class="text-sm text-destructive">
                 Não foi possível carregar os detalhes deste paciente.
             </p>
 
             <template v-else-if="data">
                 <p
                     v-if="!data.full_access"
-                    class="bg-muted text-muted-foreground rounded-md border px-3 py-2 text-sm"
+                    class="rounded-md border bg-muted px-3 py-2 text-sm text-muted-foreground"
                 >
                     Este paciente ainda não foi atendido por você — só há um
                     pré-agendamento pendente. O cadastro completo e o prontuário
@@ -169,7 +169,7 @@ function close() {
                         :key="group.professional_name"
                         class="grid gap-1"
                     >
-                        <p class="text-muted-foreground text-sm font-medium">
+                        <p class="text-sm font-medium text-muted-foreground">
                             {{ group.professional_name }}
                         </p>
                         <ul class="grid gap-1 text-sm">
@@ -201,7 +201,7 @@ function close() {
                         !data.pending_requests.length &&
                         !data.appointments_by_professional.length
                     "
-                    class="text-muted-foreground text-sm"
+                    class="text-sm text-muted-foreground"
                 >
                     Nenhum agendamento ou pré-agendamento registrado ainda.
                 </p>

@@ -60,12 +60,12 @@ function selectSlot(time: string) {
 
         <div v-if="date" class="grid gap-2">
             <Label>Horários disponíveis</Label>
-            <p v-if="loadingSlots" class="text-muted-foreground text-sm">
+            <p v-if="loadingSlots" class="text-sm text-muted-foreground">
                 Buscando horários…
             </p>
             <p
                 v-else-if="slots.length === 0"
-                class="text-muted-foreground text-sm"
+                class="text-sm text-muted-foreground"
             >
                 Nenhum horário livre encontrado para os filtros selecionados.
             </p>

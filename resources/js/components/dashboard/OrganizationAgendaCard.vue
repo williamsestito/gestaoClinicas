@@ -123,7 +123,7 @@ function statusVariant(
                 <select
                     :value="data.professionalId ?? ''"
                     aria-label="Filtrar por profissional"
-                    class="border-input shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 py-1 text-sm outline-none focus-visible:ring-[3px]"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                     @change="changeProfessional"
                 >
                     <option value="">Todos os profissionais</option>
@@ -170,7 +170,7 @@ function statusVariant(
         <CardContent>
             <p
                 v-if="data.appointments.length === 0"
-                class="text-muted-foreground py-6 text-center text-sm"
+                class="py-6 text-center text-sm text-muted-foreground"
             >
                 Nenhum agendamento neste dia.
             </p>
@@ -188,7 +188,7 @@ function statusVariant(
                             }}
                             — {{ appointment.patient_name }}
                         </p>
-                        <p class="text-muted-foreground text-sm">
+                        <p class="text-sm text-muted-foreground">
                             {{ appointment.professional_name }}
                             <template v-if="appointment.service_name">
                                 · {{ appointment.service_name }}</template
@@ -203,7 +203,7 @@ function statusVariant(
 
             <Link
                 :href="appointmentsIndex().url"
-                class="text-primary mt-3 inline-block text-sm font-medium underline-offset-4 hover:underline"
+                class="mt-3 inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"
             >
                 Ver agenda completa
             </Link>
