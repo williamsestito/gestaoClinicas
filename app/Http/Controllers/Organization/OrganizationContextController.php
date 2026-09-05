@@ -14,10 +14,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class OrganizationContextController extends Controller
 {
-    public function edit(): Response|RedirectResponse
+    public function edit(): Response|RedirectResponse|SymfonyResponse
     {
         $user = Auth::guard('web')->user();
 
@@ -37,9 +38,12 @@ class OrganizationContextController extends Controller
         // organização ainda cadastrada, ou onde todas foram suspensas depois
         // que o platform admin chegou aqui — nunca renderiza o seletor
         // vazio, manda para o painel administrativo (Filament) que conduz à
-        // criação (ver EnsureActiveOrganization, mesma regra).
+        // criação (ver EnsureActiveOrganization, mesma regra e mesmo motivo
+        // para usar Inertia::location() em vez de redirect() comum: esta
+        // rota é sempre visitada via Inertia, e /admin devolve HTML puro do
+        // Filament).
         if ($organizations->isEmpty() && $user->is_platform_admin) {
-            return redirect('/admin');
+            return Inertia::location('/admin');
         }
 
         return Inertia::render('context/OrganizationSelector', [
