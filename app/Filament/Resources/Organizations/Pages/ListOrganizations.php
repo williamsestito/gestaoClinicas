@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Organizations\Pages;
 
 use App\Filament\Resources\Organizations\OrganizationResource;
+use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListOrganizations extends ListRecords
@@ -13,9 +14,12 @@ class ListOrganizations extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        // Sem CreateAction: organizações só nascem pelo onboarding
-        // (organização + entidade legal + unidade matriz + proprietário
-        // em uma única transação — ver OnboardOrganizationAction).
-        return [];
+        // Organizações nascem pelo onboarding self-service (o próprio dono
+        // se cadastra) OU pelo bootstrap do platform admin aqui (ver
+        // App\Actions\Organization\BootstrapOrganizationAction) — nunca por
+        // um Organization::create() genérico do Filament.
+        return [
+            CreateAction::make()->label('Criar organização'),
+        ];
     }
 }

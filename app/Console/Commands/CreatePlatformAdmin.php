@@ -9,6 +9,7 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
@@ -78,14 +79,16 @@ class CreatePlatformAdmin extends Command
             return self::FAILURE;
         }
 
-        $user = $existingUser ?? new User(['email' => $email]);
-        $user->name = $name;
-        $user->email = $email;
-        $user->password = Hash::make($password);
-        $user->is_active = true;
-        $user->is_platform_admin = true;
-        $user->email_verified_at ??= Carbon::now();
-        $user->save();
+        DB::transaction(function () use ($existingUser, $email, $name, $password) {
+            $user = $existingUser ?? new User(['email' => $email]);
+            $user->name = $name;
+            $user->email = $email;
+            $user->password = Hash::make($password);
+            $user->is_active = true;
+            $user->is_platform_admin = true;
+            $user->email_verified_at ??= Carbon::now();
+            $user->save();
+        });
 
         $this->info(
             $existingUser

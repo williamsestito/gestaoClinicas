@@ -17,7 +17,7 @@ use Inertia\Response;
 
 class OrganizationContextController extends Controller
 {
-    public function edit(): Response
+    public function edit(): Response|RedirectResponse
     {
         $user = Auth::guard('web')->user();
 
@@ -32,6 +32,15 @@ class OrganizationContextController extends Controller
                 ->pluck('organization')
                 ->filter(fn (?Organization $organization) => $organization?->status === OrganizationStatus::Active)
                 ->values();
+
+        // Guarda defensiva: instalação single-tenant (ADR-010) sem nenhuma
+        // organização ainda cadastrada, ou onde todas foram suspensas depois
+        // que o platform admin chegou aqui — nunca renderiza o seletor
+        // vazio, manda para o painel administrativo (Filament) que conduz à
+        // criação (ver EnsureActiveOrganization, mesma regra).
+        if ($organizations->isEmpty() && $user->is_platform_admin) {
+            return redirect('/admin');
+        }
 
         return Inertia::render('context/OrganizationSelector', [
             'organizations' => $organizations,
