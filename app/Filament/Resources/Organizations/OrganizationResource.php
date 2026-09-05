@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Organizations;
 
+use App\Filament\Resources\Organizations\Pages\CreateOrganization;
 use App\Filament\Resources\Organizations\Pages\EditOrganization;
 use App\Filament\Resources\Organizations\Pages\ListOrganizations;
 use App\Filament\Resources\Organizations\Pages\ViewOrganization;
@@ -63,15 +64,10 @@ class OrganizationResource extends Resource
     {
         return [
             'index' => ListOrganizations::route('/'),
+            'create' => CreateOrganization::route('/create'),
             'view' => ViewOrganization::route('/{record}'),
             'edit' => EditOrganization::route('/{record}/edit'),
         ];
-    }
-
-    public static function canCreate(): bool
-    {
-        // Organizações só nascem pelo onboarding (ver OnboardOrganizationAction).
-        return false;
     }
 
     public static function canDelete(Model $record): bool

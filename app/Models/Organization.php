@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ModuleKey;
+use App\Enums\OrganizationMembershipStatus;
 use App\Enums\OrganizationStatus;
 use Database\Factories\OrganizationFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -149,6 +151,27 @@ class Organization extends Model
     public function modules(): HasMany
     {
         return $this->hasMany(OrganizationModule::class);
+    }
+
+    /**
+     * Organizações sem nenhum owner ativo — usado pelo platform admin para
+     * localizar e recuperar organizações órfãs (ver
+     * App\Actions\Organization\SetOrganizationOwnerAction). Um owner só
+     * conta se o vínculo estiver ativo e o próprio usuário também estiver
+     * ativo (um usuário desativado não deveria "esconder" a necessidade de
+     * um novo administrador).
+     *
+     * @param  Builder<Organization>  $query
+     * @return Builder<Organization>
+     */
+    public function scopeWithoutActiveOwner(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('memberships', function (Builder $membershipQuery) {
+            $membershipQuery
+                ->where('is_owner', true)
+                ->where('status', OrganizationMembershipStatus::Active)
+                ->whereHas('user', fn (Builder $userQuery) => $userQuery->where('is_active', true));
+        });
     }
 
     /**

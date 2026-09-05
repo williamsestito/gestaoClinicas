@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\OrganizationMembershipStatus;
 use App\Enums\OrganizationStatus;
+use App\Models\Organization;
 use App\Support\Tenancy\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
@@ -23,14 +24,25 @@ class EnsureActiveOrganization
         $tenant = app(TenantContext::class);
 
         if (! $tenant->hasOrganization()) {
-            // Superadmin nunca é levado para "criar uma clínica nova" — ele
-            // sempre tem organizações existentes para escolher (acesso
-            // global), mesmo sem vínculo ainda em nenhuma.
-            $hasAnyMembership = $request->user('web')->is_platform_admin
-                || $request->user('web')
-                    ->organizationMemberships()
-                    ->where('status', OrganizationMembershipStatus::Active)
-                    ->exists();
+            $user = $request->user('web');
+
+            // Instalação single-tenant (ADR-010): a plataforma nunca tem
+            // "várias organizações para escolher" de verdade, só a única
+            // organização desta instalação — que ainda pode não existir
+            // (banco recém-migrado). Nesse caso o platform admin vai para o
+            // painel administrativo (Filament, /admin), de onde cria a
+            // primeira organização; só quando já existe alguma organização
+            // é que faz sentido levá-lo ao seletor.
+            if ($user->is_platform_admin) {
+                return Organization::query()->exists()
+                    ? redirect()->route('context.organization.edit')
+                    : redirect('/admin');
+            }
+
+            $hasAnyMembership = $user
+                ->organizationMemberships()
+                ->where('status', OrganizationMembershipStatus::Active)
+                ->exists();
 
             return redirect()->route(
                 $hasAnyMembership ? 'context.organization.edit' : 'onboarding.organization.create',

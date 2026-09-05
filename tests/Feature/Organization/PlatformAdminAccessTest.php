@@ -18,6 +18,31 @@ it('routes a platform admin with no membership anywhere to the organization sele
         ->assertRedirect(route('context.organization.edit'));
 });
 
+it('sends a platform admin to the Filament panel to bootstrap the first organization when none exists yet', function () {
+    // Cenário real de produção recém-migrada: users=1 (o platform admin),
+    // organizations=0. Instalação single-tenant (ADR-010) — nunca existe
+    // "várias organizações para escolher" vazias, só a criação da única
+    // organização desta instalação, feita pelo painel (ver
+    // OrganizationsTable::emptyStateActions() / CreateOrganization).
+    expect(Organization::query()->count())->toBe(0);
+
+    $admin = User::factory()->create(['is_platform_admin' => true, 'email_verified_at' => now()]);
+
+    $this->actingAs($admin)
+        ->get('/dashboard')
+        ->assertRedirect('/admin');
+});
+
+it('also redirects a platform admin who reaches the organization selector directly with zero organizations', function () {
+    expect(Organization::query()->count())->toBe(0);
+
+    $admin = User::factory()->create(['is_platform_admin' => true, 'email_verified_at' => now()]);
+
+    $this->actingAs($admin)
+        ->get(route('context.organization.edit'))
+        ->assertRedirect('/admin');
+});
+
 it('lets a platform admin see every active organization, even without a membership', function () {
     $orgA = Organization::factory()->create(['name' => 'Org A']);
     $orgB = Organization::factory()->create(['name' => 'Org B']);
