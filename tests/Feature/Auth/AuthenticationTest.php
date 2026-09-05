@@ -32,6 +32,40 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('dashboard', absolute: false));
     }
 
+    public function test_platform_admin_is_redirected_straight_to_filament_after_login()
+    {
+        $admin = User::factory()->create(['is_platform_admin' => true]);
+
+        $response = $this->post(route('login.store'), [
+            'email' => $admin->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect('/admin');
+    }
+
+    public function test_platform_admin_login_via_inertia_gets_a_full_page_location_visit_to_filament()
+    {
+        // O formulário de login usa o componente <Form> do Inertia, então o
+        // POST real chega com o header X-Inertia. Sem tratar esse caso, o
+        // cliente Inertia tentaria seguir um redirect comum para /admin
+        // como se fosse uma página da SPA — o HTML puro do Filament não
+        // pode ser processado assim (tela branca). Inertia::location()
+        // devolve 409 + X-Inertia-Location para o cliente fazer um
+        // window.location real em vez disso.
+        $admin = User::factory()->create(['is_platform_admin' => true]);
+
+        $response = $this->withHeaders(['X-Inertia' => 'true'])->post(route('login.store'), [
+            'email' => $admin->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertStatus(409);
+        $response->assertHeader('X-Inertia-Location', '/admin');
+    }
+
     public function test_users_with_two_factor_enabled_are_redirected_to_two_factor_challenge()
     {
         $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
