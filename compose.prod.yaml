@@ -1,40 +1,46 @@
 services:
   app:
     restart: unless-stopped
+    environment:
+      TRUSTED_PROXIES: "*"
 
   nginx:
     restart: unless-stopped
-
     ports: !reset []
-
     networks:
       - frontend-network
       - proxy
-
     labels:
       - traefik.enable=true
+
+      # Gestão
       - traefik.http.routers.gestao.rule=Host(`gestao.espacodudaalmeida.com.br`)
       - traefik.http.routers.gestao.entrypoints=websecure
       - traefik.http.routers.gestao.tls=true
       - traefik.http.routers.gestao.tls.certresolver=cloudflare
+      - traefik.http.routers.gestao.service=gestao
+
+      # Landing pública
+      - traefik.http.routers.landing.rule=Host(`espacodudaalmeida.com.br`) || Host(`www.espacodudaalmeida.com.br`)
+      - traefik.http.routers.landing.entrypoints=websecure
+      - traefik.http.routers.landing.tls=true
+      - traefik.http.routers.landing.tls.certresolver=cloudflare
+      - traefik.http.routers.landing.service=gestao
+
+      # Serviço compartilhado
       - traefik.http.services.gestao.loadbalancer.server.port=80
       - traefik.docker.network=proxy
 
   node:
     ports: !reset []
-
     environment:
       NODE_ENV: production
       CHOKIDAR_USEPOLLING: "false"
-
-    # ATENCAO: o "&&" original aqui era um bug real - se node_modules ja
-    # existir (verdade a partir do segundo deploy, ja que e volume
-    # persistente), o curto-circuito do "||" pulava build e tail juntos, e o
-    # container so terminava sem nunca recompilar os assets. O ";" separa a
-    # instalacao condicional do build, que agora roda sempre.
     command: >
-      sh -c "[ -d node_modules/.bin ] || npm ci;
+      sh -c "rm -f public/hot;
+             [ -d node_modules/.bin ] || npm ci;
              npm run build &&
+             rm -f public/hot &&
              tail -f /dev/null"
 
   postgres:
