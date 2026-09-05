@@ -38,6 +38,12 @@ jobs:
 
             git fetch origin
             git checkout main
-            git pull --ff-only origin main
+
+            # O diretorio de deploy nunca deve ter edicao manual: qualquer
+            # drift local (ex.: alguem editando compose.prod.yaml direto na
+            # VPS) trava o pull para sempre a partir dali. "reset --hard"
+            # so descarta mudancas em arquivos rastreados pelo git - nunca
+            # apaga arquivos nao versionados como .env, storage/ ou uploads.
+            git reset --hard origin/main
 
             make prod-deploy
