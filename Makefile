@@ -287,16 +287,23 @@ prod-deploy: ## Fluxo padrao de deploy da aplicacao
 	@echo "3. Aguardando containers..."
 	@sleep 10
 	@echo ""
-	@echo "4. Executando migrations..."
+	@echo "4. Compilando assets do frontend..."
+	@# Explicito e determinístico: nunca depende do Compose decidir recriar
+	@# (ou não) o container "node" nem da lógica do próprio command dele -
+	@# roda "npm run build" direto, sempre, garantindo que o front fique
+	@# atualizado neste deploy mesmo se o container node já estava de pé.
+	$(COMPOSE_PROD) exec $(NODE_SERVICE) npm run build
+	@echo ""
+	@echo "5. Executando migrations..."
 	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan migrate --force
 	@echo ""
-	@echo "5. Limpando caches antigos..."
+	@echo "6. Limpando caches antigos..."
 	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan optimize:clear
 	@echo ""
-	@echo "6. Criando caches de producao..."
+	@echo "7. Criando caches de producao..."
 	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan optimize
 	@echo ""
-	@echo "7. Status final:"
+	@echo "8. Status final:"
 	$(COMPOSE_PROD) ps
 	@echo ""
 	@echo "Deploy concluido."

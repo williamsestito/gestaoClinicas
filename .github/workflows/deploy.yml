@@ -1,0 +1,43 @@
+name: Deploy
+
+# So dispara depois que o workflow "CI" (ci.yml) terminar de rodar em main,
+# e so segue para o deploy se ele tiver passado - nunca reexecuta a suite de
+# testes aqui, so encadeia depois que ela realmente passou.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Nunca dois deploys ao mesmo tempo na mesma VPS - a segunda execucao fica
+# na fila em vez de cancelar a primeira no meio.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -euo pipefail
+
+            cd /opt/apps/gestao-clinicas
+
+            git fetch origin
+            git checkout main
+            git pull --ff-only origin main
+
+            make prod-deploy

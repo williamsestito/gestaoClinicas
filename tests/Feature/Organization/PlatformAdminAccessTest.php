@@ -43,6 +43,31 @@ it('also redirects a platform admin who reaches the organization selector direct
         ->assertRedirect('/admin');
 });
 
+it('sends a real Inertia visit to /admin as a full-page location visit, never a plain redirect the SPA client would mangle', function () {
+    // Achado real (tela branca em produção): /dashboard é sempre visitado
+    // via Inertia (header X-Inertia), e /admin é o painel Filament — HTML
+    // puro, sem o protocolo Inertia. Um redirect() comum vira 302 que o
+    // cliente Inertia tenta processar como se fosse uma página da SPA,
+    // quebrando o render. Inertia::location() devolve 409 +
+    // X-Inertia-Location em vez disso, para o cliente fazer um
+    // window.location real.
+    expect(Organization::query()->count())->toBe(0);
+
+    $admin = User::factory()->create(['is_platform_admin' => true, 'email_verified_at' => now()]);
+
+    $this->actingAs($admin)
+        ->withHeaders(['X-Inertia' => 'true'])
+        ->get('/dashboard')
+        ->assertStatus(409)
+        ->assertHeader('X-Inertia-Location');
+
+    $this->actingAs($admin)
+        ->withHeaders(['X-Inertia' => 'true'])
+        ->get(route('context.organization.edit'))
+        ->assertStatus(409)
+        ->assertHeader('X-Inertia-Location');
+});
+
 it('lets a platform admin see every active organization, even without a membership', function () {
     $orgA = Organization::factory()->create(['name' => 'Org A']);
     $orgB = Organization::factory()->create(['name' => 'Org B']);
