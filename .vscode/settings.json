@@ -1,0 +1,78 @@
+{
+  // ---------------------------------------------------------------------
+  // Editor geral — o .editorconfig já cobre isso para quem não tem a
+  // extensão instalada; espelhado aqui para quem tem.
+  // ---------------------------------------------------------------------
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  // ---------------------------------------------------------------------
+  // PHP — Laravel Pint é o único formatador (rode `make format` ou
+  // `vendor/bin/pint --dirty`). Nunca deixar Prettier/Intelephense
+  // reformatar PHP no save, para não brigar com o estilo do Pint.
+  // ---------------------------------------------------------------------
+  "[php]": {
+    "editor.formatOnSave": false,
+    "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+  },
+  "intelephense.files.exclude": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/storage/**",
+    "**/bootstrap/cache/**",
+    "**/public/build/**"
+  ],
+
+  // ---------------------------------------------------------------------
+  // JS/TS/Vue — Prettier formata, ESLint só corrige regras de lint (sem
+  // sobreposição: eslint.config.js não reimplementa regras de formatação).
+  // ---------------------------------------------------------------------
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[vue]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[yaml]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "eslint.validate": ["javascript", "typescript", "vue"],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "vue.server.hybridMode": true,
+
+  // ---------------------------------------------------------------------
+  // Tailwind CSS v4 — reconhece classes dentro de cn()/cva(), usados nos
+  // componentes shadcn-vue em resources/js/components/ui.
+  // ---------------------------------------------------------------------
+  "tailwindCSS.experimental.classRegex": [
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+  ],
+
+  // ---------------------------------------------------------------------
+  // YAML — schemas para autocompletar/validar Compose e GitHub Actions.
+  // ---------------------------------------------------------------------
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json": [
+      "compose.yaml",
+      "compose.*.yaml"
+    ]
+  },
+
+  // ---------------------------------------------------------------------
+  // Ruído de busca — vendor/node_modules continuam navegáveis no explorer,
+  // só ficam fora do full-text search (que é lento e pouco útil ali).
+  // ---------------------------------------------------------------------
+  "search.exclude": {
+    "**/vendor": true,
+    "**/node_modules": true,
+    "**/public/build": true,
+    "storage/framework/**": true,
+    "storage/logs/**": true,
+    "**/*.lock": true
+  }
+}

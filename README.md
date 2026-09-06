@@ -167,6 +167,20 @@ make clean
 Remove os containers e, somente após duas confirmações explícitas,
 remove também os volumes (Postgres/Redis/MinIO) — ação irreversível.
 
+## Fluxo de branches, CI e deploy
+
+- `beta` = desenvolvimento/homologação. `main` = produção.
+- Desenvolvimento: `git checkout beta && git pull origin beta`, trabalhar,
+  `git push origin beta`.
+- Integração: abrir Pull Request `beta → main`. O CI (Pint, Larastan, Pest,
+  ESLint, Prettier, vue-tsc, Vitest) roda automaticamente e precisa passar
+  para o merge ser liberado.
+- Deploy: só acontece depois de um push efetivo em `main` (o próprio merge
+  do PR) com o CI verde — nunca a partir de `beta`. Detalhes completos do
+  pipeline, secrets necessários e configuração manual do GitHub/VPS em
+  [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+- Nunca `git push origin main` diretamente como fluxo normal.
+
 ## Troubleshooting
 
 - **Vite não carrega / erro de manifest**: confirme que o container `node`
@@ -181,6 +195,7 @@ remove também os volumes (Postgres/Redis/MinIO) — ação irreversível.
 
 ## Documentação adicional
 
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — CI/CD, secrets, Ruleset e deploy em produção.
 - [docs/architecture/overview.md](docs/architecture/overview.md) — visão geral e estrutura de pastas.
 - [docs/architecture/docker.md](docs/architecture/docker.md) — detalhes de cada serviço Docker.
 - [docs/architecture/development.md](docs/architecture/development.md) — fluxo de desenvolvimento local.

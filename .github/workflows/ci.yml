@@ -1,9 +1,14 @@
 name: CI
 
+# Roda em PRs contra main (inclusive beta -> main) e em push direto em main
+# (o merge do PR). workflow_dispatch permite disparo manual quando preciso
+# revalidar sem um novo commit/PR.
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read

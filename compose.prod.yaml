@@ -36,11 +36,14 @@ services:
     environment:
       NODE_ENV: production
       CHOKIDAR_USEPOLLING: "false"
+    # NUNCA rodar "npm run build" aqui: scripts/deploy.sh (build_frontend_assets)
+    # e a UNICA fonte do build de producao, execado explicitamente depois que
+    # o container ja esta de pe. Duplicar o build aqui correria em paralelo
+    # com esse exec (node nao tem healthcheck, entao "up --wait" nao espera
+    # esse comando terminar), arriscando escrita concorrente em public/build.
     command: >
       sh -c "rm -f public/hot;
              [ -d node_modules/.bin ] || npm ci;
-             npm run build &&
-             rm -f public/hot &&
              tail -f /dev/null"
 
   postgres:

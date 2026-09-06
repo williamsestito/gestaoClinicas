@@ -1,0 +1,35 @@
+{
+  "recommendations": [
+    // Git / GitHub — revisar PRs e histórico sem sair do VS Code.
+    "github.vscode-pull-request-github",
+    "eamodio.gitlens",
+
+    // Docker / Compose — este projeto roda inteiramente em containers.
+    "ms-azuretools.vscode-docker",
+
+    // Backend: PHP 8.4 / Laravel.
+    "bmewburn.vscode-intelephense-client",
+    "xdebug.php-debug",
+
+    // Frontend: Vue 3 (Composition API) + TypeScript + Tailwind CSS v4.
+    "vue.volar",
+    "bradlc.vscode-tailwindcss",
+
+    // Qualidade: ESLint (JS/TS/Vue) e Prettier (JS/TS/Vue/CSS/JSON/MD) —
+    // Pint cuida do PHP separadamente, não há sobreposição de domínio.
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+
+    // Consistência de arquivos.
+    "editorconfig.editorconfig",
+    "mikestead.dotenv",
+    "redhat.vscode-yaml"
+  ],
+  "unwantedRecommendations": [
+    // Formatador PHP alternativo — este projeto usa Pint (Laravel Pint),
+    // nunca o php-cs-fixer da extensão abaixo diretamente.
+    "junstyle.php-cs-fixer",
+    // Conflita com o Vue - Official (Volar) para arquivos .vue.
+    "octref.vetur"
+  ]
+}
