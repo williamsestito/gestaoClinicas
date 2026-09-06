@@ -143,6 +143,22 @@ it('exposes active benefits, services, professionals, gallery, testimonials and 
         );
 });
 
+it('exposes the site latitude and longitude in the contact payload for the map embed', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+    SiteSetting::factory()->create([
+        'latitude' => '-26.3021000',
+        'longitude' => '-48.8456000',
+    ]);
+
+    $this->get('/')
+        ->assertInertia(fn ($page) => $page
+            ->where('contact.latitude', '-26.3021000')
+            ->where('contact.longitude', '-48.8456000')
+        );
+});
+
 it('shows an unlinked professional or service regardless of any operational data', function () {
     Organization::factory()->create();
     SiteSetting::factory()->create();

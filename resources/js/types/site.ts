@@ -212,6 +212,8 @@ export interface PublicContact {
     address: SiteContactAddress | null;
     opening_hours: PublicOpeningHour[];
     map_url: string | null;
+    latitude: string | null;
+    longitude: string | null;
 }
 
 export interface PublicService {

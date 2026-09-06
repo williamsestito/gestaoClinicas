@@ -104,6 +104,8 @@ class PublicSiteController extends Controller
                     'closes_at' => $hour->closes_at,
                 ])->all(),
                 'map_url' => $siteSetting->google_maps_url,
+                'latitude' => $siteSetting->latitude,
+                'longitude' => $siteSetting->longitude,
             ] : null,
             'seo' => $this->seoMetaBuilder->forHome($organization, $site),
         ]);
