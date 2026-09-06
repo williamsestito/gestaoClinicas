@@ -17,19 +17,41 @@ const sortedHours = computed(() =>
     ),
 );
 
-const mapsSearchUrl = computed(() => {
-    if (props.contact.map_url) {
-        return props.contact.map_url;
-    }
-
+const addressQuery = computed(() => {
     if (!props.contact.address) {
         return null;
     }
 
     const { street, number, city, state } = props.contact.address;
-    const query = encodeURIComponent(`${street}, ${number} - ${city}/${state}`);
 
-    return `https://www.google.com/maps/search/?api=1&query=${query}`;
+    return `${street}, ${number} - ${city}/${state}`;
+});
+
+const mapsSearchUrl = computed(() => {
+    if (props.contact.map_url) {
+        return props.contact.map_url;
+    }
+
+    if (!addressQuery.value) {
+        return null;
+    }
+
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressQuery.value)}`;
+});
+
+// Embed gratuito do Google Maps (sem API key/billing): a URL "de como
+// chegar" (map_url) é um link de compartilhamento comum, não serve como
+// src de iframe — por isso o embed é sempre construído aqui, priorizando
+// latitude/longitude (mais preciso) e caindo para o endereço em texto.
+const mapEmbedUrl = computed(() => {
+    const query =
+        props.contact.latitude && props.contact.longitude
+            ? `${props.contact.latitude},${props.contact.longitude}`
+            : addressQuery.value;
+
+    return query
+        ? `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`
+        : null;
 });
 
 const whatsappUrl = computed(() => buildWhatsAppUrl(props.contact.whatsapp));
@@ -124,7 +146,20 @@ const whatsappUrl = computed(() => buildWhatsAppUrl(props.contact.whatsapp));
             </div>
 
             <div
-                v-if="mapsSearchUrl"
+                v-if="mapEmbedUrl"
+                class="overflow-hidden rounded-2xl border border-border"
+            >
+                <iframe
+                    :src="mapEmbedUrl"
+                    title="Localização no mapa"
+                    class="h-full min-h-64 w-full"
+                    style="border: 0"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                />
+            </div>
+            <div
+                v-else-if="mapsSearchUrl"
                 class="overflow-hidden rounded-2xl border border-border"
             >
                 <a

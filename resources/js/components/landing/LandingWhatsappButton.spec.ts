@@ -11,6 +11,8 @@ function makeContact(whatsapp: string | null) {
         address: null,
         opening_hours: [],
         map_url: null,
+        latitude: null,
+        longitude: null,
     };
 }
 
