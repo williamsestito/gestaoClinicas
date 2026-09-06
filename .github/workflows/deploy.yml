@@ -67,7 +67,13 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            test -f scripts/deploy.sh
-            chmod +x scripts/deploy.sh
+            # Chamado como "bash scripts/deploy.sh" (nao "./scripts/deploy.sh"),
+            # entao o bit de execucao do arquivo e irrelevante aqui - so
+            # precisamos confirmar que ele existe apos o bootstrap acima, com
+            # uma mensagem clara caso nao exista.
+            if [ ! -f scripts/deploy.sh ]; then
+              echo "ERRO: scripts/deploy.sh não encontrado após bootstrap do repositório." >&2
+              exit 1
+            fi
 
             bash scripts/deploy.sh
