@@ -44,4 +44,7 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/apps/gestao-clinicas
-            ./scripts/deploy.sh
+            # "bash scripts/deploy.sh" em vez de "./scripts/deploy.sh": nao
+            # depende do bit de execucao estar setado no checkout (pode se
+            # perder em alguns clones/exports), so precisa do arquivo existir.
+            bash scripts/deploy.sh

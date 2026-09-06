@@ -42,6 +42,9 @@ validate_environment() {
 
     command -v docker >/dev/null 2>&1 || { echo "::error::docker nao encontrado no PATH." >&2; exit 1; }
     docker compose version >/dev/null 2>&1 || { echo "::error::plugin 'docker compose' nao encontrado." >&2; exit 1; }
+    command -v git >/dev/null 2>&1 || { echo "::error::git nao encontrado no PATH." >&2; exit 1; }
+    command -v curl >/dev/null 2>&1 || { echo "::error::curl nao encontrado no PATH (necessario para o health check)." >&2; exit 1; }
+    git rev-parse --is-inside-work-tree >/dev/null 2>&1 || { echo "::error::${SCRIPT_DIR} nao e um repositorio Git valido." >&2; exit 1; }
 
     [ -f compose.yaml ] || { echo "::error::compose.yaml nao encontrado em ${SCRIPT_DIR}." >&2; exit 1; }
     [ -f compose.prod.yaml ] || { echo "::error::compose.prod.yaml nao encontrado em ${SCRIPT_DIR}." >&2; exit 1; }
@@ -92,6 +95,11 @@ build_frontend_assets() {
     # nao) o container "node" nem da logica do proprio command dele - roda
     # "npm run build" direto, sempre, garantindo que o front fique
     # atualizado neste deploy mesmo se o container node ja estava de pe.
+    # Esta e a UNICA chamada de "npm run build" em producao - o command do
+    # servico "node" em compose.prod.yaml deliberadamente NAO builda sozinho,
+    # para nao rodar em paralelo com este exec (node nao tem healthcheck, ou
+    # seja "up --wait" nao esperaria esse build terminar antes de chegar
+    # aqui) e arriscar escrita concorrente em public/build.
     log "Compilando assets do frontend..."
     $COMPOSE_PROD exec -T "$NODE_SERVICE" npm run build
 }
