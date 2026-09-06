@@ -29,9 +29,29 @@ COMPOSE_PROD="docker compose -f compose.yaml -f compose.prod.yaml"
 APP_SERVICE="app"
 NODE_SERVICE="node"
 
+# Servicos long-running (ficam "up" para sempre). "minio-init" e
+# PROPOSITALMENTE um job one-shot (compose.yaml: "restart: no") que cria/
+# configura o bucket e termina - nunca entra nesta lista, e validado a
+# parte em wait_for_minio_init().
+LONG_RUNNING_SERVICES=(app nginx postgres redis minio node queue scheduler)
+
 HEALTH_CHECK_URL="${HEALTH_CHECK_URL:-https://gestao.espacodudaalmeida.com.br/up}"
 HEALTH_CHECK_ATTEMPTS="${HEALTH_CHECK_ATTEMPTS:-10}"
 HEALTH_CHECK_DELAY="${HEALTH_CHECK_DELAY:-3}"
+
+WAIT_SERVICES_ATTEMPTS="${WAIT_SERVICES_ATTEMPTS:-60}"
+WAIT_SERVICES_DELAY="${WAIT_SERVICES_DELAY:-3}"
+MINIO_INIT_ATTEMPTS="${MINIO_INIT_ATTEMPTS:-30}"
+MINIO_INIT_DELAY="${MINIO_INIT_DELAY:-2}"
+
+# So estes long-running tem healthcheck definido em compose.yaml - node,
+# queue e scheduler nao tem, entao so exigimos "running" deles.
+service_has_healthcheck() {
+    case "$1" in
+        app | nginx | postgres | redis | minio) return 0 ;;
+        *) return 1 ;;
+    esac
+}
 
 log() {
     printf '\n==> %s\n' "$1"
@@ -81,13 +101,113 @@ build_containers() {
     $COMPOSE_PROD build
 }
 
+wait_for_services() {
+    # NAO usa "docker compose up --wait": esse flag exige que TODO servico
+    # fique "running" (ou "healthy", se tiver healthcheck) - ele nao sabe
+    # distinguir um job one-shot que e SUPOSTO terminar (minio-init) de um
+    # servico long-running que morreu. Foi exatamente isso que causou uma
+    # falha falsa em producao: "up --wait" viu o minio-init sair (exited,
+    # mesmo com exit 0 = sucesso) e interpretou como o container nao ter
+    # ficado "running", derrubando o deploy inteiro (e o rollback em
+    # seguida, pela mesma razao). Por isso esperamos so os servicos
+    # long-running aqui, com nossa propria checagem; o minio-init e
+    # validado a parte em wait_for_minio_init(), que trata exited(0) como
+    # sucesso de verdade.
+    log "Aguardando os servicos long-running ficarem prontos..."
+
+    local attempt service container_id state health not_ready
+    for ((attempt = 1; attempt <= WAIT_SERVICES_ATTEMPTS; attempt++)); do
+        not_ready=""
+
+        for service in "${LONG_RUNNING_SERVICES[@]}"; do
+            # "-a"/"--all": sem isso, um servico que crashou e ficou
+            # "exited" nao apareceria aqui (por padrao "ps -q" so lista
+            # containers em execucao), sendo reportado como "sem
+            # container" em vez do estado real - piorando o diagnostico e
+            # atrasando a detecção ate estourar o timeout completo.
+            container_id="$($COMPOSE_PROD ps -a -q "$service")"
+            if [ -z "$container_id" ]; then
+                not_ready="${not_ready}${service}(sem container) "
+                continue
+            fi
+
+            state="$(docker inspect -f '{{.State.Status}}' "$container_id" 2>/dev/null || echo unknown)"
+
+            if service_has_healthcheck "$service"; then
+                health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$container_id" 2>/dev/null || echo unknown)"
+                if [ "$state" != "running" ] || [ "$health" != "healthy" ]; then
+                    not_ready="${not_ready}${service}(${state}/${health}) "
+                fi
+            else
+                [ "$state" = "running" ] || not_ready="${not_ready}${service}(${state}) "
+            fi
+        done
+
+        if [ -z "$not_ready" ]; then
+            log "Todos os servicos long-running estao prontos."
+            return 0
+        fi
+
+        echo "Aguardando: ${not_ready}(tentativa ${attempt}/${WAIT_SERVICES_ATTEMPTS})..."
+        sleep "$WAIT_SERVICES_DELAY"
+    done
+
+    echo "::error::Timeout aguardando servicos ficarem prontos: ${not_ready}" >&2
+    return 1
+}
+
+wait_for_minio_init() {
+    # minio-init e PROPOSITALMENTE one-shot (compose.yaml: "restart: no"):
+    # cria/configura o bucket e termina. exited com ExitCode 0 e SUCESSO,
+    # nunca uma falha - so um ExitCode != 0 e rejeitado.
+    log "Validando o job one-shot minio-init..."
+
+    local container_id
+    # "-a"/"--all" e essencial aqui: por padrao "ps -q" so lista containers
+    # em execucao, e a esta altura o minio-init normalmente ja terminou -
+    # sem "-a" o container nao apareceria e o exit code nunca seria checado.
+    container_id="$($COMPOSE_PROD ps -a -q minio-init)"
+
+    if [ -z "$container_id" ]; then
+        echo "Aviso: container minio-init nao encontrado (pode ja ter sido removido apos concluir com sucesso)." >&2
+        return 0
+    fi
+
+    local attempt state exit_code
+    for ((attempt = 1; attempt <= MINIO_INIT_ATTEMPTS; attempt++)); do
+        state="$(docker inspect -f '{{.State.Status}}' "$container_id" 2>/dev/null || echo unknown)"
+
+        if [ "$state" = "exited" ]; then
+            exit_code="$(docker inspect -f '{{.State.ExitCode}}' "$container_id" 2>/dev/null || echo -1)"
+            if [ "$exit_code" -eq 0 ]; then
+                log "minio-init concluiu com sucesso (exit 0)."
+                return 0
+            fi
+            echo "::error::minio-init terminou com exit code ${exit_code} (esperado 0)." >&2
+            return 1
+        fi
+
+        echo "Aguardando minio-init concluir (estado atual: ${state}, tentativa ${attempt}/${MINIO_INIT_ATTEMPTS})..."
+        sleep "$MINIO_INIT_DELAY"
+    done
+
+    echo "::error::Timeout aguardando minio-init concluir (estado atual: ${state})." >&2
+    return 1
+}
+
 start_containers() {
     log "Subindo containers de producao..."
-    # --wait bloqueia ate os servicos com healthcheck (app/nginx/postgres/
-    # redis/minio) reportarem "healthy", e falha (exit != 0) se algum ficar
-    # "unhealthy" dentro do timeout - sem precisar de um loop de espera
-    # manual aqui.
-    $COMPOSE_PROD up -d --remove-orphans --wait --wait-timeout 180
+    # "|| return 1" explicito em cada etapa (nao so confiar no errexit
+    # ambiente): esta funcao tambem e chamada de dentro de rollback_code(),
+    # que por sua vez roda dentro de "if rollback_code; then" em
+    # on_failure() - esse "if" suspende o errexit para toda a cadeia de
+    # chamadas aninhadas. Sem o "||" aqui, uma falha em wait_for_services()
+    # passaria batido e wait_for_minio_init() ainda rodaria depois,
+    # decidindo sozinho (e incorretamente) o retorno final desta funcao.
+    $COMPOSE_PROD up -d --remove-orphans || return 1
+
+    wait_for_services || return 1
+    wait_for_minio_init || return 1
 }
 
 build_frontend_assets() {
@@ -98,8 +218,9 @@ build_frontend_assets() {
     # Esta e a UNICA chamada de "npm run build" em producao - o command do
     # servico "node" em compose.prod.yaml deliberadamente NAO builda sozinho,
     # para nao rodar em paralelo com este exec (node nao tem healthcheck, ou
-    # seja "up --wait" nao esperaria esse build terminar antes de chegar
-    # aqui) e arriscar escrita concorrente em public/build.
+    # seja wait_for_services() so exige "running" dele, nao esperaria esse
+    # build terminar antes de chegar aqui) e arriscar escrita concorrente em
+    # public/build.
     log "Compilando assets do frontend..."
     $COMPOSE_PROD exec -T "$NODE_SERVICE" npm run build
 }
@@ -111,7 +232,12 @@ run_migrations() {
 
 optimize_laravel() {
     log "Limpando caches antigos..."
-    $COMPOSE_PROD exec -T "$APP_SERVICE" php artisan optimize:clear
+    # "|| return 1": mesma razao de start_containers() - esta funcao
+    # tambem roda durante o rollback, com errexit suspenso pelo "if" em
+    # on_failure(). Sem o "||", uma falha aqui passaria batido se o
+    # "optimize" seguinte desse certo, e a funcao inteira reportaria
+    # sucesso incorretamente.
+    $COMPOSE_PROD exec -T "$APP_SERVICE" php artisan optimize:clear || return 1
 
     log "Gerando caches de producao (config/route/view/event)..."
     $COMPOSE_PROD exec -T "$APP_SERVICE" php artisan optimize
