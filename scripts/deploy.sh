@@ -120,7 +120,12 @@ wait_for_services() {
         not_ready=""
 
         for service in "${LONG_RUNNING_SERVICES[@]}"; do
-            container_id="$($COMPOSE_PROD ps -q "$service")"
+            # "-a"/"--all": sem isso, um servico que crashou e ficou
+            # "exited" nao apareceria aqui (por padrao "ps -q" so lista
+            # containers em execucao), sendo reportado como "sem
+            # container" em vez do estado real - piorando o diagnostico e
+            # atrasando a detecção ate estourar o timeout completo.
+            container_id="$($COMPOSE_PROD ps -a -q "$service")"
             if [ -z "$container_id" ]; then
                 not_ready="${not_ready}${service}(sem container) "
                 continue
@@ -192,10 +197,17 @@ wait_for_minio_init() {
 
 start_containers() {
     log "Subindo containers de producao..."
-    $COMPOSE_PROD up -d --remove-orphans
+    # "|| return 1" explicito em cada etapa (nao so confiar no errexit
+    # ambiente): esta funcao tambem e chamada de dentro de rollback_code(),
+    # que por sua vez roda dentro de "if rollback_code; then" em
+    # on_failure() - esse "if" suspende o errexit para toda a cadeia de
+    # chamadas aninhadas. Sem o "||" aqui, uma falha em wait_for_services()
+    # passaria batido e wait_for_minio_init() ainda rodaria depois,
+    # decidindo sozinho (e incorretamente) o retorno final desta funcao.
+    $COMPOSE_PROD up -d --remove-orphans || return 1
 
-    wait_for_services
-    wait_for_minio_init
+    wait_for_services || return 1
+    wait_for_minio_init || return 1
 }
 
 build_frontend_assets() {
@@ -220,7 +232,12 @@ run_migrations() {
 
 optimize_laravel() {
     log "Limpando caches antigos..."
-    $COMPOSE_PROD exec -T "$APP_SERVICE" php artisan optimize:clear
+    # "|| return 1": mesma razao de start_containers() - esta funcao
+    # tambem roda durante o rollback, com errexit suspenso pelo "if" em
+    # on_failure(). Sem o "||", uma falha aqui passaria batido se o
+    # "optimize" seguinte desse certo, e a funcao inteira reportaria
+    # sucesso incorretamente.
+    $COMPOSE_PROD exec -T "$APP_SERVICE" php artisan optimize:clear || return 1
 
     log "Gerando caches de producao (config/route/view/event)..."
     $COMPOSE_PROD exec -T "$APP_SERVICE" php artisan optimize
