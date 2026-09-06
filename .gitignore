@@ -28,7 +28,13 @@ yarn-error.log
 /.fleet
 /.idea
 /.nova
-/.vscode
+# .vscode: versiona so a config compartilhada do projeto (extensions/settings/
+# tasks recomendados para o time); qualquer outro estado local do editor
+# (ex.: launch.json pessoal, *.code-workspace) continua ignorado.
+/.vscode/*
+!/.vscode/extensions.json
+!/.vscode/settings.json
+!/.vscode/tasks.json
 /.zed
 /.agents
 /.codex

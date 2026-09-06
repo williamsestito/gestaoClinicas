@@ -1,0 +1,99 @@
+{
+  "version": "2.0.0",
+  // Todas as tasks passam por `make`/`docker compose` — o projeto não usa
+  // Laravel Sail e não espera PHP/Composer/Node instalados no host (tudo
+  // roda em containers, ver README "Requisitos mínimos"). Nenhuma task
+  // aqui toca produção: deploy só acontece via .github/workflows/deploy.yml
+  // depois de um merge em main (ver docs/DEPLOYMENT.md).
+  "tasks": [
+    {
+      "label": "Docker: Dev Up",
+      "type": "shell",
+      "command": "make up",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Dev Down",
+      "type": "shell",
+      "command": "make down",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Prod Config Check",
+      "detail": "Valida a composição final (compose.yaml + compose.prod.yaml) sem subir nada e sem imprimir segredos.",
+      "type": "shell",
+      "command": "docker compose -f compose.yaml -f compose.prod.yaml config --quiet",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Laravel: Tests (Pest)",
+      "type": "shell",
+      "command": "make test-backend",
+      "group": { "kind": "test", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Tests (Vitest)",
+      "type": "shell",
+      "command": "make test-frontend",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "PHPStan (Larastan)",
+      "type": "shell",
+      "command": "docker compose exec app ./vendor/bin/phpstan analyse --no-progress",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Pint (check)",
+      "type": "shell",
+      "command": "docker compose exec app ./vendor/bin/pint --test",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Pint (fix)",
+      "type": "shell",
+      "command": "docker compose exec app ./vendor/bin/pint",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Lint (ESLint)",
+      "type": "shell",
+      "command": "make npm cmd=\"run lint\"",
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Format Check (Prettier)",
+      "type": "shell",
+      "command": "make npm cmd=\"run format:check\"",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Types (vue-tsc)",
+      "type": "shell",
+      "command": "make npm cmd=\"run types\"",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "CI - Full (local)",
+      "detail": "Reproduz localmente os mesmos gates do workflow CI (Pint, Larastan, Pest, ESLint, Prettier, vue-tsc, Vitest) — requer `make up` já rodando.",
+      "type": "shell",
+      "command": "make lint && make npm cmd=\"run format:check\" && make analyse && make test",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    }
+  ]
+}

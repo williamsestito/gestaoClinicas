@@ -22,6 +22,11 @@ jobs:
   deploy:
     if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    # Ambiente "production" do GitHub: permite exigir aprovação manual e/ou
+    # secrets com escopo restrito a este job, configurado em
+    # Settings -> Environments (ver docs/DEPLOYMENT.md).
+    environment:
+      name: production
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
@@ -30,20 +35,13 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          # SHA256 fingerprint da host key da VPS: pina o servidor esperado
+          # em vez de aceitar qualquer host key na primeira conexão (o
+          # equivalente inseguro de StrictHostKeyChecking=no). Ver
+          # docs/DEPLOYMENT.md para o comando que gera esse valor.
+          fingerprint: ${{ secrets.VPS_HOST_FINGERPRINT }}
           command_timeout: 15m
           script: |
             set -euo pipefail
-
             cd /opt/apps/gestao-clinicas
-
-            git fetch origin
-            git checkout main
-
-            # O diretorio de deploy nunca deve ter edicao manual: qualquer
-            # drift local (ex.: alguem editando compose.prod.yaml direto na
-            # VPS) trava o pull para sempre a partir dali. "reset --hard"
-            # so descarta mudancas em arquivos rastreados pelo git - nunca
-            # apaga arquivos nao versionados como .env, storage/ ou uploads.
-            git reset --hard origin/main
-
-            make prod-deploy
+            ./scripts/deploy.sh

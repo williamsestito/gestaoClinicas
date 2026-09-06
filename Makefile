@@ -57,7 +57,8 @@ NODE_SERVICE := node
 	prod-db \
 	prod-redis \
 	prod-status \
-	prod-deploy
+	prod-deploy \
+	prod-queue-restart
 
 help: ## Lista os comandos disponiveis
 	@echo "Gestao de Clinicas — comandos disponiveis:"
@@ -101,6 +102,7 @@ help: ## Lista os comandos disponiveis
 	@echo "  make prod-optimize                Cria caches Laravel"
 	@echo "  make prod-optimize-clear          Limpa caches Laravel"
 	@echo "  make prod-deploy                  Executa fluxo padrao de deploy"
+	@echo "  make prod-queue-restart           Reinicia so os workers de fila"
 	@echo ""
 
 # =========================================================
@@ -275,35 +277,8 @@ prod-db: ## Abre psql no banco de producao
 prod-redis: ## Abre redis-cli de producao
 	$(COMPOSE_PROD) exec redis sh -c 'redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning'
 
-prod-deploy: ## Fluxo padrao de deploy da aplicacao
-	@echo "=== Gestao de Clinicas: deploy de producao ==="
-	@echo ""
-	@echo "1. Construindo imagens..."
-	$(COMPOSE_PROD) build
-	@echo ""
-	@echo "2. Subindo infraestrutura..."
-	$(COMPOSE_PROD) up -d
-	@echo ""
-	@echo "3. Aguardando containers..."
-	@sleep 10
-	@echo ""
-	@echo "4. Compilando assets do frontend..."
-	@# Explicito e determinístico: nunca depende do Compose decidir recriar
-	@# (ou não) o container "node" nem da lógica do próprio command dele -
-	@# roda "npm run build" direto, sempre, garantindo que o front fique
-	@# atualizado neste deploy mesmo se o container node já estava de pé.
-	$(COMPOSE_PROD) exec $(NODE_SERVICE) npm run build
-	@echo ""
-	@echo "5. Executando migrations..."
-	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan migrate --force
-	@echo ""
-	@echo "6. Limpando caches antigos..."
-	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan optimize:clear
-	@echo ""
-	@echo "7. Criando caches de producao..."
-	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan optimize
-	@echo ""
-	@echo "8. Status final:"
-	$(COMPOSE_PROD) ps
-	@echo ""
-	@echo "Deploy concluido."
+prod-deploy: ## Fluxo padrao de deploy da aplicacao (build, up, migrations, otimizacao, health check, rollback automatico em falha)
+	@bash scripts/deploy.sh
+
+prod-queue-restart: ## Reinicia os workers de fila sem refazer todo o deploy
+	$(COMPOSE_PROD) exec $(APP_SERVICE) php artisan queue:restart
