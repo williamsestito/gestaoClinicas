@@ -42,9 +42,38 @@ jobs:
           fingerprint: ${{ secrets.VPS_HOST_FINGERPRINT }}
           command_timeout: 15m
           script: |
-            set -euo pipefail
+            set -Eeuo pipefail
             cd /opt/apps/gestao-clinicas
-            # "bash scripts/deploy.sh" em vez de "./scripts/deploy.sh": nao
-            # depende do bit de execucao estar setado no checkout (pode se
-            # perder em alguns clones/exports), so precisa do arquivo existir.
+
+            # Bootstrap minimo ANTES de chamar o script: no primeiro deploy
+            # depois de scripts/deploy.sh ser adicionado (ou de qualquer
+            # alteracao nele), o checkout da VPS ainda esta no commit
+            # anterior e o arquivo pode nem existir ainda - "bash
+            # scripts/deploy.sh" direto falharia com "No such file or
+            # directory" antes mesmo de chegar ao update_repository() interno
+            # do proprio script. scripts/deploy.sh tambem faz fetch/reset
+            # (idempotente - roda de novo sem problema, e cobre quem o chama
+            # direto sem passar por aqui, ex.: `make prod-deploy` manual).
+            #
+            # PREVIOUS_COMMIT precisa ser capturado ANTES do reset e
+            # exportado para scripts/deploy.sh herdar: backup_current_commit()
+            # so recaptura sozinho se a variavel ainda nao existir - se o
+            # reset abaixo ja tivesse rodado antes dessa captura, o "commit
+            # anterior" guardado seria o mesmo commit novo (o reset ja teria
+            # movido o HEAD), e o rollback em caso de falha viraria um no-op.
+            PREVIOUS_COMMIT="$(git rev-parse HEAD)"
+            export PREVIOUS_COMMIT
+
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Chamado como "bash scripts/deploy.sh" (nao "./scripts/deploy.sh"),
+            # entao o bit de execucao do arquivo e irrelevante aqui - so
+            # precisamos confirmar que ele existe apos o bootstrap acima, com
+            # uma mensagem clara caso nao exista.
+            if [ ! -f scripts/deploy.sh ]; then
+              echo "ERRO: scripts/deploy.sh não encontrado após bootstrap do repositório." >&2
+              exit 1
+            fi
+
             bash scripts/deploy.sh
