@@ -11,8 +11,9 @@ use App\Models\UnitMembership;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 
-// ownerActingInOrganization() vive em tests/Pest.php — compartilhada com
-// vários outros arquivos de Organization/Sales/Roles.
+// ownerActingInOrganization()/validUnitAddressPayload() vivem em
+// tests/Pest.php — compartilhadas com vários outros arquivos de
+// Organization/Sales/Roles.
 
 it('enforces a unique unit code per organization', function () {
     $ctx = ownerActingInOrganization();
@@ -310,9 +311,112 @@ it('flashes a toast confirmation after updating a unit', function () {
             'whatsapp' => '',
             'email' => '',
             'timezone' => $ctx['headquarters']->timezone,
+            'address' => validUnitAddressPayload(),
         ])
         ->assertRedirect('/settings/units')
         ->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'Unidade atualizada com sucesso.']);
+});
+
+it('updates the address of an existing unit', function () {
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->put("/settings/units/{$ctx['headquarters']->id}", [
+            'name' => $ctx['headquarters']->name,
+            'phone' => '',
+            'whatsapp' => '',
+            'email' => '',
+            'timezone' => $ctx['headquarters']->timezone,
+            'address' => [
+                'postal_code' => '20040020',
+                'street' => 'Avenida Rio Branco',
+                'number' => '100',
+                'neighborhood' => 'Centro',
+                'city' => 'Rio de Janeiro',
+                'state' => 'RJ',
+            ],
+        ])
+        ->assertRedirect('/settings/units');
+
+    $ctx['headquarters']->refresh();
+    expect($ctx['headquarters']->address->street)->toBe('Avenida Rio Branco')
+        ->and($ctx['headquarters']->address->city)->toBe('Rio de Janeiro')
+        ->and($ctx['headquarters']->address->state)->toBe('RJ');
+});
+
+it('updates the opening hours of an existing unit', function () {
+    $ctx = ownerActingInOrganization();
+    $ctx['headquarters']->openingHours()->create([
+        'organization_id' => $ctx['organization']->id,
+        'day_of_week' => 1,
+        'opens_at' => '08:00',
+        'closes_at' => '12:00',
+        'sort_order' => 0,
+    ]);
+
+    $this->actingAs($ctx['user'])
+        ->put("/settings/units/{$ctx['headquarters']->id}", [
+            'name' => $ctx['headquarters']->name,
+            'phone' => '',
+            'whatsapp' => '',
+            'email' => '',
+            'timezone' => $ctx['headquarters']->timezone,
+            'address' => validUnitAddressPayload(),
+            'opening_hours' => [
+                ['day_of_week' => 2, 'opens_at' => '09:00', 'closes_at' => '19:00'],
+            ],
+        ])
+        ->assertRedirect('/settings/units');
+
+    $ctx['headquarters']->refresh();
+    expect($ctx['headquarters']->openingHours()->count())->toBe(1)
+        ->and($ctx['headquarters']->openingHours()->first())
+        ->day_of_week->toBe(2)
+        ->opens_at->toBe('09:00:00')
+        ->closes_at->toBe('19:00:00');
+});
+
+it('leaves existing opening hours untouched when the update request omits the field', function () {
+    $ctx = ownerActingInOrganization();
+    $ctx['headquarters']->openingHours()->create([
+        'organization_id' => $ctx['organization']->id,
+        'day_of_week' => 1,
+        'opens_at' => '08:00',
+        'closes_at' => '12:00',
+        'sort_order' => 0,
+    ]);
+
+    $this->actingAs($ctx['user'])
+        ->put("/settings/units/{$ctx['headquarters']->id}", [
+            'name' => $ctx['headquarters']->name,
+            'phone' => '',
+            'whatsapp' => '',
+            'email' => '',
+            'timezone' => $ctx['headquarters']->timezone,
+            'address' => validUnitAddressPayload(),
+        ])
+        ->assertRedirect('/settings/units');
+
+    expect($ctx['headquarters']->openingHours()->count())->toBe(1);
+});
+
+it('rejects an update with overlapping opening hours intervals on the same day', function () {
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->put("/settings/units/{$ctx['headquarters']->id}", [
+            'name' => $ctx['headquarters']->name,
+            'phone' => '',
+            'whatsapp' => '',
+            'email' => '',
+            'timezone' => $ctx['headquarters']->timezone,
+            'address' => validUnitAddressPayload(),
+            'opening_hours' => [
+                ['day_of_week' => 1, 'opens_at' => '08:00', 'closes_at' => '12:00'],
+                ['day_of_week' => 1, 'opens_at' => '10:00', 'closes_at' => '18:00'],
+            ],
+        ])
+        ->assertSessionHasErrors('opening_hours');
 });
 
 it('flashes distinct toast confirmations when activating and inactivating a unit', function () {

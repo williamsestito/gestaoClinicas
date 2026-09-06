@@ -311,11 +311,8 @@ function formatDate(value: string): string {
             </Card>
         </div>
 
-        <div
-            v-if="hasAny"
-            class="flex flex-col gap-3 sm:flex-row sm:items-center"
-        >
-            <div class="relative sm:max-w-xs sm:flex-1">
+        <div v-if="hasAny" class="flex flex-wrap items-center gap-3">
+            <div class="relative w-full sm:w-64">
                 <Search
                     class="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground"
                 />
@@ -330,7 +327,7 @@ function formatDate(value: string): string {
             <select
                 v-model="statusFilter"
                 aria-label="Filtrar profissionais por status"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="h-9 shrink-0 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Todos</option>
                 <option value="active">Ativos</option>
@@ -341,7 +338,7 @@ function formatDate(value: string): string {
             <select
                 v-model="unitFilter"
                 aria-label="Filtrar profissionais por unidade"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="h-9 shrink-0 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Todas as unidades</option>
                 <option
@@ -356,7 +353,7 @@ function formatDate(value: string): string {
             <select
                 v-model="specialtyFilter"
                 aria-label="Filtrar profissionais por especialidade"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="h-9 shrink-0 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Todas as especialidades</option>
                 <option
@@ -371,7 +368,7 @@ function formatDate(value: string): string {
             <select
                 v-model="serviceFilter"
                 aria-label="Filtrar profissionais por serviço"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="h-9 shrink-0 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Todos os serviços</option>
                 <option
@@ -386,7 +383,7 @@ function formatDate(value: string): string {
             <select
                 v-model="activeUnitFilter"
                 aria-label="Filtrar profissionais por unidade ativa"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="h-9 shrink-0 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Com ou sem unidade ativa</option>
                 <option value="with">Com unidade ativa</option>
@@ -396,7 +393,7 @@ function formatDate(value: string): string {
             <select
                 v-model="workingHoursFilter"
                 aria-label="Filtrar profissionais por jornada"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="h-9 shrink-0 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Com ou sem jornada</option>
                 <option value="with">Com jornada</option>
@@ -406,7 +403,7 @@ function formatDate(value: string): string {
             <select
                 v-model="operationalStatusFilter"
                 aria-label="Filtrar profissionais por situação operacional"
-                class="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                class="h-9 shrink-0 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
                 <option value="all">Qualquer situação operacional</option>
                 <option value="operational">Operacional</option>
@@ -414,7 +411,9 @@ function formatDate(value: string): string {
                 <option value="inactive">Inativo</option>
             </select>
 
-            <label class="flex items-center gap-2 text-sm">
+            <label
+                class="flex shrink-0 items-center gap-2 text-sm whitespace-nowrap"
+            >
                 <input v-model="ongoingAbsenceFilter" type="checkbox" />
                 Com ausência em andamento
             </label>

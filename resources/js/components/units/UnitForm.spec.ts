@@ -61,8 +61,21 @@ const unit: EditableUnit = {
     phone: null,
     whatsapp: null,
     deleted_at: null,
-    address: { street: 'Rua A', number: '10', city: 'São Paulo', state: 'SP' },
-    opening_hours: [{ day_of_week: 1, opens_at: '08:00', closes_at: '18:00' }],
+    address: {
+        postal_code: '01310100',
+        street: 'Rua A',
+        number: '10',
+        complement: null,
+        neighborhood: 'Centro',
+        city: 'São Paulo',
+        state: 'SP',
+    },
+    // O backend entrega HH:MM:SS (coluna `time`) — o UnitForm precisa
+    // normalizar para HH:MM antes de reenviar, ver teste de normalização
+    // abaixo.
+    opening_hours: [
+        { day_of_week: 1, opens_at: '08:00:00', closes_at: '18:00:00' },
+    ],
 };
 
 describe('UnitForm', () => {
@@ -80,15 +93,27 @@ describe('UnitForm', () => {
         expect(wrapper.text()).toContain('Criar unidade');
     });
 
-    it('edit mode never renders editable address/opening-hours fields, only a read-only summary', () => {
+    it('edit mode renders the address field, editable', () => {
         const wrapper = mount(UnitForm, {
             props: { mode: 'edit', unit },
         });
 
-        expect(wrapper.findComponent(AddressFields).exists()).toBe(false);
-        expect(wrapper.findComponent(OpeningHoursFields).exists()).toBe(false);
-        expect(wrapper.text()).toContain('Rua A, 10');
+        expect(wrapper.findComponent(AddressFields).exists()).toBe(true);
+        expect(
+            wrapper.findComponent(AddressFields).props('modelValue'),
+        ).toMatchObject({ street: 'Rua A', number: '10' });
         expect(wrapper.text()).toContain('Salvar alterações');
+    });
+
+    it('edit mode renders the opening hours field, editable', () => {
+        const wrapper = mount(UnitForm, {
+            props: { mode: 'edit', unit },
+        });
+
+        expect(wrapper.findComponent(OpeningHoursFields).exists()).toBe(true);
+        expect(
+            wrapper.findComponent(OpeningHoursFields).props('modelValue'),
+        ).toEqual([{ day_of_week: 1, opens_at: '08:00', closes_at: '18:00' }]);
     });
 
     it('edit mode shows the unit code as read-only text, not an editable field', () => {

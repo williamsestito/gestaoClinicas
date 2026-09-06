@@ -86,7 +86,19 @@ class UnitController extends Controller
 
     public function update(UpdateUnitRequest $request, Unit $unit, UpdateUnitAction $action): RedirectResponse
     {
-        $action->handle($unit, $request->validated());
+        $data = $request->validated();
+
+        $openingHours = null;
+        if (array_key_exists('opening_hours', $data)) {
+            $openingHours = [];
+            foreach ($data['opening_hours'] as $index => $hour) {
+                $openingHours[] = OpeningHourData::fromArray($hour, $index);
+            }
+        }
+
+        $address = array_key_exists('address', $data) ? AddressData::fromArray($data['address']) : null;
+
+        $action->handle($unit, $data, $address, $openingHours);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Unidade atualizada com sucesso.']);
 

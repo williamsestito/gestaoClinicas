@@ -44,8 +44,11 @@ function makeUnit(overrides: Partial<EditableUnit> = {}): EditableUnit {
         whatsapp: null,
         deleted_at: null,
         address: {
+            postal_code: '01310100',
             street: 'Rua A',
             number: '10',
+            complement: null,
+            neighborhood: 'Centro',
             city: 'São Paulo',
             state: 'SP',
         },
