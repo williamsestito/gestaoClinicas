@@ -81,8 +81,10 @@ const editForm = useForm({
     } as AddressForm,
     opening_hours: (props.unit?.opening_hours ?? []).map((hour) => ({
         day_of_week: hour.day_of_week,
-        opens_at: hour.opens_at,
-        closes_at: hour.closes_at,
+        // O backend entrega HH:MM:SS (coluna `time`); a validação de
+        // atualização exige HH:MM (date_format:H:i).
+        opens_at: hour.opens_at.slice(0, 5),
+        closes_at: hour.closes_at.slice(0, 5),
     })) as OpeningHourForm[],
 });
 

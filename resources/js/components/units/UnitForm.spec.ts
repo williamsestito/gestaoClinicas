@@ -70,7 +70,12 @@ const unit: EditableUnit = {
         city: 'São Paulo',
         state: 'SP',
     },
-    opening_hours: [{ day_of_week: 1, opens_at: '08:00', closes_at: '18:00' }],
+    // O backend entrega HH:MM:SS (coluna `time`) — o UnitForm precisa
+    // normalizar para HH:MM antes de reenviar, ver teste de normalização
+    // abaixo.
+    opening_hours: [
+        { day_of_week: 1, opens_at: '08:00:00', closes_at: '18:00:00' },
+    ],
 };
 
 describe('UnitForm', () => {
