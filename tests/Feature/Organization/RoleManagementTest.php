@@ -130,6 +130,7 @@ it('grants a non-owner unit update access through a role permission, without mak
             'whatsapp' => null,
             'email' => null,
             'timezone' => 'America/Sao_Paulo',
+            'address' => validUnitAddressPayload(),
         ])
         ->assertSessionHasNoErrors()
         ->assertStatus(302);

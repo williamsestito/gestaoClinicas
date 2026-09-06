@@ -6,18 +6,20 @@ import AddressFields from '@/components/organization/AddressFields.vue';
 import OpeningHoursFields from '@/components/organization/OpeningHoursFields.vue';
 import PhoneInput from '@/components/PhoneInput.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { maskPostalCode } from '@/lib/masks';
 import { store, update } from '@/routes/settings/units';
-import { WEEKDAYS } from '@/types/organization';
 import type { AddressForm, OpeningHourForm, Unit } from '@/types/organization';
 
 export type EditableUnit = Unit & {
     address: {
+        postal_code: string;
         street: string;
         number: string;
+        complement: string | null;
+        neighborhood: string;
         city: string;
         state: string;
     } | null;
@@ -45,8 +47,6 @@ const emit = defineEmits<{
     cancel: [];
 }>();
 
-// O backend só aceita endereço e horários na criação (UpdateUnitRequest não
-// tem esses campos) — em edição eles são somente leitura, propositalmente.
 const createForm = useForm({
     name: '',
     code: '',
@@ -70,6 +70,20 @@ const editForm = useForm({
     whatsapp: props.unit?.whatsapp ?? '',
     email: props.unit?.email ?? '',
     timezone: props.unit?.timezone ?? '',
+    address: {
+        postal_code: maskPostalCode(props.unit?.address?.postal_code ?? ''),
+        street: props.unit?.address?.street ?? '',
+        number: props.unit?.address?.number ?? '',
+        complement: props.unit?.address?.complement ?? '',
+        neighborhood: props.unit?.address?.neighborhood ?? '',
+        city: props.unit?.address?.city ?? '',
+        state: props.unit?.address?.state ?? '',
+    } as AddressForm,
+    opening_hours: (props.unit?.opening_hours ?? []).map((hour) => ({
+        day_of_week: hour.day_of_week,
+        opens_at: hour.opens_at,
+        closes_at: hour.closes_at,
+    })) as OpeningHourForm[],
 });
 
 const form = computed(() => (props.mode === 'create' ? createForm : editForm));
@@ -86,10 +100,6 @@ function submit() {
             onSuccess: () => emit('success'),
         });
     }
-}
-
-function dayLabel(day: number): string {
-    return WEEKDAYS.find((w) => w.value === day)?.label ?? String(day);
 }
 </script>
 
@@ -156,7 +166,7 @@ function dayLabel(day: number): string {
 
         <Separator />
 
-        <div v-if="mode === 'create'" class="grid gap-4">
+        <div class="grid gap-4">
             <div>
                 <h3 class="text-sm font-medium">Endereço</h3>
                 <p class="text-sm text-muted-foreground">
@@ -165,38 +175,23 @@ function dayLabel(day: number): string {
                 </p>
             </div>
             <AddressFields
-                v-model="createForm.address"
+                v-model="form.address"
                 :states="states"
                 :errors="{
-                    postal_code: createForm.errors['address.postal_code'],
-                    street: createForm.errors['address.street'],
-                    number: createForm.errors['address.number'],
-                    complement: createForm.errors['address.complement'],
-                    neighborhood: createForm.errors['address.neighborhood'],
-                    city: createForm.errors['address.city'],
-                    state: createForm.errors['address.state'],
+                    postal_code: form.errors['address.postal_code'],
+                    street: form.errors['address.street'],
+                    number: form.errors['address.number'],
+                    complement: form.errors['address.complement'],
+                    neighborhood: form.errors['address.neighborhood'],
+                    city: form.errors['address.city'],
+                    state: form.errors['address.state'],
                 }"
             />
-        </div>
-        <div v-else-if="unit" class="grid gap-4">
-            <h3 class="text-sm font-medium">Endereço</h3>
-            <Card v-if="unit.address">
-                <CardContent class="py-4 text-sm text-muted-foreground">
-                    {{ unit.address.street }}, {{ unit.address.number }} —
-                    {{ unit.address.city }}/{{ unit.address.state }}
-                </CardContent>
-            </Card>
-            <p v-else class="text-sm text-muted-foreground">
-                Endereço não cadastrado.
-            </p>
-            <p class="text-xs text-muted-foreground">
-                Endereço não é editável por aqui nesta etapa.
-            </p>
         </div>
 
         <Separator />
 
-        <div v-if="mode === 'create'" class="grid gap-4">
+        <div class="grid gap-4">
             <div>
                 <h3 class="text-sm font-medium">Horários de funcionamento</h3>
                 <p class="text-sm text-muted-foreground">
@@ -204,31 +199,9 @@ function dayLabel(day: number): string {
                 </p>
             </div>
             <OpeningHoursFields
-                v-model="createForm.opening_hours"
-                :error="createForm.errors.opening_hours"
+                v-model="form.opening_hours"
+                :error="form.errors.opening_hours"
             />
-        </div>
-        <div v-else-if="unit" class="grid gap-4">
-            <h3 class="text-sm font-medium">Horários de funcionamento</h3>
-            <Card v-if="unit.opening_hours.length">
-                <CardContent
-                    class="grid gap-1 py-4 text-sm text-muted-foreground"
-                >
-                    <div
-                        v-for="(hour, index) in unit.opening_hours"
-                        :key="index"
-                    >
-                        {{ dayLabel(hour.day_of_week) }}: {{ hour.opens_at }} às
-                        {{ hour.closes_at }}
-                    </div>
-                </CardContent>
-            </Card>
-            <p v-else class="text-sm text-muted-foreground">
-                Nenhum horário de funcionamento cadastrado ainda.
-            </p>
-            <p class="text-xs text-muted-foreground">
-                Horários não são editáveis por aqui nesta etapa.
-            </p>
         </div>
 
         <div class="flex items-center justify-end gap-2">

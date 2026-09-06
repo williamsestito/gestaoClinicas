@@ -150,6 +150,26 @@ function medicalRecordStaffUser(Organization $organization, SystemRole $role): U
 }
 
 /**
+ * Payload de endereço válido para os testes de criação/atualização de
+ * unidade — o endereço é obrigatório em ambos os formulários. Compartilhado
+ * entre os testes de Organization/Roles pela mesma razão de
+ * ownerActingInOrganization() logo abaixo.
+ *
+ * @return array<string, string>
+ */
+function validUnitAddressPayload(): array
+{
+    return [
+        'postal_code' => '01310100',
+        'street' => 'Rua A',
+        'number' => '10',
+        'neighborhood' => 'Centro',
+        'city' => 'São Paulo',
+        'state' => 'SP',
+    ];
+}
+
+/**
  * Organização própria com unidade matriz, entidade legal e proprietário
  * autenticado — sem papéis de sistema semeados (ver seedSystemRoles()
  * abaixo para isso). Compartilhada entre os testes de Organization/
