@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\AppointmentRequest;
 use App\Models\Organization;
 use App\Models\Patient;
 use App\Models\PatientEmergencyContact;
@@ -29,6 +30,7 @@ function baseRegistrationPayload(): array
         'password_confirmation' => 'password',
         'registering_for' => 'self',
         'birth_date' => Carbon::now()->subYears(30)->toDateString(),
+        'document' => LegalEntityFactory::validCpf(),
     ];
 }
 
@@ -105,6 +107,46 @@ it('registers a self patient user with a linked patient and no forced emergency 
     expect(Auth::guard('patient')->check())->toBeTrue();
 });
 
+it('rejects self-registration without a CPF, even with an orphan appointment request waiting under the same phone/email', function () {
+    $organization = Organization::factory()->create();
+
+    $request = AppointmentRequest::factory()->for($organization)->create([
+        'document' => LegalEntityFactory::validCpf(),
+        'phone' => '(47) 99999-0000',
+        'email' => 'maria@example.com',
+    ]);
+
+    $payload = baseRegistrationPayload();
+    unset($payload['document']);
+    $payload['phone'] = '(47) 99999-0000';
+
+    $this->post('/portal/registrar', $payload)->assertSessionHasErrors('document');
+
+    expect(PatientUser::query()->count())->toBe(0)
+        ->and(Patient::query()->count())->toBe(0)
+        ->and($request->fresh()->patient_id)->toBeNull();
+});
+
+it('rejects a dependent registration without a CPF for the dependent', function () {
+    Organization::factory()->create();
+
+    $payload = [
+        'name' => 'João Pai',
+        'email' => 'joao@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'registering_for' => 'dependent',
+        'dependent_name' => 'Joãozinho',
+        'dependent_birth_date' => Carbon::now()->subYears(8)->toDateString(),
+        'relationship' => 'Pai',
+        'responsible_phone' => '(47) 99696-1511',
+    ];
+
+    $this->post('/portal/registrar', $payload)->assertSessionHasErrors('dependent_document');
+
+    expect(PatientUser::query()->count())->toBe(0);
+});
+
 it('blocks a minor from self-registering as the account holder', function () {
     Organization::factory()->create();
 
@@ -127,6 +169,7 @@ it('registers a dependent, auto-creating an emergency contact and, for a minor, 
         'registering_for' => 'dependent',
         'dependent_name' => 'Joãozinho',
         'dependent_birth_date' => Carbon::now()->subYears(8)->toDateString(),
+        'dependent_document' => LegalEntityFactory::validCpf(),
         'relationship' => 'Pai',
         'responsible_phone' => '(47) 99696-1511',
     ];
@@ -163,6 +206,7 @@ it('registers an adult dependent without forcing a legal guardian responsible', 
         'registering_for' => 'dependent',
         'dependent_name' => 'Avó Idosa',
         'dependent_birth_date' => Carbon::now()->subYears(80)->toDateString(),
+        'dependent_document' => LegalEntityFactory::validCpf(),
         'relationship' => 'Filha',
         'responsible_phone' => '(47) 99696-1511',
     ];

@@ -38,6 +38,16 @@ class StoreAppointmentRequestRequest extends FormRequest
     }
 
     /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'document.required' => 'CPF é obrigatório para localizarmos seu cadastro.',
+        ];
+    }
+
+    /**
      * @return array<string, ValidationRule|array<mixed>|string|Closure>
      */
     public function rules(): array

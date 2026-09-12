@@ -58,7 +58,13 @@ class RegisterPatientUserRequest extends FormRequest
             'registering_for' => ['required', 'in:self,dependent'],
 
             'birth_date' => ['required_if:registering_for,self', 'nullable', 'date', 'before:today'],
-            'document' => ['nullable', 'string', new CpfCnpjRule(LegalEntityType::Individual)],
+            // Obrigatório para "self" (decisão de negócio, alinhada ao
+            // formulário público de pré-agendamento): sem CPF aqui,
+            // App\Support\Patients\OrphanAppointmentRequestLinker nunca
+            // consegue vincular retroativamente um pré-agendamento anterior
+            // ao Patient recém-criado — o cadastro administrativo continua
+            // aceitando CPF opcional (ver CreatePatientRequest).
+            'document' => ['required_if:registering_for,self', 'nullable', 'string', new CpfCnpjRule(LegalEntityType::Individual)],
             'phone' => ['nullable', 'string', 'max:20'],
             // Só se aplica a "self" — o dependente criado aqui não tem
             // sessão própria para fazer upload depois; deixado sem foto
@@ -67,7 +73,7 @@ class RegisterPatientUserRequest extends FormRequest
 
             'dependent_name' => ['required_if:registering_for,dependent', 'nullable', 'string', 'min:2', 'max:255'],
             'dependent_birth_date' => ['required_if:registering_for,dependent', 'nullable', 'date', 'before:today'],
-            'dependent_document' => ['nullable', 'string', new CpfCnpjRule(LegalEntityType::Individual)],
+            'dependent_document' => ['required_if:registering_for,dependent', 'nullable', 'string', new CpfCnpjRule(LegalEntityType::Individual)],
             'dependent_phone' => ['nullable', 'string', 'max:20'],
             'relationship' => ['required_if:registering_for,dependent', 'nullable', 'string', 'max:255'],
             // Telefone de quem está se cadastrando como responsável — usado
@@ -81,6 +87,17 @@ class RegisterPatientUserRequest extends FormRequest
             // nunca preenchido por um visitante real (ver Controller).
             'website' => ['nullable', 'string'],
             'form_rendered_at' => ['nullable', 'integer'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'document.required_if' => 'CPF é obrigatório para localizarmos seu cadastro.',
+            'dependent_document.required_if' => 'CPF do dependente é obrigatório para localizarmos o cadastro dele.',
         ];
     }
 

@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Enums\AuditAction;
 use App\Models\AppointmentRequest;
+use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\Patient;
 use Illuminate\Routing\Middleware\ThrottleRequests;
@@ -81,6 +83,60 @@ it('never links an appointment request when the new patient has no document at a
     ])->assertRedirect('/settings/patients');
 
     expect($request->fresh()->patient_id)->toBeNull();
+});
+
+it('flags an orphan appointment request for manual review when phone matches but the new patient has no document', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+
+    $request = AppointmentRequest::factory()->for($organization)->create([
+        'document' => null,
+        'phone' => '(11) 96666-6666',
+    ]);
+
+    $this->actingAs($user)->post('/settings/patients', [
+        'name' => 'Paciente Sem Documento',
+        'birth_date' => '1990-05-10',
+        'phone' => '(11) 96666-6666',
+        'emergency_contacts' => [
+            ['name' => 'Contato', 'relationship' => 'cônjuge', 'phone_primary' => '11999990000'],
+        ],
+    ])->assertRedirect('/settings/patients');
+
+    expect($request->fresh()->patient_id)->toBeNull();
+
+    $flag = AuditLog::query()
+        ->where('auditable_id', $request->id)
+        ->where('action', AuditAction::FlaggedForReview)
+        ->first();
+
+    expect($flag)->not->toBeNull();
+});
+
+it('never flags an orphan appointment request when the new patient shares no phone/email/document with it', function () {
+    $user = actingOwnerWithActiveContext();
+    $organization = $user->organizationMemberships()->first()->organization;
+
+    $request = AppointmentRequest::factory()->for($organization)->create([
+        'document' => null,
+        'phone' => '(11) 97777-7777',
+    ]);
+
+    $this->actingAs($user)->post('/settings/patients', [
+        'name' => 'Paciente Sem Relacao Nenhuma',
+        'birth_date' => '1990-05-10',
+        'phone' => '(11) 98888-8888',
+        'emergency_contacts' => [
+            ['name' => 'Contato', 'relationship' => 'cônjuge', 'phone_primary' => '11999990000'],
+        ],
+    ])->assertRedirect('/settings/patients');
+
+    expect($request->fresh()->patient_id)->toBeNull();
+
+    expect(AuditLog::query()
+        ->where('auditable_id', $request->id)
+        ->where('action', AuditAction::FlaggedForReview)
+        ->exists())->toBeFalse();
 });
 
 it('never links an appointment request from another organization, even with the same document', function () {

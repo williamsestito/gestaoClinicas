@@ -219,14 +219,19 @@ function submit() {
                     <InputError :message="form.errors.birth_date" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="document">CPF (opcional)</Label>
+                    <Label for="document">CPF</Label>
                     <Input
                         id="document"
                         :model-value="form.document"
+                        required
                         @update:model-value="
                             (v) => (form.document = maskCpf(String(v)))
                         "
                     />
+                    <p class="text-xs text-muted-foreground">
+                        Obrigatório — garante que seu pré-agendamento, se
+                        houver, seja vinculado à sua conta.
+                    </p>
                     <InputError :message="form.errors.document" />
                 </div>
                 <div class="grid gap-2">
@@ -258,17 +263,22 @@ function submit() {
                     <InputError :message="form.errors.dependent_birth_date" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="dependent_document">
-                        CPF do dependente (opcional)
-                    </Label>
+                    <Label for="dependent_document">CPF do dependente</Label>
                     <Input
                         id="dependent_document"
                         :model-value="form.dependent_document"
+                        required
                         @update:model-value="
                             (v) =>
                                 (form.dependent_document = maskCpf(String(v)))
                         "
                     />
+                    <p class="text-xs text-muted-foreground">
+                        Obrigatório — garante que o pré-agendamento do
+                        dependente, se houver, seja vinculado ao cadastro
+                        dele.
+                    </p>
+                    <InputError :message="form.errors.dependent_document" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="relationship">

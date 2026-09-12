@@ -28,6 +28,7 @@ enum AuditAction: string
     case Confirmed = 'confirmed';
     case Cancelled = 'cancelled';
     case Approved = 'approved';
+    case FlaggedForReview = 'flagged_for_review';
 
     public function label(): string
     {
@@ -54,6 +55,7 @@ enum AuditAction: string
             self::Confirmed => 'Confirmado',
             self::Cancelled => 'Cancelado',
             self::Approved => 'Aprovado',
+            self::FlaggedForReview => 'Sinalizado para revisão manual',
         };
     }
 }
