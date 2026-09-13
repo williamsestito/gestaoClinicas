@@ -68,16 +68,11 @@ const heroBackgroundVars = computed(() => {
 
         <!--
             No mobile, o banner fica empilhado abaixo do texto (imagem em
-            caixa própria). A partir do md, quando há imagem, o banner de
-            fundo (hero_image_url) vira plano de fundo em tela cheia (via
-            `background-image`, nunca elemento posicionado) com texto
-            sobreposto à esquerda — layout pedido a partir de um modelo de
-            referência (hero com overlay escuro, texto alinhado à esquerda,
-            dois botões). Além do fundo, o banner dedicado ao mobile
-            (hero_image_mobile_url, ou o próprio banner de fundo quando
-            nenhum foi enviado) também aparece no desktop, como uma segunda
-            imagem ao lado do texto — pedido explícito para as duas imagens
-            (desktop e mobile) ficarem visíveis juntas nessa tela.
+            caixa própria). A partir do md, quando há imagem, o banner vira
+            plano de fundo em tela cheia (via `background-image`, nunca
+            elemento posicionado) com texto sobreposto à esquerda — layout
+            pedido a partir de um modelo de referência (hero com overlay
+            escuro, texto alinhado à esquerda, dois botões).
         -->
         <div
             class="relative"
@@ -88,13 +83,7 @@ const heroBackgroundVars = computed(() => {
             "
             :style="heroBackgroundVars"
         >
-            <div
-                class="mx-auto max-w-6xl px-4 sm:px-6"
-                :class="
-                    hasHeroImage &&
-                    'md:flex md:items-center md:justify-between md:gap-8'
-                "
-            >
+            <div class="mx-auto max-w-6xl px-4 sm:px-6">
                 <div
                     class="space-y-6 text-center"
                     :class="
@@ -209,27 +198,6 @@ const heroBackgroundVars = computed(() => {
                             {{ highlight.title }}
                         </li>
                     </ul>
-                </div>
-
-                <!--
-                    Segunda imagem, exclusiva do desktop — o mesmo banner
-                    "mobile" que aparece abaixo (ou o de fundo, sem um
-                    dedicado), agora também visível ao lado do texto aqui.
-                -->
-                <div
-                    v-if="hasHeroImage"
-                    class="hidden shrink-0 md:block md:w-full md:max-w-sm lg:max-w-md"
-                >
-                    <img
-                        :src="
-                            site.hero_image_mobile_url ??
-                            site.hero_image_url ??
-                            undefined
-                        "
-                        :alt="site.title"
-                        class="h-auto w-full rounded-2xl border border-border shadow-lg"
-                        @error="heroImageFailedToLoad = true"
-                    />
                 </div>
             </div>
 

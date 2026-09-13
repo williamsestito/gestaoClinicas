@@ -36,7 +36,7 @@ function makeSite(
 }
 
 describe('LandingHeroSection', () => {
-    it('renders no image at all when no banner was uploaded', () => {
+    it('renders no image container when no banner was uploaded', () => {
         const wrapper = mount(LandingHeroSection, {
             props: { site: makeSite() },
         });
@@ -44,30 +44,18 @@ describe('LandingHeroSection', () => {
         expect(wrapper.find('img').exists()).toBe(false);
     });
 
-    it('renders both the mobile banner (hidden from md) and the desktop-only banner (hidden below md), sharing the same file when no dedicated mobile banner exists', () => {
+    it('renders the desktop banner spanning the full section width, outside the text column', () => {
         const wrapper = mount(LandingHeroSection, {
             props: { site: makeSite({ hero_image_url: '/storage/hero.jpg' }) },
         });
 
-        const images = wrapper.findAll('img');
-        expect(images).toHaveLength(2);
-
-        const mobileImg = wrapper.find('picture img');
-        expect(mobileImg.attributes('src')).toBe('/storage/hero.jpg');
-        expect(mobileImg.element.parentElement?.className).toContain(
-            'md:hidden',
-        );
-
-        const desktopOnlyImg = images.find(
-            (img) => img.element.parentElement?.tagName !== 'PICTURE',
-        );
-        expect(desktopOnlyImg?.attributes('src')).toBe('/storage/hero.jpg');
-        expect(desktopOnlyImg?.element.parentElement?.className).toContain(
-            'md:block',
-        );
+        const img = wrapper.find('img');
+        expect(img.exists()).toBe(true);
+        expect(img.attributes('src')).toBe('/storage/hero.jpg');
+        expect(img.classes()).toContain('w-full');
     });
 
-    it('prefers the dedicated mobile banner for the desktop-only image and for the mobile <source>, while the mobile <img> fallback stays on the desktop file', () => {
+    it('adds a mobile-only <source> when a dedicated mobile banner exists', () => {
         const wrapper = mount(LandingHeroSection, {
             props: {
                 site: makeSite({
@@ -81,16 +69,18 @@ describe('LandingHeroSection', () => {
         expect(source.exists()).toBe(true);
         expect(source.attributes('srcset')).toBe('/storage/hero-mobile.jpg');
         expect(source.attributes('media')).toBe('(max-width: 767px)');
+    });
 
-        const mobileImg = wrapper.find('picture img');
-        expect(mobileImg.attributes('src')).toBe('/storage/hero-desktop.jpg');
+    it('falls back to the desktop banner on mobile when no dedicated mobile banner was uploaded', () => {
+        const wrapper = mount(LandingHeroSection, {
+            props: {
+                site: makeSite({ hero_image_url: '/storage/hero-desktop.jpg' }),
+            },
+        });
 
-        const images = wrapper.findAll('img');
-        const desktopOnlyImg = images.find(
-            (img) => img.element.parentElement?.tagName !== 'PICTURE',
-        );
-        expect(desktopOnlyImg?.attributes('src')).toBe(
-            '/storage/hero-mobile.jpg',
+        expect(wrapper.find('source').exists()).toBe(false);
+        expect(wrapper.find('img').attributes('src')).toBe(
+            '/storage/hero-desktop.jpg',
         );
     });
 
