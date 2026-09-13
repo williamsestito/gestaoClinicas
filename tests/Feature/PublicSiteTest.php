@@ -296,6 +296,33 @@ it('uses the singular label when a statistic equals exactly one', function () {
         );
 });
 
+it('keeps serving the same (oldest) organization\'s content even if a second organization invalidly coexists (ADR-010)', function () {
+    $organization = Organization::factory()->create(['name' => 'Clínica Original']);
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create(['phone' => '(47) 3222-1122']);
+    SiteSetting::factory()->create();
+
+    // Segunda organização criada depois, na mesma base — estado inválido
+    // para uma instalação single-tenant, mas o front público não pode
+    // reagir a isso alternando qual organização exibe nem contando
+    // estatísticas de uma organização que não é a resolvida.
+    $laterOrganization = Organization::factory()->create(['name' => 'Outra Clínica']);
+    Professional::factory()->for($laterOrganization)->create(['status' => RecordStatus::Active, 'is_public' => true]);
+
+    $this->get('/')
+        ->assertInertia(fn ($page) => $page
+            ->where('contact.name', 'Clínica Original')
+            ->where('contact.phone', '(47) 3222-1122')
+            // Só a estatística de unidades da organização resolvida (a mais
+            // antiga) aparece — o profissional criado acima pertence à
+            // segunda organização e nunca deveria contar aqui.
+            ->has('statistics', 1)
+            ->where('statistics.0', ['value' => '1', 'label' => 'Unidade'])
+        );
+
+    expect($organization->id)->not->toBe($laterOrganization->id);
+});
+
 it('uses the plural label once a statistic is greater than one', function () {
     Organization::factory()->create();
     SiteSetting::factory()->create();

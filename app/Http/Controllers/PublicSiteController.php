@@ -16,6 +16,7 @@ use App\Models\SiteProfessional;
 use App\Models\SiteService;
 use App\Models\SiteSetting;
 use App\Models\SiteTestimonial;
+use App\Queries\CurrentInstallationOrganizationQuery;
 use App\Queries\PublicProfessionalQuery;
 use App\Support\Seo\SeoMetaBuilder;
 use App\Support\Site\LandingSections;
@@ -28,6 +29,7 @@ class PublicSiteController extends Controller
     public function __construct(
         private readonly SeoMetaBuilder $seoMetaBuilder,
         private readonly PublicProfessionalQuery $publicProfessionalQuery,
+        private readonly CurrentInstallationOrganizationQuery $currentInstallationOrganizationQuery,
     ) {}
 
     public function home(): Response
@@ -37,7 +39,7 @@ class PublicSiteController extends Controller
         // dentre várias clínicas-cliente. Se ainda não houver nenhuma
         // (onboarding não concluído), a página exibe um estado de
         // configuração pendente, nunca um erro técnico.
-        $organization = Organization::query()->first();
+        $organization = $this->currentInstallationOrganizationQuery->resolve();
         $siteSetting = SiteSetting::query()->first();
 
         // Enquanto o site não for publicado, a página pública se comporta

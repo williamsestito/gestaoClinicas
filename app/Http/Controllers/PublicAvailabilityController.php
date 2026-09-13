@@ -11,6 +11,7 @@ use App\Http\Requests\PublicAvailabilitySpecialtiesRequest;
 use App\Http\Requests\PublicAvailabilityTimesRequest;
 use App\Models\Organization;
 use App\Models\SiteSetting;
+use App\Queries\CurrentInstallationOrganizationQuery;
 use App\Services\Availability\PublicAvailabilityFinder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
@@ -26,7 +27,10 @@ use Illuminate\Support\Carbon;
  */
 class PublicAvailabilityController extends Controller
 {
-    public function __construct(private readonly PublicAvailabilityFinder $finder) {}
+    public function __construct(
+        private readonly PublicAvailabilityFinder $finder,
+        private readonly CurrentInstallationOrganizationQuery $currentInstallationOrganizationQuery,
+    ) {}
 
     public function units(): JsonResponse
     {
@@ -129,7 +133,7 @@ class PublicAvailabilityController extends Controller
      */
     private function publishedOrganization(): ?Organization
     {
-        $organization = Organization::query()->first();
+        $organization = $this->currentInstallationOrganizationQuery->resolve();
         $siteSetting = SiteSetting::query()->first();
 
         if ($organization === null || $siteSetting === null || ! $siteSetting->is_published) {

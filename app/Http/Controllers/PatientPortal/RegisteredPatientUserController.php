@@ -7,7 +7,7 @@ namespace App\Http\Controllers\PatientPortal;
 use App\Actions\PatientPortal\RegisterPatientUserAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PatientPortal\RegisterPatientUserRequest;
-use App\Models\Organization;
+use App\Queries\CurrentInstallationOrganizationQuery;
 use App\Support\Documents\Document;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,14 +17,16 @@ use Inertia\Response;
 
 /**
  * Autocadastro público do portal do paciente. A organização é resolvida
- * como Organization::query()->first() — instalação single-tenant (ver
- * docs/decisions/ADR-010-single-tenant-install-and-seo.md), mesmo padrão
- * de PublicSiteController/PublicAppointmentRequestController.
+ * via App\Queries\CurrentInstallationOrganizationQuery — instalação
+ * single-tenant (ver docs/decisions/ADR-010-single-tenant-install-and-seo.md),
+ * mesmo padrão de PublicSiteController/PublicAppointmentRequestController.
  */
 class RegisteredPatientUserController extends Controller
 {
     /** Abaixo deste tempo entre a renderização do formulário e o envio, tratamos como automatizado. */
     private const MIN_FILL_TIME_MS = 3000;
+
+    public function __construct(private readonly CurrentInstallationOrganizationQuery $currentInstallationOrganizationQuery) {}
 
     /**
      * `prefill`: dados já digitados no formulário público de agendamento
@@ -36,7 +38,7 @@ class RegisteredPatientUserController extends Controller
      */
     public function create(Request $request): Response
     {
-        $organization = Organization::query()->first();
+        $organization = $this->currentInstallationOrganizationQuery->resolve();
 
         return Inertia::render('patient-portal/Register', [
             'organizationConfigured' => $organization !== null,
@@ -62,7 +64,7 @@ class RegisteredPatientUserController extends Controller
             return to_route('login');
         }
 
-        $organization = Organization::query()->first();
+        $organization = $this->currentInstallationOrganizationQuery->resolve();
 
         if ($organization === null) {
             return back()->withErrors(['email' => 'Cadastro indisponível no momento.']);

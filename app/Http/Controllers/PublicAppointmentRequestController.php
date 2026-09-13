@@ -6,9 +6,9 @@ namespace App\Http\Controllers;
 
 use App\Actions\Public\CreateAppointmentRequestAction;
 use App\Http\Requests\StoreAppointmentRequestRequest;
-use App\Models\Organization;
 use App\Models\PatientUser;
 use App\Models\Unit;
+use App\Queries\CurrentInstallationOrganizationQuery;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 
@@ -22,7 +22,10 @@ class PublicAppointmentRequestController extends Controller
     /** Abaixo deste tempo entre a renderização do formulário e o envio, tratamos como automatizado. */
     private const MIN_FILL_TIME_MS = 3000;
 
-    public function __construct(private readonly CreateAppointmentRequestAction $action) {}
+    public function __construct(
+        private readonly CreateAppointmentRequestAction $action,
+        private readonly CurrentInstallationOrganizationQuery $currentInstallationOrganizationQuery,
+    ) {}
 
     public function store(StoreAppointmentRequestRequest $request): RedirectResponse
     {
@@ -33,7 +36,7 @@ class PublicAppointmentRequestController extends Controller
             return $this->successResponse();
         }
 
-        $organization = Organization::query()->first();
+        $organization = $this->currentInstallationOrganizationQuery->resolve();
 
         // Prioriza a unidade real escolhida na busca de disponibilidade
         // (ver LandingAvailabilitySearch.vue) sobre a matriz — só cai na
