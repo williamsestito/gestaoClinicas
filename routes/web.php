@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\DirectPasswordResetController;
+use App\Http\Controllers\Auth\RegisterPageController;
 use App\Http\Controllers\Auth\SendPasswordResetLinkController;
 use App\Http\Controllers\Organization\InvitationAcceptController;
 use App\Http\Controllers\PostalCodeLookupController;
@@ -22,6 +23,15 @@ Route::middleware('throttle:direct-password-reset')->group(function () {
     Route::post('forgot-password/direct-reset', [DirectPasswordResetController::class, 'update'])
         ->name('password.direct-reset');
 });
+
+// Substitui a tela de registro nativa do Fortify (feature `registration`
+// desabilitada em config/fortify.php — ver RegisterPageController) — o
+// autocadastro de conta de staff/organização não existe mais, só o de
+// paciente (routes/patient-portal.php). Sem POST correspondente: não há
+// mais nenhum formulário nesta tela.
+Route::get('register', RegisterPageController::class)
+    ->middleware('guest:web')
+    ->name('register');
 
 // "Esqueci minha senha" unificado em /login (ver SendPasswordResetLinkController)
 // — substitui o POST nativo do Fortify (password.email, que só olha a

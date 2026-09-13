@@ -170,7 +170,12 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Registration: desabilitado de propósito — criação de conta de
+        // staff nunca é autocadastro público, só por convite (ver
+        // App\Http\Controllers\Organization\InvitationAcceptController) ou
+        // pelo bootstrap de organização do platform admin. GET /register
+        // continua existindo (ver routes/web.php), mas só oferece o
+        // autocadastro de paciente.
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([

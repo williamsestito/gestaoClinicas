@@ -56,9 +56,16 @@ class EnsureActiveOrganization
                 ->where('status', OrganizationMembershipStatus::Active)
                 ->exists();
 
-            return redirect()->route(
-                $hasAnyMembership ? 'context.organization.edit' : 'onboarding.organization.create',
-            );
+            if ($hasAnyMembership) {
+                return redirect()->route('context.organization.edit');
+            }
+
+            // Onboarding deixou de ser autoatendimento (ver
+            // App\Http\Middleware\EnsurePlatformAdmin) — um staff comum sem
+            // nenhum vínculo é sempre resultado de convite ainda não aceito
+            // ou vínculo removido, nunca um passo esperado do fluxo
+            // "cadastre sua clínica".
+            abort(403, 'Sua conta ainda não está vinculada a nenhuma organização. Peça um novo convite ao administrador da sua clínica.');
         }
 
         if ($tenant->organization()->status !== OrganizationStatus::Active) {

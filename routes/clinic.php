@@ -63,10 +63,15 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->group(function () {
 
-    // Onboarding: acessível sem organização ativa (é como ela é criada).
-    // Bloqueado para quem já tem uma organização (evita reacesso e criação
-    // ilimitada de clínicas pela mesma rota).
-    Route::middleware('tenant.no-active-organization')->group(function () {
+    // Onboarding: criação de organização não é mais autoatendimento
+    // (decisão de negócio — toda organização representa uma cobrança
+    // futura). Restrito ao platform admin, que também pode usar o painel
+    // Filament (App\Filament\Resources\Organizations\Pages\CreateOrganization)
+    // — as duas vias reaproveitam Actions de domínio distintas, nenhuma
+    // delas acessível por autocadastro público. Ainda bloqueado para quem
+    // já tem uma organização (evita reacesso e criação ilimitada de
+    // clínicas pela mesma rota).
+    Route::middleware(['platform.admin', 'tenant.no-active-organization'])->group(function () {
         Route::get('onboarding/organization', [OnboardingController::class, 'create'])
             ->name('onboarding.organization.create');
         Route::post('onboarding/organization', [OnboardingController::class, 'store'])

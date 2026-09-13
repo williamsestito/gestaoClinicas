@@ -9,7 +9,7 @@ it('runs the application under the pt_BR locale by default', function () {
 });
 
 it('translates validation messages using friendly, non-technical attribute names', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->platformAdmin()->create();
 
     $response = $this->actingAs($user)->post('/onboarding/organization', []);
 
