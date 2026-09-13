@@ -84,6 +84,12 @@ Route::middleware(['auth', 'verified', 'tenant.organization', 'tenant.unit'])->g
     Route::put('context/organization', [OrganizationContextController::class, 'update'])
         ->middleware('throttle:20,1')
         ->name('context.organization.update');
+    // Sai do modo de gestão "como superadmin" (ver PlatformAdminBanner.vue)
+    // — restrito a platform admin, mesmo controle de EnsurePlatformAdmin já
+    // usado no onboarding.
+    Route::delete('context/organization', [OrganizationContextController::class, 'destroy'])
+        ->middleware(['platform.admin', 'throttle:20,1'])
+        ->name('context.organization.destroy');
 
     Route::middleware('tenant.active-organization')->group(function () {
         // Rotas operacionais: exigem também uma unidade ativa resolvida.
