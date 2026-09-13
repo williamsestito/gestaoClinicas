@@ -40,7 +40,7 @@ const aboutImageUrl = computed(
                 :src="aboutImageUrl"
                 :alt="site.title"
                 loading="lazy"
-                class="aspect-4/3 w-full rounded-2xl border border-border object-cover shadow-sm lg:order-first"
+                class="hidden aspect-4/3 w-full rounded-2xl border border-border object-cover shadow-sm md:block lg:order-first"
                 @error="heroImageFailedToLoad = true"
             />
 

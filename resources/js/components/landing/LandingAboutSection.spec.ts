@@ -119,6 +119,21 @@ describe('LandingAboutSection', () => {
         );
     });
 
+    it('hides the banner image on mobile and shows it only from md upward — it already appears in the hero on mobile, showing it again here duplicated content', () => {
+        const wrapper = mount(LandingAboutSection, {
+            props: {
+                site: makeSite({
+                    about_text: 'Texto sobre a clínica.',
+                    hero_image_mobile_url: 'https://example.com/mobile.jpg',
+                }),
+            },
+        });
+
+        const img = wrapper.find('img');
+        expect(img.classes()).toContain('hidden');
+        expect(img.classes()).toContain('md:block');
+    });
+
     it('shows mission and vision only when configured', () => {
         const withoutThem = mount(LandingAboutSection, {
             props: { site: makeSite({ about_text: 'Texto sobre a clínica.' }) },
