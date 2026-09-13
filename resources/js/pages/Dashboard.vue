@@ -6,6 +6,7 @@ import OrganizationAgendaCard from '@/components/dashboard/OrganizationAgendaCar
 import type { OrgAgendaData } from '@/components/dashboard/OrganizationAgendaCard.vue';
 import ProfessionalDashboard from '@/components/dashboard/ProfessionalDashboard.vue';
 import type { ProfessionalDashboardData } from '@/components/dashboard/ProfessionalDashboard.vue';
+import SimpleBarChart from '@/components/dashboard/SimpleBarChart.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +16,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { formatCurrencyBrl } from '@/lib/masks';
 import { dashboard } from '@/routes';
 import { index as indexLegalEntities } from '@/routes/settings/legal-entities';
 import { edit as editOrganization } from '@/routes/settings/organization';
@@ -48,6 +50,18 @@ defineOptions({
     },
 });
 
+type ManagementIndicators = {
+    todayAppointmentsCount: number | null;
+    pendingConfirmationsCount: number | null;
+    revenueThisMonthCents: number | null;
+    newPatientsThisMonthCount: number | null;
+    charts: {
+        appointmentsByWeekday: { label: string; count: number }[] | null;
+        revenueByMonth: { label: string; total_cents: number }[] | null;
+        occupancyByProfessional: { label: string; count: number }[] | null;
+    };
+};
+
 defineProps<{
     professionalDashboard: ProfessionalDashboardData | null;
     organizationName: string | null;
@@ -62,17 +76,11 @@ defineProps<{
     } | null;
     domainConfigured: boolean;
     seoConfigured: boolean;
-    recentActivity: {
-        id: string;
-        actor: string;
-        action: string;
-        entity: string;
-        created_at: string | null;
-    }[];
     pendingSetupItems: string[];
     pendingAppointmentRequestsByProfessional:
         PendingAppointmentRequestGroup[] | null;
     orgAgenda: OrgAgendaData | null;
+    indicators: ManagementIndicators | null;
 }>();
 
 const page = usePage();
@@ -165,6 +173,92 @@ const tenant = computed(() => page.props.tenant);
             </Card>
 
             <OrganizationAgendaCard v-if="orgAgenda" :data="orgAgenda" />
+
+            <div
+                v-if="indicators"
+                class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+            >
+                <Card v-if="indicators.todayAppointmentsCount !== null">
+                    <CardHeader>
+                        <CardDescription>Agendamentos hoje</CardDescription>
+                        <CardTitle class="text-3xl">
+                            {{ indicators.todayAppointmentsCount }}
+                        </CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card v-if="indicators.pendingConfirmationsCount !== null">
+                    <CardHeader>
+                        <CardDescription>
+                            Confirmações pendentes
+                        </CardDescription>
+                        <CardTitle class="text-3xl">
+                            {{ indicators.pendingConfirmationsCount }}
+                        </CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card v-if="indicators.revenueThisMonthCents !== null">
+                    <CardHeader>
+                        <CardDescription>Faturamento no mês</CardDescription>
+                        <CardTitle class="text-3xl">
+                            {{
+                                formatCurrencyBrl(
+                                    indicators.revenueThisMonthCents,
+                                )
+                            }}
+                        </CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card v-if="indicators.newPatientsThisMonthCount !== null">
+                    <CardHeader>
+                        <CardDescription
+                            >Novos pacientes no mês</CardDescription
+                        >
+                        <CardTitle class="text-3xl">
+                            {{ indicators.newPatientsThisMonthCount }}
+                        </CardTitle>
+                    </CardHeader>
+                </Card>
+            </div>
+
+            <div v-if="indicators" class="grid gap-4 lg:grid-cols-3">
+                <SimpleBarChart
+                    v-if="indicators.charts.appointmentsByWeekday"
+                    title="Agendamentos por dia da semana"
+                    description="Últimas 4 semanas"
+                    :data="
+                        indicators.charts.appointmentsByWeekday.map((item) => ({
+                            label: item.label,
+                            value: item.count,
+                        }))
+                    "
+                />
+                <SimpleBarChart
+                    v-if="indicators.charts.revenueByMonth"
+                    title="Faturamento por período"
+                    description="Últimos 6 meses"
+                    :data="
+                        indicators.charts.revenueByMonth.map((item) => ({
+                            label: item.label,
+                            value: item.total_cents,
+                        }))
+                    "
+                    :format-value="(value) => formatCurrencyBrl(value)"
+                />
+                <SimpleBarChart
+                    v-if="indicators.charts.occupancyByProfessional"
+                    title="Ocupação por profissional"
+                    description="Mês atual"
+                    empty-message="Sem agendamentos neste mês."
+                    :data="
+                        indicators.charts.occupancyByProfessional.map(
+                            (item) => ({
+                                label: item.label,
+                                value: item.count,
+                            }),
+                        )
+                    "
+                />
+            </div>
 
             <Card v-if="tenant?.organization">
                 <CardHeader>
@@ -325,27 +419,6 @@ const tenant = computed(() => page.props.tenant);
                         class="text-primary underline-offset-4 hover:underline"
                         >Visualizar site</a
                     >
-                </CardContent>
-            </Card>
-
-            <Card v-if="recentActivity.length > 0">
-                <CardHeader>
-                    <CardTitle>Últimas atividades</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <ul class="space-y-2 text-sm">
-                        <li
-                            v-for="activity in recentActivity"
-                            :key="activity.id"
-                            class="text-muted-foreground"
-                        >
-                            <span class="font-medium text-foreground">{{
-                                activity.actor
-                            }}</span>
-                            {{ activity.action.toLowerCase() }}
-                            {{ activity.entity }}
-                        </li>
-                    </ul>
                 </CardContent>
             </Card>
         </template>
