@@ -36,31 +36,62 @@ function makeSite(
 }
 
 describe('LandingHeroSection', () => {
-    it('never renders an <img> for the banner — it only exists as a desktop background-image', () => {
+    it('renders no image at all when no banner was uploaded', () => {
         const wrapper = mount(LandingHeroSection, {
-            props: { site: makeSite({ hero_image_url: '/storage/hero.jpg' }) },
+            props: { site: makeSite() },
         });
 
         expect(wrapper.find('img').exists()).toBe(false);
     });
 
-    it('does not set a background-image style when no banner was uploaded', () => {
+    it('renders both the mobile banner (hidden from md) and the desktop-only banner (hidden below md), sharing the same file when no dedicated mobile banner exists', () => {
         const wrapper = mount(LandingHeroSection, {
-            props: { site: makeSite() },
+            props: { site: makeSite({ hero_image_url: '/storage/hero.jpg' }) },
         });
 
-        expect(wrapper.html()).not.toContain('--hero-bg-image');
+        const images = wrapper.findAll('img');
+        expect(images).toHaveLength(2);
+
+        const mobileImg = wrapper.find('picture img');
+        expect(mobileImg.attributes('src')).toBe('/storage/hero.jpg');
+        expect(mobileImg.element.parentElement?.className).toContain(
+            'md:hidden',
+        );
+
+        const desktopOnlyImg = images.find(
+            (img) => img.element.parentElement?.tagName !== 'PICTURE',
+        );
+        expect(desktopOnlyImg?.attributes('src')).toBe('/storage/hero.jpg');
+        expect(desktopOnlyImg?.element.parentElement?.className).toContain(
+            'md:block',
+        );
     });
 
-    it('sets the background-image style from hero_image_url when a banner was uploaded', () => {
+    it('prefers the dedicated mobile banner for the desktop-only image and for the mobile <source>, while the mobile <img> fallback stays on the desktop file', () => {
         const wrapper = mount(LandingHeroSection, {
             props: {
-                site: makeSite({ hero_image_url: '/storage/hero-desktop.jpg' }),
+                site: makeSite({
+                    hero_image_url: '/storage/hero-desktop.jpg',
+                    hero_image_mobile_url: '/storage/hero-mobile.jpg',
+                }),
             },
         });
 
-        expect(wrapper.html()).toContain('--hero-bg-image');
-        expect(wrapper.html()).toContain('/storage/hero-desktop.jpg');
+        const source = wrapper.find('source');
+        expect(source.exists()).toBe(true);
+        expect(source.attributes('srcset')).toBe('/storage/hero-mobile.jpg');
+        expect(source.attributes('media')).toBe('(max-width: 767px)');
+
+        const mobileImg = wrapper.find('picture img');
+        expect(mobileImg.attributes('src')).toBe('/storage/hero-desktop.jpg');
+
+        const images = wrapper.findAll('img');
+        const desktopOnlyImg = images.find(
+            (img) => img.element.parentElement?.tagName !== 'PICTURE',
+        );
+        expect(desktopOnlyImg?.attributes('src')).toBe(
+            '/storage/hero-mobile.jpg',
+        );
     });
 
     it('shows the eyebrow badge when the site has a schema type label', () => {
@@ -71,7 +102,7 @@ describe('LandingHeroSection', () => {
         expect(wrapper.text()).toContain('Clínica médica');
     });
 
-    it('keeps the real title, description and CTA visible for mobile even with a custom banner — only the desktop background carries the banner now', () => {
+    it('hides the eyebrow, title and description visually once a custom banner is uploaded — the banner already carries its own message, and overlaying text on it looked cluttered', () => {
         const wrapper = mount(LandingHeroSection, {
             props: {
                 site: makeSite({
@@ -80,34 +111,28 @@ describe('LandingHeroSection', () => {
                         'Cuidar dos seus pés é cuidar da sua qualidade de vida.',
                     schema_type_label: 'Estética e bem-estar',
                     hero_image_url: '/storage/hero.jpg',
-                    cta_text: 'Agende sua avaliação',
-                    cta_url: 'https://wa.me/554799999999',
                 }),
-                benefits: [
-                    {
-                        id: 1,
-                        icon: null,
-                        title: 'Atendimento humanizado',
-                        description: null,
-                    },
-                ],
             },
         });
 
-        expect(wrapper.find('.landing-eyebrow').exists()).toBe(true);
-        expect(wrapper.text()).toContain(
+        expect(wrapper.find('.landing-eyebrow').exists()).toBe(false);
+        expect(wrapper.text()).not.toContain(
             'Cuidar dos seus pés é cuidar da sua qualidade de vida.',
         );
-        expect(wrapper.text()).toContain('Agende sua avaliação');
-        expect(wrapper.find('ul').exists()).toBe(true);
+
+        // O <h1> continua no DOM (heading principal da página), só
+        // visualmente oculto — nunca removido por completo.
+        const heading = wrapper.find('h1');
+        expect(heading.exists()).toBe(true);
+        expect(heading.text()).toBe('Espaço Duda Almeida');
+        expect(heading.classes()).toContain('sr-only');
     });
 
-    it('marks the title, description, CTA and highlights as desktop-hidden once a custom banner is uploaded — the banner already carries that message from md upward', () => {
+    it('also hides the CTA button and quick highlights once a custom banner is uploaded — the navbar keeps a functional way to schedule/log in', () => {
         const wrapper = mount(LandingHeroSection, {
             props: {
                 site: makeSite({
                     hero_image_url: '/storage/hero.jpg',
-                    schema_type_label: 'Estética e bem-estar',
                     cta_text: 'Agende sua avaliação',
                     cta_url: 'https://wa.me/554799999999',
                 }),
@@ -122,18 +147,8 @@ describe('LandingHeroSection', () => {
             },
         });
 
-        // O <h1> continua no DOM (heading principal da página) e visível no
-        // mobile — só vira sr-only a partir do md, nunca removido.
-        const heading = wrapper.find('h1');
-        expect(heading.exists()).toBe(true);
-        expect(heading.classes()).toContain('md:sr-only');
-        expect(heading.classes()).not.toContain('sr-only');
-
-        expect(wrapper.find('.landing-eyebrow').classes()).toContain(
-            'md:hidden',
-        );
-        expect(wrapper.find('p').classes()).toContain('md:hidden');
-        expect(wrapper.find('ul').classes()).toContain('md:hidden');
+        expect(wrapper.text()).not.toContain('Agende sua avaliação');
+        expect(wrapper.find('ul').exists()).toBe(false);
     });
 
     it('shows the eyebrow, title and description normally when there is no custom banner', () => {
@@ -148,7 +163,7 @@ describe('LandingHeroSection', () => {
 
         expect(wrapper.find('.landing-eyebrow').exists()).toBe(true);
         expect(wrapper.text()).toContain('Cuidado que você merece.');
-        expect(wrapper.find('h1').classes()).not.toContain('md:sr-only');
+        expect(wrapper.find('h1').classes()).not.toContain('sr-only');
     });
 
     it('does not show an eyebrow badge when there is no schema type label', () => {

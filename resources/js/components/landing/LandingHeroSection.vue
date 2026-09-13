@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { dashboard, login, register } from '@/routes';
 import type { PublicBenefit, PublicSiteContent } from '@/types/site';
@@ -15,11 +15,14 @@ const props = withDefaults(
 
 const page = usePage();
 
-// O banner (quando existe) só aparece a partir do md, como background-image
-// — nunca em um <img> próprio, então não há evento de erro para detectar
-// falha de carregamento aqui (mesma limitação que o background-image já
-// tinha antes desta seção depender de um <img> só para o mobile).
-const hasHeroImage = computed(() => Boolean(props.site.hero_image_url));
+// Se o arquivo referenciado no banco não existir mais no storage (arquivo
+// removido manualmente, disco trocado etc.), esconde a imagem em vez de
+// exibir o ícone de imagem quebrada.
+const heroImageFailedToLoad = ref(false);
+
+const hasHeroImage = computed(
+    () => Boolean(props.site.hero_image_url) && !heroImageFailedToLoad.value,
+);
 
 // "Três destaques rápidos" ao lado do título — reaproveita os diferenciais
 // já cadastrados (seção "benefits") em vez de um campo novo só para isto.
@@ -64,69 +67,79 @@ const heroBackgroundVars = computed(() => {
         </div>
 
         <!--
-            O banner customizado só aparece a partir do md, como plano de
-            fundo em tela cheia (via `background-image`, nunca elemento
-            posicionado) com texto sobreposto à esquerda — layout pedido a
-            partir de um modelo de referência (hero com overlay escuro,
-            texto alinhado à esquerda, dois botões). No mobile ele deixou de
-            ser exibido: o mesmo banner já aparece mais abaixo, no corpo da
-            landing page, e repeti-lo logo no topo em telas pequenas só
-            duplicava conteúdo (achado real, pedido explícito para
-            remover) — o hero mobile volta a mostrar título/descrição/CTA
-            reais nesse caso, como no hero padrão sem banner.
+            No mobile, o banner fica empilhado abaixo do texto (imagem em
+            caixa própria). A partir do md, quando há imagem, o banner de
+            fundo (hero_image_url) vira plano de fundo em tela cheia (via
+            `background-image`, nunca elemento posicionado) com texto
+            sobreposto à esquerda — layout pedido a partir de um modelo de
+            referência (hero com overlay escuro, texto alinhado à esquerda,
+            dois botões). Além do fundo, o banner dedicado ao mobile
+            (hero_image_mobile_url, ou o próprio banner de fundo quando
+            nenhum foi enviado) também aparece no desktop, como uma segunda
+            imagem ao lado do texto — pedido explícito para as duas imagens
+            (desktop e mobile) ficarem visíveis juntas nessa tela.
         -->
         <div
-            class="relative py-16 sm:py-24"
+            class="relative"
             :class="
-                hasHeroImage &&
-                'md:flex md:min-h-[520px] md:items-center md:[background-image:var(--hero-bg-image)] md:bg-cover md:bg-center md:py-0 lg:min-h-[620px]'
+                hasHeroImage
+                    ? 'py-6 sm:py-8 md:flex md:min-h-[520px] md:items-center md:[background-image:var(--hero-bg-image)] md:bg-cover md:bg-center md:py-0 lg:min-h-[620px]'
+                    : 'py-16 sm:py-24'
             "
             :style="heroBackgroundVars"
         >
-            <div class="mx-auto max-w-6xl px-4 sm:px-6">
-                <div class="space-y-6 text-center">
+            <div
+                class="mx-auto max-w-6xl px-4 sm:px-6"
+                :class="
+                    hasHeroImage &&
+                    'md:flex md:items-center md:justify-between md:gap-8'
+                "
+            >
+                <div
+                    class="space-y-6 text-center"
+                    :class="
+                        hasHeroImage && 'md:max-w-xl md:text-left md:text-white'
+                    "
+                >
                     <span
-                        v-if="site.schema_type_label"
+                        v-if="site.schema_type_label && !hasHeroImage"
                         class="landing-eyebrow block"
-                        :class="hasHeroImage && 'md:hidden'"
                     >
                         {{ site.schema_type_label }}
                     </span>
 
                     <!--
-                        No desktop com banner, ele já traz sua própria
-                        mensagem (logo, título, tagline) desenhada na imagem
-                        — sobrepor título/descrição por cima ficava
+                        Quando há um banner customizado, ele já traz sua
+                        própria mensagem (logo, título, tagline) desenhada na
+                        imagem — sobrepor título/descrição por cima ficava
                         redundante e poluído (achado real, pedido explícito
                         para remover). O <h1> continua no DOM, só
-                        visualmente oculto (`sr-only`) a partir do md, para
-                        nunca perder a página sem um heading principal.
+                        visualmente oculto (`sr-only`), para nunca perder a
+                        página sem um heading principal.
                     -->
                     <h1
                         class="text-4xl leading-[0.98] font-bold tracking-tight text-balance sm:text-5xl"
-                        :class="hasHeroImage && 'md:sr-only'"
+                        :class="hasHeroImage && 'sr-only'"
                     >
                         {{ site.title }}
                     </h1>
                     <p
-                        v-if="site.description"
+                        v-if="site.description && !hasHeroImage"
                         class="mx-auto max-w-2xl text-lg text-balance text-muted-foreground"
-                        :class="hasHeroImage && 'md:hidden'"
                     >
                         {{ site.description }}
                     </p>
 
                     <!--
-                        Mesmo raciocínio do título/descrição acima: no
-                        desktop, quando o banner já traz seu próprio botão
-                        desenhado na imagem, um CTA real sobreposto fica
-                        redundante — a navbar já mantém "Agendar
-                        horário"/"Acessar o sistema" sempre visíveis como
-                        alternativa funcional.
+                        Mesmo raciocínio do título/descrição acima: quando o
+                        banner já traz seu próprio botão desenhado na
+                        imagem, um CTA real sobreposto fica redundante — a
+                        navbar já mantém "Agendar horário"/"Acessar o
+                        sistema" sempre visíveis como alternativa funcional.
                     -->
                     <div
+                        v-if="!hasHeroImage"
                         class="flex flex-col items-center justify-center gap-3 sm:flex-row"
-                        :class="hasHeroImage && 'md:hidden'"
                     >
                         <a
                             v-if="site.cta_text && site.cta_url"
@@ -154,9 +167,8 @@ const heroBackgroundVars = computed(() => {
                     </div>
 
                     <div
-                        v-if="!site.cta_text"
+                        v-if="!hasHeroImage && !site.cta_text"
                         class="flex flex-col items-center justify-center gap-3 sm:flex-row"
-                        :class="hasHeroImage && 'md:hidden'"
                     >
                         <Link v-if="page.props.auth.user" :href="dashboard()">
                             <Button size="lg" class="rounded-full"
@@ -181,9 +193,8 @@ const heroBackgroundVars = computed(() => {
                     </div>
 
                     <ul
-                        v-if="quickHighlights.length > 0"
+                        v-if="quickHighlights.length > 0 && !hasHeroImage"
                         class="flex flex-col flex-wrap items-center justify-center gap-x-6 gap-y-2 pt-2 text-sm text-muted-foreground sm:flex-row"
-                        :class="hasHeroImage && 'md:hidden'"
                     >
                         <li
                             v-for="highlight in quickHighlights"
@@ -199,7 +210,46 @@ const heroBackgroundVars = computed(() => {
                         </li>
                     </ul>
                 </div>
+
+                <!--
+                    Segunda imagem, exclusiva do desktop — o mesmo banner
+                    "mobile" que aparece abaixo (ou o de fundo, sem um
+                    dedicado), agora também visível ao lado do texto aqui.
+                -->
+                <div
+                    v-if="hasHeroImage"
+                    class="hidden shrink-0 md:block md:w-full md:max-w-sm lg:max-w-md"
+                >
+                    <img
+                        :src="
+                            site.hero_image_mobile_url ??
+                            site.hero_image_url ??
+                            undefined
+                        "
+                        :alt="site.title"
+                        class="h-auto w-full rounded-2xl border border-border shadow-lg"
+                        @error="heroImageFailedToLoad = true"
+                    />
+                </div>
             </div>
+
+            <picture
+                v-if="hasHeroImage"
+                class="block w-full px-4 sm:px-6 md:hidden"
+            >
+                <source
+                    v-if="site.hero_image_mobile_url"
+                    media="(max-width: 767px)"
+                    :srcset="site.hero_image_mobile_url"
+                />
+                <img
+                    :src="site.hero_image_url ?? undefined"
+                    :alt="site.title"
+                    fetchpriority="high"
+                    class="h-auto w-full rounded-2xl border border-border shadow-lg"
+                    @error="heroImageFailedToLoad = true"
+                />
+            </picture>
         </div>
     </section>
 </template>
