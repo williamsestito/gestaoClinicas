@@ -9,6 +9,7 @@ use App\Http\Middleware\EnsureNoActiveOrganization;
 use App\Http\Middleware\EnsureOrganizationMembership;
 use App\Http\Middleware\EnsurePatientMembership;
 use App\Http\Middleware\EnsurePatientUserIsActive;
+use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsureProductMembership;
 use App\Http\Middleware\EnsureProfessionalMembership;
 use App\Http\Middleware\EnsureResourceMembership;
@@ -81,6 +82,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.active-organization' => EnsureActiveOrganization::class,
             'tenant.active-unit' => EnsureActiveUnit::class,
             'tenant.no-active-organization' => EnsureNoActiveOrganization::class,
+            'platform.admin' => EnsurePlatformAdmin::class,
             'tenant.organization-membership' => EnsureOrganizationMembership::class,
             'tenant.unit-membership' => EnsureUnitMembership::class,
             'tenant.legal-entity-membership' => EnsureLegalEntityMembership::class,

@@ -39,7 +39,7 @@ function onboardingPayload(array $overrides = []): array
 }
 
 it('completes the full onboarding transaction and sets the active context', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->platformAdmin()->create();
 
     $response = $this->actingAs($user)->post('/onboarding/organization', onboardingPayload());
 
@@ -80,7 +80,7 @@ it('completes the full onboarding transaction and sets the active context', func
 });
 
 it('rolls back everything when onboarding fails partway through', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->platformAdmin()->create();
 
     // CPF inválido faz a validação do Form Request falhar antes de qualquer
     // escrita — nada deve ser persistido.
@@ -100,7 +100,7 @@ it('rolls back the whole transaction when the database rejects a duplicate docum
     $existingDocument = LegalEntityFactory::validCpf();
     LegalEntity::factory()->create(['document' => $existingDocument]);
 
-    $user = User::factory()->create();
+    $user = User::factory()->platformAdmin()->create();
 
     // O documento é numericamente válido (passa no Form Request) mas já
     // está em uso por outra organização — só a constraint UNIQUE do banco
@@ -123,15 +123,39 @@ it('rolls back the whole transaction when the database rejects a duplicate docum
     expect(Organization::query()->where('name', 'Clínica Boa Saúde')->exists())->toBeFalse();
 });
 
-it('redirects a user without an organization to onboarding when visiting the dashboard', function () {
+it('blocks a regular user without an organization from reaching the dashboard, instead of routing them to onboarding', function () {
+    // Onboarding deixou de ser autoatendimento — um staff comum sem
+    // vínculo nenhum nunca deveria mais "cair" numa tela de criação de
+    // clínica (ver App\Http\Middleware\EnsurePlatformAdmin).
     $user = User::factory()->create();
 
-    $this->actingAs($user)->get('/dashboard')->assertRedirect(route('onboarding.organization.create'));
+    $this->actingAs($user)->get('/dashboard')->assertForbidden();
 });
 
-it('blocks a user who already has an active organization from re-accessing onboarding', function () {
-    $organization = Organization::factory()->create();
+it('blocks a regular (non platform admin) user from reaching onboarding, even by direct URL', function () {
     $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get('/onboarding/organization')
+        ->assertForbidden();
+
+    $this->actingAs($user)
+        ->post('/onboarding/organization', onboardingPayload())
+        ->assertForbidden();
+
+    expect(Organization::query()->count())->toBe(0);
+});
+
+it('redirects an unauthenticated visitor away from onboarding instead of exposing the form', function () {
+    $this->get('/onboarding/organization')->assertRedirect(route('login'));
+    $this->post('/onboarding/organization', onboardingPayload())->assertRedirect(route('login'));
+
+    expect(Organization::query()->count())->toBe(0);
+});
+
+it('blocks a platform admin who already has an active organization from re-accessing onboarding', function () {
+    $organization = Organization::factory()->create();
+    $user = User::factory()->platformAdmin()->create();
     OrganizationMembership::factory()->owner()->for($organization)->for($user)->create();
 
     $this->actingAs($user)

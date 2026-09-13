@@ -116,10 +116,10 @@ it('grants a platform admin real membership on first access to an organization, 
         ->assertOk();
 });
 
-it('still routes a regular user with no membership to onboarding, unaffected by the platform admin change', function () {
+it('still blocks a regular user with no membership from the dashboard, unaffected by the platform admin change', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
 
     $this->actingAs($user)
         ->get('/dashboard')
-        ->assertRedirect(route('onboarding.organization.create'));
+        ->assertForbidden();
 });

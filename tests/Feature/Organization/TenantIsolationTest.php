@@ -27,7 +27,7 @@ function createOrganizationWithOwner(): array
 it('does not let a user without any membership reach the clinic area', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user)->get('/dashboard')->assertRedirect(route('onboarding.organization.create'));
+    $this->actingAs($user)->get('/dashboard')->assertForbidden();
 });
 
 it('lets an owner access their own organization dashboard', function () {

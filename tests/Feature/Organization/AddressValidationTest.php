@@ -33,7 +33,7 @@ function baseOnboardingAddressPayload(array $addressOverrides = []): array
 }
 
 it('requires street, number, neighborhood and city', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->platformAdmin()->create();
 
     $this->actingAs($user)
         ->post('/onboarding/organization', baseOnboardingAddressPayload([
@@ -48,7 +48,7 @@ it('requires street, number, neighborhood and city', function () {
 });
 
 it('allows complement to be empty', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->platformAdmin()->create();
 
     $this->actingAs($user)
         ->post('/onboarding/organization', baseOnboardingAddressPayload(['complement' => null]))
@@ -56,7 +56,7 @@ it('allows complement to be empty', function () {
 });
 
 it('rejects an invalid Brazilian state', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->platformAdmin()->create();
 
     $this->actingAs($user)
         ->post('/onboarding/organization', baseOnboardingAddressPayload(['state' => 'ZZ']))

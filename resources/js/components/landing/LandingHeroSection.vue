@@ -75,10 +75,11 @@ const heroBackgroundVars = computed(() => {
             escuro, texto alinhado à esquerda, dois botões).
         -->
         <div
-            class="relative py-16 sm:py-24"
+            class="relative"
             :class="
-                hasHeroImage &&
-                'md:flex md:min-h-[520px] md:items-center md:[background-image:var(--hero-bg-image)] md:bg-cover md:bg-center md:py-0 lg:min-h-[620px]'
+                hasHeroImage
+                    ? 'py-6 sm:py-8 md:flex md:min-h-[520px] md:items-center md:[background-image:var(--hero-bg-image)] md:bg-cover md:bg-center md:py-0 lg:min-h-[620px]'
+                    : 'py-16 sm:py-24'
             "
             :style="heroBackgroundVars"
         >
@@ -202,7 +203,7 @@ const heroBackgroundVars = computed(() => {
 
             <picture
                 v-if="hasHeroImage"
-                class="mt-12 block w-full px-4 sm:px-6 md:hidden"
+                class="block w-full px-4 sm:px-6 md:hidden"
             >
                 <source
                     v-if="site.hero_image_mobile_url"
@@ -213,7 +214,7 @@ const heroBackgroundVars = computed(() => {
                     :src="site.hero_image_url ?? undefined"
                     :alt="site.title"
                     fetchpriority="high"
-                    class="aspect-4/5 w-full rounded-2xl border border-border object-cover shadow-lg sm:aspect-16/9"
+                    class="h-auto w-full rounded-2xl border border-border shadow-lg"
                     @error="heroImageFailedToLoad = true"
                 />
             </picture>

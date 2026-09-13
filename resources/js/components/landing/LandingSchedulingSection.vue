@@ -473,7 +473,8 @@ function submit() {
                     "
                 />
                 <p class="text-xs text-muted-foreground">
-                    Ajuda a localizar seu cadastro, caso você já seja paciente.
+                    Obrigatório — ajuda a localizar seu cadastro, caso você já
+                    seja paciente.
                 </p>
                 <InputError :message="form.errors.document" />
             </div>
