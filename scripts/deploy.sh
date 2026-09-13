@@ -210,6 +210,29 @@ start_containers() {
     wait_for_minio_init || return 1
 }
 
+clear_caches() {
+    # Precisa rodar ANTES de build_frontend_assets(): o plugin
+    # @laravel/vite-plugin-wayfinder gera resources/js/routes|actions
+    # chamando "php artisan wayfinder:generate", que boota o Laravel
+    # inteiro - se um cache de rotas de um deploy anterior ainda existir em
+    # bootstrap/cache/routes-v7.php (gitignored, nunca apagado por "git
+    # reset --hard"), o Laravel carrega esse cache em vez de ler
+    # routes/*.php do disco, e o Wayfinder gera o TypeScript a partir das
+    # rotas ANTIGAS. Foi exatamente essa sequencia que quebrou um deploy
+    # real: uma rota nomeada nova (context.organization.destroy) ficou de
+    # fora do arquivo gerado, e o build do frontend falhou com
+    # "[MISSING_EXPORT] destroy is not exported". Rodar isto cedo garante
+    # que toda geracao de codigo baseada em rotas (Wayfinder inclusive) le
+    # sempre routes/*.php como estao neste commit.
+    log "Limpando caches antigos..."
+    $COMPOSE_PROD exec -T "$APP_SERVICE" php artisan optimize:clear
+}
+
+cache_production_config() {
+    log "Gerando caches de producao (config/route/view/event)..."
+    $COMPOSE_PROD exec -T "$APP_SERVICE" php artisan optimize
+}
+
 build_frontend_assets() {
     # Explicito e deterministico: nao depende do Compose decidir recriar (ou
     # nao) o container "node" nem da logica do proprio command dele - roda
@@ -228,19 +251,6 @@ build_frontend_assets() {
 run_migrations() {
     log "Executando migrations..."
     $COMPOSE_PROD exec -T "$APP_SERVICE" php artisan migrate --force
-}
-
-optimize_laravel() {
-    log "Limpando caches antigos..."
-    # "|| return 1": mesma razao de start_containers() - esta funcao
-    # tambem roda durante o rollback, com errexit suspenso pelo "if" em
-    # on_failure(). Sem o "||", uma falha aqui passaria batido se o
-    # "optimize" seguinte desse certo, e a funcao inteira reportaria
-    # sucesso incorretamente.
-    $COMPOSE_PROD exec -T "$APP_SERVICE" php artisan optimize:clear || return 1
-
-    log "Gerando caches de producao (config/route/view/event)..."
-    $COMPOSE_PROD exec -T "$APP_SERVICE" php artisan optimize
 }
 
 restart_workers() {
@@ -300,8 +310,9 @@ rollback_code() {
 
     build_containers || return 1
     start_containers || return 1
+    clear_caches || return 1
     build_frontend_assets || return 1
-    optimize_laravel || return 1
+    cache_production_config || return 1
     restart_workers || return 1
 
     echo "::warning::Rollback de codigo concluido para ${PREVIOUS_COMMIT}. Migrations NAO foram revertidas automaticamente (risco de perda de dados) - se o deploy que falhou adicionou migrations incompativeis com o codigo anterior, revise manualmente antes de tentar o proximo deploy." >&2
@@ -330,9 +341,10 @@ main() {
     update_repository
     build_containers
     start_containers
+    clear_caches
     build_frontend_assets
     run_migrations
-    optimize_laravel
+    cache_production_config
     restart_workers
     health_check
 
