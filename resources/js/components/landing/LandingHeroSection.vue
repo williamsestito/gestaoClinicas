@@ -213,7 +213,7 @@ const heroBackgroundVars = computed(() => {
                     :src="site.hero_image_url ?? undefined"
                     :alt="site.title"
                     fetchpriority="high"
-                    class="aspect-4/5 w-full rounded-2xl border border-border object-cover shadow-lg sm:aspect-16/9"
+                    class="h-auto w-full rounded-2xl border border-border shadow-lg"
                     @error="heroImageFailedToLoad = true"
                 />
             </picture>

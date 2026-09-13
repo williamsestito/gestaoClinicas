@@ -275,8 +275,7 @@ function submit() {
                     />
                     <p class="text-xs text-muted-foreground">
                         Obrigatório — garante que o pré-agendamento do
-                        dependente, se houver, seja vinculado ao cadastro
-                        dele.
+                        dependente, se houver, seja vinculado ao cadastro dele.
                     </p>
                     <InputError :message="form.errors.dependent_document" />
                 </div>
