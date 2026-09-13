@@ -1,9 +1,18 @@
 import { mount } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Index from './Index.vue';
 
+afterEach(() => {
+    document.body.innerHTML = '';
+});
+
 const { routerMock } = vi.hoisted(() => ({
-    routerMock: { get: vi.fn() },
+    routerMock: {
+        get: vi.fn(),
+        delete: vi.fn(),
+        patch: vi.fn(),
+        post: vi.fn(),
+    },
 }));
 
 vi.mock('@inertiajs/vue3', () => ({
@@ -103,5 +112,72 @@ describe('settings/patients/Index', () => {
         expect(wrapper.find('[data-testid="summary-modal"]').text()).toBe(
             'patient-1',
         );
+    });
+
+    it('shows a styled confirmation dialog instead of a native confirm() when "Excluir" is clicked', async () => {
+        const wrapper = mount(Index, {
+            props: { patients: makePatients(), professionals, filters: {} },
+            attachTo: document.body,
+        });
+
+        expect(document.body.querySelector('[role="dialog"]')).toBeNull();
+
+        const removeButton = wrapper
+            .findAll('button')
+            .find((b) => b.text() === 'Excluir');
+        await removeButton?.trigger('click');
+
+        const dialog = document.body.querySelector('[role="dialog"]');
+        expect(dialog?.textContent).toContain('Excluir Ana Souza?');
+        expect(routerMock.delete).not.toHaveBeenCalled();
+
+        wrapper.unmount();
+    });
+
+    it('does not delete the patient when the confirmation dialog is cancelled', async () => {
+        const wrapper = mount(Index, {
+            props: { patients: makePatients(), professionals, filters: {} },
+            attachTo: document.body,
+        });
+
+        const removeButton = wrapper
+            .findAll('button')
+            .find((b) => b.text() === 'Excluir');
+        await removeButton?.trigger('click');
+
+        const cancelButton = Array.from(
+            document.body.querySelectorAll('[role="dialog"] button'),
+        ).find((b) => b.textContent === 'Cancelar') as HTMLElement;
+        cancelButton.click();
+        await wrapper.vm.$nextTick();
+
+        expect(routerMock.delete).not.toHaveBeenCalled();
+
+        wrapper.unmount();
+    });
+
+    it('deletes the patient (soft delete) when the confirmation dialog is confirmed', async () => {
+        const wrapper = mount(Index, {
+            props: { patients: makePatients(), professionals, filters: {} },
+            attachTo: document.body,
+        });
+
+        const removeButton = wrapper
+            .findAll('button')
+            .find((b) => b.text() === 'Excluir');
+        await removeButton?.trigger('click');
+
+        const confirmButton = Array.from(
+            document.body.querySelectorAll('[role="dialog"] button'),
+        ).find((b) => b.textContent === 'Excluir') as HTMLElement;
+        confirmButton.click();
+        await wrapper.vm.$nextTick();
+
+        expect(routerMock.delete).toHaveBeenCalledWith(
+            expect.stringContaining('patient-1'),
+            expect.objectContaining({ preserveScroll: true }),
+        );
+
+        wrapper.unmount();
     });
 });
