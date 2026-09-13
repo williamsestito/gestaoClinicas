@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\PatientPortal;
 
-use App\Concerns\PasswordValidationRules;
 use App\Enums\LegalEntityType;
 use App\Rules\CpfCnpjRule;
 use App\Rules\ValidImageContentRule;
@@ -13,6 +12,7 @@ use App\Support\Patients\MinorGuardianGuard;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Validator;
 
 /**
@@ -23,8 +23,6 @@ use Illuminate\Validation\Validator;
  */
 class RegisterPatientUserRequest extends FormRequest
 {
-    use PasswordValidationRules;
-
     public function authorize(): bool
     {
         return true;
@@ -53,7 +51,12 @@ class RegisterPatientUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('patient_users', 'email')],
-            'password' => $this->passwordRules(),
+            // Regra própria, deliberadamente mais permissiva que
+            // Password::default() (usada por staff/superadmin em
+            // App\Concerns\PasswordValidationRules): autocadastro de
+            // paciente é o único fluxo com essa exceção — nunca reaproveitar
+            // esta regra fora daqui.
+            'password' => ['required', 'string', Password::min(6), 'confirmed'],
 
             'registering_for' => ['required', 'in:self,dependent'],
 

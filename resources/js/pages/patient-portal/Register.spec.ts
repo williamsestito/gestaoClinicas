@@ -123,4 +123,45 @@ describe('patient-portal/Register', () => {
             expect.objectContaining({ forceFormData: true }),
         );
     });
+
+    it('does not rely on the native HTML "required" attribute for the CPF field — the backend message is what tells the user it is required', () => {
+        const wrapper = mount(Register, {
+            props: { organizationConfigured: true, prefill: emptyPrefill },
+        });
+
+        expect(
+            wrapper.find('#document').attributes('required'),
+        ).toBeUndefined();
+    });
+
+    it('does not rely on the native HTML "required" attribute for the dependent CPF field either', async () => {
+        const wrapper = mount(Register, {
+            props: { organizationConfigured: true, prefill: emptyPrefill },
+        });
+
+        const dependentButton = wrapper
+            .findAll('button')
+            .find((b) => b.text().includes('Um dependente'))!;
+        await dependentButton.trigger('click');
+
+        expect(
+            wrapper.find('#dependent_document').attributes('required'),
+        ).toBeUndefined();
+    });
+
+    it("shows the backend's friendly message when the CPF is missing, instead of a generic native validation popup", () => {
+        formState.errors = {
+            document: 'CPF é obrigatório para localizarmos seu cadastro.',
+        };
+
+        const wrapper = mount(Register, {
+            props: { organizationConfigured: true, prefill: emptyPrefill },
+        });
+
+        expect(wrapper.text()).toContain(
+            'CPF é obrigatório para localizarmos seu cadastro.',
+        );
+
+        formState.errors = {};
+    });
 });
