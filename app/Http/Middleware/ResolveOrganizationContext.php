@@ -41,7 +41,13 @@ class ResolveOrganizationContext
             $request->session()->forget(['active_organization_id', 'active_unit_id']);
         }
 
-        if (! $membership && $memberships->count() === 1) {
+        // Nunca para platform admin: os vínculos dele são um subproduto de
+        // organizações já visitadas (ver SetActiveOrganizationAction), não
+        // um sinal de "esta é a única organização dele" como é para um
+        // membro real — sem esta exceção, "Sair do modo de gestão"
+        // (PlatformAdminBanner.vue) reentrava sozinho na mesma organização
+        // sempre que o admin só tivesse gerenciado uma até agora.
+        if (! $membership && $memberships->count() === 1 && ! $user->is_platform_admin) {
             $membership = $memberships->first();
             $request->session()->put('active_organization_id', $membership->organization_id);
         }

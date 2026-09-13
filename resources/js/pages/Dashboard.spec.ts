@@ -39,10 +39,10 @@ const baseAdminProps = {
     primaryLegalEntity: null,
     domainConfigured: false,
     seoConfigured: false,
-    recentActivity: [],
     pendingSetupItems: [],
     pendingAppointmentRequestsByProfessional: null,
     orgAgenda: null,
+    indicators: null,
 };
 
 const professionalDashboard = {
@@ -168,5 +168,86 @@ describe('Dashboard', () => {
         });
 
         expect(wrapper.text()).not.toContain('Agendamentos da clínica');
+    });
+
+    it('no longer shows a technical activity/audit log feed on the main dashboard', () => {
+        const wrapper = mount(Dashboard, {
+            props: { ...baseAdminProps, professionalDashboard: null },
+        });
+
+        expect(wrapper.text()).not.toContain('Últimas atividades');
+    });
+
+    it('shows the management indicator cards and charts when indicators are provided', () => {
+        const wrapper = mount(Dashboard, {
+            props: {
+                ...baseAdminProps,
+                professionalDashboard: null,
+                indicators: {
+                    todayAppointmentsCount: 4,
+                    pendingConfirmationsCount: 2,
+                    revenueThisMonthCents: 150000,
+                    newPatientsThisMonthCount: 3,
+                    charts: {
+                        appointmentsByWeekday: [
+                            { label: 'Seg', count: 5 },
+                            { label: 'Ter', count: 3 },
+                        ],
+                        revenueByMonth: [
+                            { label: 'Jan/26', total_cents: 100000 },
+                            { label: 'Fev/26', total_cents: 150000 },
+                        ],
+                        occupancyByProfessional: [
+                            { label: 'Dra Juliana Cruz', count: 10 },
+                        ],
+                    },
+                },
+            },
+        });
+
+        // formatCurrencyBrl usa toLocaleString, que insere um espaço não
+        // separável (U+00A0) entre "R$" e o valor — normaliza antes de
+        // comparar para não depender desse detalhe do Intl (mesmo padrão de
+        // settings/sales/Create.spec.ts).
+        const normalized = wrapper.text().replace(/ /g, ' ');
+
+        expect(normalized).toContain('Agendamentos hoje');
+        expect(normalized).toContain('4');
+        expect(normalized).toContain('Confirmações pendentes');
+        expect(normalized).toContain('Faturamento no mês');
+        expect(normalized).toContain('R$ 1.500,00');
+        expect(normalized).toContain('Novos pacientes no mês');
+
+        expect(wrapper.text()).toContain('Agendamentos por dia da semana');
+        expect(wrapper.text()).toContain('Faturamento por período');
+        expect(wrapper.text()).toContain('Ocupação por profissional');
+        expect(wrapper.text()).toContain('Dra Juliana Cruz');
+    });
+
+    it('does not show indicator cards for sections the user has no permission to see', () => {
+        const wrapper = mount(Dashboard, {
+            props: {
+                ...baseAdminProps,
+                professionalDashboard: null,
+                indicators: {
+                    todayAppointmentsCount: 4,
+                    pendingConfirmationsCount: null,
+                    revenueThisMonthCents: null,
+                    newPatientsThisMonthCount: null,
+                    charts: {
+                        appointmentsByWeekday: [{ label: 'Seg', count: 5 }],
+                        revenueByMonth: null,
+                        occupancyByProfessional: null,
+                    },
+                },
+            },
+        });
+
+        expect(wrapper.text()).toContain('Agendamentos hoje');
+        expect(wrapper.text()).not.toContain('Confirmações pendentes');
+        expect(wrapper.text()).not.toContain('Faturamento no mês');
+        expect(wrapper.text()).not.toContain('Novos pacientes no mês');
+        expect(wrapper.text()).not.toContain('Faturamento por período');
+        expect(wrapper.text()).not.toContain('Ocupação por profissional');
     });
 });

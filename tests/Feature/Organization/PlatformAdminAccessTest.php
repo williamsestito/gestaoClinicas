@@ -116,6 +116,53 @@ it('grants a platform admin real membership on first access to an organization, 
         ->assertOk();
 });
 
+it('lets a platform admin leave "management mode", clearing the session context without touching the granted membership', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    $unit = Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+    $admin = User::factory()->create(['is_platform_admin' => true, 'email_verified_at' => now()]);
+
+    $this->actingAs($admin)
+        ->put(route('context.organization.update'), ['organization_id' => $organization->id])
+        ->assertRedirect(route('dashboard'));
+    $this->actingAs($admin)
+        ->put(route('context.unit.update'), ['unit_id' => $unit->id])
+        ->assertRedirect(route('dashboard'));
+
+    expect(session('active_organization_id'))->toBe($organization->id)
+        ->and(session('active_unit_id'))->toBe($unit->id);
+
+    $this->actingAs($admin)
+        ->delete(route('context.organization.destroy'))
+        ->assertRedirect(route('context.organization.edit'));
+
+    expect(session('active_organization_id'))->toBeNull()
+        ->and(session('active_unit_id'))->toBeNull();
+
+    // O vínculo concedido continua existindo (histórico/auditoria
+    // preservados) — só o contexto de sessão foi limpo.
+    $membership = OrganizationMembership::query()
+        ->where('user_id', $admin->id)
+        ->where('organization_id', $organization->id)
+        ->first();
+    expect($membership)->not->toBeNull()
+        ->and($membership->status)->toBe(OrganizationMembershipStatus::Active);
+
+    // Sem resíduo de contexto — o próximo acesso ao dashboard volta ao
+    // seletor de organização, nunca "preso" na anterior.
+    $this->actingAs($admin)
+        ->get('/dashboard')
+        ->assertRedirect(route('context.organization.edit'));
+});
+
+it('never lets a non-platform-admin leave "management mode" — the endpoint is restricted to platform admins', function () {
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->delete(route('context.organization.destroy'))
+        ->assertForbidden();
+});
+
 it('still blocks a regular user with no membership from the dashboard, unaffected by the platform admin change', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
 

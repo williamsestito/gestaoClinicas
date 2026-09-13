@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\AppointmentRequestStatus;
 use App\Enums\AppointmentStatus;
 use App\Enums\PermissionKey;
+use App\Enums\SaleStatus;
 use App\Enums\SystemRole;
 use App\Models\Appointment;
 use App\Models\AppointmentRequest;
@@ -14,6 +15,7 @@ use App\Models\OrganizationMembership;
 use App\Models\Patient;
 use App\Models\Professional;
 use App\Models\Role;
+use App\Models\Sale;
 use App\Models\Service;
 use App\Models\SiteSetting;
 use App\Models\Unit;
@@ -227,4 +229,183 @@ it('shares only the permissions granted by the assigned role in the tenant prop'
             ->where('tenant.permissions', fn ($permissions) => collect($permissions)->contains(PermissionKey::UnitsView->value)
                 && ! collect($permissions)->contains(PermissionKey::UsersInvite->value))
         );
+});
+
+it('no longer exposes a technical audit/activity log feed on the dashboard payload', function () {
+    $ctx = ownerActingInOrganization();
+
+    $this->actingAs($ctx['user'])
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page->missing('recentActivity'));
+});
+
+it('shows the management indicators (today, pending confirmations, revenue, new patients) for an owner', function () {
+    $ctx = ownerActingInOrganization();
+    $professional = Professional::factory()->for($ctx['organization'])->create();
+    // Reaproveitado nos agendamentos abaixo — evita que o factory de
+    // Appointment crie pacientes próprios "escondidos", o que inflaria a
+    // contagem de novos pacientes que este teste quer conferir com
+    // precisão.
+    $existingPatient = Patient::factory()->for($ctx['organization'])->create();
+
+    Appointment::factory()->for($ctx['organization'])->for($professional)->for($existingPatient)->create([
+        'status' => AppointmentStatus::Confirmed,
+        'starts_at' => now()->setTime(9, 0),
+    ]);
+    Appointment::factory()->for($ctx['organization'])->for($professional)->for($existingPatient)->create([
+        'status' => AppointmentStatus::Confirmed,
+        'starts_at' => now()->addDay()->setTime(9, 0),
+    ]);
+
+    AppointmentRequest::factory()->for($ctx['organization'])->create();
+    AppointmentRequest::factory()->for($ctx['organization'])->create();
+    AppointmentRequest::factory()->contacted()->for($ctx['organization'])->create();
+
+    Sale::factory()->create([
+        'organization_id' => $ctx['organization']->id,
+        'patient_id' => $existingPatient->id,
+        'status' => SaleStatus::Confirmed,
+        'total_cents' => 15000,
+    ]);
+    Sale::factory()->create([
+        'organization_id' => $ctx['organization']->id,
+        'patient_id' => $existingPatient->id,
+        'status' => SaleStatus::Cancelled,
+        'total_cents' => 99999,
+    ]);
+
+    // Único paciente que deve contar como "novo" — os agendamentos/vendas
+    // acima reaproveitam $existingPatient de propósito.
+    Patient::factory()->for($ctx['organization'])->create();
+
+    $this->actingAs($ctx['user'])
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('indicators.todayAppointmentsCount', 1)
+            ->where('indicators.pendingConfirmationsCount', 2)
+            ->where('indicators.revenueThisMonthCents', 15000)
+            // $existingPatient + o paciente criado logo acima.
+            ->where('indicators.newPatientsThisMonthCount', 2));
+});
+
+it('shows appointments-by-weekday, revenue-by-month and occupancy-by-professional chart data for an owner', function () {
+    $ctx = ownerActingInOrganization();
+    $professional = Professional::factory()->for($ctx['organization'])->create(['display_name' => 'Dra Juliana Cruz']);
+
+    Appointment::factory()->for($ctx['organization'])->for($professional)->create([
+        'status' => AppointmentStatus::Confirmed,
+        'starts_at' => now()->setTime(9, 0),
+    ]);
+
+    $patient = Patient::factory()->for($ctx['organization'])->create();
+    Sale::factory()->create([
+        'organization_id' => $ctx['organization']->id,
+        'patient_id' => $patient->id,
+        'status' => SaleStatus::Confirmed,
+        'total_cents' => 20000,
+    ]);
+
+    $this->actingAs($ctx['user'])
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('indicators.charts.appointmentsByWeekday', 7)
+            ->has('indicators.charts.revenueByMonth', 6)
+            ->has('indicators.charts.occupancyByProfessional', 1)
+            ->where('indicators.charts.occupancyByProfessional.0.label', 'Dra Juliana Cruz')
+            ->where('indicators.charts.occupancyByProfessional.0.count', 1)
+            ->where(
+                'indicators.charts.revenueByMonth.5.total_cents',
+                20000,
+            ));
+});
+
+it('groups occupancy strictly by professional_id and labels by the professional\'s display_name, never by the linked user\'s name', function () {
+    // Reproduz o cenário real que motivou este teste: a profissional e o
+    // usuário vinculado a ela têm nomes diferentes (comum quando o
+    // display_name inclui título/tratamento, ex. "Dra."). O card nunca
+    // pode usar App\Models\User::name para rotular ou agrupar a barra —
+    // só professional_id (agrupamento) e Professional::display_name
+    // (rótulo).
+    $ctx = ownerActingInOrganization();
+    $user = User::factory()->create(['name' => 'Fernanda']);
+    $professional = Professional::factory()->for($ctx['organization'])->create([
+        'user_id' => $user->id,
+        'display_name' => 'Dra Fernanda',
+    ]);
+
+    Appointment::factory()->for($ctx['organization'])->for($professional)->create([
+        'status' => AppointmentStatus::Confirmed,
+        'starts_at' => now()->setTime(9, 0),
+        'ends_at' => now()->setTime(9, 30),
+    ]);
+    Appointment::factory()->for($ctx['organization'])->for($professional)->create([
+        'status' => AppointmentStatus::Confirmed,
+        'starts_at' => now()->setTime(10, 0),
+        'ends_at' => now()->setTime(10, 30),
+    ]);
+
+    $this->actingAs($ctx['user'])
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('indicators.charts.occupancyByProfessional', 1)
+            ->where('indicators.charts.occupancyByProfessional.0.label', 'Dra Fernanda')
+            ->where('indicators.charts.occupancyByProfessional.0.count', 2));
+});
+
+it('never breaks the occupancy-by-professional chart when a professional with an appointment this month was soft-deleted', function () {
+    $ctx = ownerActingInOrganization();
+    $professional = Professional::factory()->for($ctx['organization'])->create(['display_name' => 'Fernanda']);
+
+    Appointment::factory()->for($ctx['organization'])->for($professional)->create([
+        'status' => AppointmentStatus::Confirmed,
+        'starts_at' => now()->setTime(9, 0),
+        'ends_at' => now()->setTime(9, 30),
+    ]);
+
+    $professional->delete();
+
+    $this->actingAs($ctx['user'])
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('indicators.charts.occupancyByProfessional', 1)
+            ->where('indicators.charts.occupancyByProfessional.0.label', 'Fernanda')
+            ->where('indicators.charts.occupancyByProfessional.0.count', 1));
+});
+
+it('hides appointment/patient-based indicators for a role without that permission, keeping the sales indicator it does have (Finance)', function () {
+    $ctx = ownerActingInOrganization();
+    seedSystemRoles($ctx['organization']);
+
+    // Finance (ver App\Enums\SystemRole::defaultPermissions) tem
+    // sales.view, mas não appointments.view nem patients.view — combinação
+    // real que não existe em nenhum outro papel de sistema, útil para
+    // provar que cada indicador respeita sua própria Policy de verdade
+    // (não é tudo-ou-nada).
+    $role = Role::query()->where('organization_id', $ctx['organization']->id)->where('slug', SystemRole::Finance->value)->firstOrFail();
+    $member = User::factory()->create();
+    $membership = OrganizationMembership::factory()->for($ctx['organization'])->for($member)->create(['role_id' => $role->id]);
+    UnitMembership::factory()->for($membership, 'organizationMembership')->for($ctx['headquarters'], 'unit')->create();
+
+    $patient = Patient::factory()->for($ctx['organization'])->create();
+    Sale::factory()->create([
+        'organization_id' => $ctx['organization']->id,
+        'patient_id' => $patient->id,
+        'status' => SaleStatus::Confirmed,
+        'total_cents' => 5000,
+    ]);
+
+    $this->actingAs($member)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('indicators.todayAppointmentsCount', null)
+            ->where('indicators.newPatientsThisMonthCount', null)
+            ->where('indicators.revenueThisMonthCents', 5000)
+            ->where('indicators.charts.appointmentsByWeekday', null)
+            ->where('indicators.charts.occupancyByProfessional', null)
+            ->has('indicators.charts.revenueByMonth', 6));
 });

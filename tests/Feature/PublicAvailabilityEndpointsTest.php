@@ -108,6 +108,33 @@ it('rejects a unit id belonging to another organization', function () {
         ->assertUnprocessable();
 });
 
+it('never mixes data from a second organization that should not exist in this single-tenant installation (ADR-010)', function () {
+    // Reproduz o cenário real que motivou este teste: uma segunda
+    // organização completa (ex.: um seeder de QA) acaba coexistindo na
+    // mesma base de uma instalação single-tenant. Mesmo nesse estado
+    // inválido, todos os endpoints do widget de disponibilidade devem
+    // continuar servindo exclusivamente a mesma organização (a mais
+    // antiga, ver App\Queries\CurrentInstallationOrganizationQuery) —
+    // nunca misturar unidades/especialidades de outra organização.
+    [$organization, $unit, $specialty] = publicAvailabilityEndpointSetup();
+
+    $foreignOrganization = Organization::factory()->create();
+    $foreignUnit = Unit::factory()->for($foreignOrganization)->create(['status' => RecordStatus::Active]);
+    $foreignSpecialty = Specialty::factory()->for($foreignOrganization)->create(['status' => RecordStatus::Active]);
+
+    $this->get('/disponibilidade/unidades')
+        ->assertOk()
+        ->assertJsonFragment(['id' => $unit->id])
+        ->assertJsonMissing(['id' => $foreignUnit->id]);
+
+    $this->get('/disponibilidade/especialidades?'.http_build_query(['unit_id' => $unit->id]))
+        ->assertOk()
+        ->assertJsonFragment(['id' => $specialty->id])
+        ->assertJsonMissing(['id' => $foreignSpecialty->id]);
+
+    expect($organization->id)->not->toBe($foreignOrganization->id);
+});
+
 it('returns available dates for a month, without exposing raw working hours or blocks', function () {
     [, $unit, $specialty, $service, $professional] = publicAvailabilityEndpointSetup();
     $monday = nextAvailableMonday();

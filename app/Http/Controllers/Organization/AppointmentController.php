@@ -51,7 +51,16 @@ class AppointmentController extends Controller
         $professionalId = $request->string('professional_id')->value() ?: null;
 
         $appointments = $organization->appointments()
-            ->with(['professional:id,display_name', 'patient:id,name,preferred_name', 'service:id,name', 'unit:id,name'])
+            ->with([
+                // withTrashed(): um agendamento passado continua precisando
+                // mostrar com qual profissional foi, mesmo que esse
+                // profissional tenha sido desligado/excluído (soft delete)
+                // depois — nunca quebra a agenda nem esconde o histórico.
+                'professional' => fn ($query) => $query->withTrashed()->select(['id', 'display_name']),
+                'patient:id,name,preferred_name',
+                'service:id,name',
+                'unit:id,name',
+            ])
             ->whereDate('starts_at', $date->toDateString())
             ->when($professionalId, fn ($query) => $query->where('professional_id', $professionalId))
             ->orderBy('starts_at')
@@ -346,7 +355,11 @@ class AppointmentController extends Controller
     {
         $this->authorize('proposeAlternateTime', $appointment);
 
-        $appointment->loadMissing(['unit', 'professional:id,display_name', 'service:id,name']);
+        $appointment->loadMissing([
+            'unit',
+            'professional' => fn ($query) => $query->withTrashed()->select(['id', 'display_name']),
+            'service:id,name',
+        ]);
 
         return Inertia::render('settings/appointments/Propose', [
             'appointment' => [

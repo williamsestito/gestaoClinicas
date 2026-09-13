@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PatientSummaryModal from '@/components/patients/PatientSummaryModal.vue';
@@ -46,6 +47,7 @@ const search = ref(props.filters.search ?? '');
 const statusFilter = ref(props.filters.status ?? '');
 const professionalFilter = ref(props.filters.professional_id ?? '');
 const selectedPatientId = ref<string | null>(null);
+const patientPendingRemoval = ref<PatientRow | null>(null);
 
 defineOptions({
     layout: {
@@ -75,11 +77,17 @@ function toggleStatus(patient: PatientRow) {
 }
 
 function removePatient(patient: PatientRow) {
-    if (!confirm(`Excluir o paciente ${patient.name}?`)) {
+    patientPendingRemoval.value = patient;
+}
+
+function confirmRemovePatient() {
+    if (!patientPendingRemoval.value) {
         return;
     }
 
-    router.delete(destroy(patient.id).url, { preserveScroll: true });
+    router.delete(destroy(patientPendingRemoval.value.id).url, {
+        preserveScroll: true,
+    });
 }
 
 function restorePatient(patient: PatientRow) {
@@ -310,5 +318,15 @@ function restorePatient(patient: PatientRow) {
         </nav>
 
         <PatientSummaryModal v-model="selectedPatientId" />
+
+        <ConfirmDialog
+            :open="patientPendingRemoval !== null"
+            :title="`Excluir ${patientPendingRemoval?.name ?? 'paciente'}?`"
+            description="O paciente será inativado e deixará de aparecer nas listagens padrão — o cadastro e o histórico continuam preservados e podem ser restaurados depois, seguindo a regra de exclusão lógica da clínica."
+            confirm-label="Excluir"
+            destructive
+            @update:open="(value) => !value && (patientPendingRemoval = null)"
+            @confirm="confirmRemovePatient"
+        />
     </div>
 </template>

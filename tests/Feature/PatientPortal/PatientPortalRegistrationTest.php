@@ -107,6 +107,44 @@ it('registers a self patient user with a linked patient and no forced emergency 
     expect(Auth::guard('patient')->check())->toBeTrue();
 });
 
+it('accepts a 6-character password with no additional complexity for patient self-registration', function () {
+    Organization::factory()->create();
+
+    $payload = baseRegistrationPayload();
+    $payload['password'] = 'abc123';
+    $payload['password_confirmation'] = 'abc123';
+
+    $this->post('/portal/registrar', $payload)->assertRedirect('/portal');
+
+    expect(PatientUser::query()->where('email', 'maria@example.com')->exists())->toBeTrue();
+});
+
+it('still rejects a password shorter than 6 characters for patient self-registration', function () {
+    Organization::factory()->create();
+
+    $payload = baseRegistrationPayload();
+    $payload['password'] = 'ab12';
+    $payload['password_confirmation'] = 'ab12';
+
+    $this->post('/portal/registrar', $payload)->assertSessionHasErrors('password');
+
+    expect(PatientUser::query()->count())->toBe(0);
+});
+
+it('shows a friendly custom message, not a generic one, when the CPF is missing on self-registration', function () {
+    Organization::factory()->create();
+
+    $payload = baseRegistrationPayload();
+    unset($payload['document']);
+
+    $response = $this->post('/portal/registrar', $payload);
+
+    $response->assertSessionHasErrors('document');
+    expect(session('errors')->get('document')[0])->toBe(
+        'CPF é obrigatório para localizarmos seu cadastro.',
+    );
+});
+
 it('rejects self-registration without a CPF, even with an orphan appointment request waiting under the same phone/email', function () {
     $organization = Organization::factory()->create();
 

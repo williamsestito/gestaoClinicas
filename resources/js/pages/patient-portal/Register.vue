@@ -223,7 +223,6 @@ function submit() {
                     <Input
                         id="document"
                         :model-value="form.document"
-                        required
                         @update:model-value="
                             (v) => (form.document = maskCpf(String(v)))
                         "
@@ -267,7 +266,6 @@ function submit() {
                     <Input
                         id="dependent_document"
                         :model-value="form.dependent_document"
-                        required
                         @update:model-value="
                             (v) =>
                                 (form.dependent_document = maskCpf(String(v)))

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\IndexingPolicy;
-use App\Models\Organization;
 use App\Models\SiteGalleryItem;
 use App\Models\SiteSetting;
 use App\Support\Seo\CanonicalUrlResolver;
@@ -24,7 +23,6 @@ class PublicGalleryController extends Controller
 
     public function index(): Response
     {
-        $organization = Organization::query()->first();
         $siteSetting = SiteSetting::query()->first();
         $isPublished = $siteSetting && $siteSetting->is_published;
 

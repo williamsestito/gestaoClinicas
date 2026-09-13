@@ -7,15 +7,17 @@ namespace App\Http\Controllers\Organization;
 use App\Enums\AppointmentRequestStatus;
 use App\Enums\AppointmentStatus;
 use App\Enums\RecordStatus;
+use App\Enums\SaleStatus;
 use App\Enums\SystemRole;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\AppointmentRequest;
-use App\Models\AuditLog;
 use App\Models\LegalEntity;
 use App\Models\Organization;
+use App\Models\Patient;
 use App\Models\Professional;
 use App\Models\ProfessionalDashboardReminder;
+use App\Models\Sale;
 use App\Models\SiteSetting;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
@@ -215,22 +217,6 @@ class DashboardController extends Controller
             $inactiveUsersCount = $usersCount - $activeUsersCount;
         }
 
-        $recentActivity = $organization
-            ? AuditLog::query()
-                ->where('organization_id', $organization->id)
-                ->with('actor:id,name')
-                ->latest('created_at')
-                ->limit(5)
-                ->get(['id', 'actor_user_id', 'action', 'auditable_type', 'created_at'])
-                ->map(fn (AuditLog $log) => [
-                    'id' => $log->id,
-                    'actor' => $log->actor ? $log->actor->name : 'Sistema',
-                    'action' => $log->action->label(),
-                    'entity' => class_basename((string) $log->auditable_type),
-                    'created_at' => $log->created_at->toIso8601String(),
-                ])
-            : collect();
-
         $domainConfigured = $siteSetting !== null && filled($siteSetting->official_domain);
         $seoConfigured = $siteSetting !== null && filled($siteSetting->meta_title) && filled($siteSetting->meta_description);
 
@@ -254,6 +240,12 @@ class DashboardController extends Controller
         $canViewAppointmentRequests = $organization !== null
             && Gate::forUser($request->user())->allows('viewAny', [AppointmentRequest::class, $organization]);
 
+        $canViewSales = $organization !== null
+            && Gate::forUser($request->user())->allows('viewAny', [Sale::class, $organization]);
+
+        $canViewPatients = $organization !== null
+            && Gate::forUser($request->user())->allows('viewAny', [Patient::class, $organization]);
+
         return [
             'organizationName' => $organization?->name,
             'unitsCount' => $organization?->units()->count() ?? 0,
@@ -267,12 +259,14 @@ class DashboardController extends Controller
             ] : null,
             'domainConfigured' => $domainConfigured,
             'seoConfigured' => $seoConfigured,
-            'recentActivity' => $recentActivity,
             'pendingSetupItems' => $this->pendingSetupItems($organization, $primaryLegalEntity, $siteSetting),
             'pendingAppointmentRequestsByProfessional' => $canViewAppointmentRequests
                 ? $this->pendingAppointmentRequestsByProfessional($organization)
                 : null,
             'orgAgenda' => $canViewAgenda ? $this->organizationAgenda($request, $organization) : null,
+            'indicators' => $organization
+                ? $this->managementIndicators($organization, $canViewAgenda, $canViewAppointmentRequests, $canViewSales, $canViewPatients)
+                : null,
         ];
     }
 
@@ -365,6 +359,145 @@ class DashboardController extends Controller
                 'created_at' => $appointmentRequest->created_at?->toIso8601String(),
             ])->values()->all(),
         ];
+    }
+
+    /**
+     * Indicadores e gráficos do foco gerencial do dashboard (achado de uso
+     * real: a tela só trazia configuração de organização e um feed de
+     * auditoria técnica, sem nada que ajudasse a gestão do dia a dia —
+     * auditoria continua existindo em settings/audit, só não aparece mais
+     * aqui). Cada seção só é calculada quando a Policy correspondente
+     * permite (nunca calcula faturamento/pacientes para quem não tem a
+     * permissão), mesmo padrão de $canViewAgenda/$canViewAppointmentRequests
+     * já usado acima.
+     *
+     * @return array<string, mixed>
+     */
+    private function managementIndicators(
+        Organization $organization,
+        bool $canViewAgenda,
+        bool $canViewAppointmentRequests,
+        bool $canViewSales,
+        bool $canViewPatients,
+    ): array {
+        $now = Carbon::now();
+        $startOfMonth = $now->copy()->startOfMonth();
+        $endOfMonth = $now->copy()->endOfMonth();
+
+        return [
+            'todayAppointmentsCount' => $canViewAgenda
+                ? $organization->appointments()->whereDate('starts_at', $now->toDateString())->count()
+                : null,
+            'pendingConfirmationsCount' => $canViewAppointmentRequests
+                ? AppointmentRequest::query()
+                    ->where('organization_id', $organization->id)
+                    ->where('status', AppointmentRequestStatus::Pending)
+                    ->count()
+                : null,
+            'revenueThisMonthCents' => $canViewSales
+                ? (int) Sale::query()
+                    ->where('organization_id', $organization->id)
+                    ->where('status', SaleStatus::Confirmed)
+                    ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                    ->sum('total_cents')
+                : null,
+            'newPatientsThisMonthCount' => $canViewPatients
+                ? Patient::query()
+                    ->where('organization_id', $organization->id)
+                    ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                    ->count()
+                : null,
+            'charts' => [
+                'appointmentsByWeekday' => $canViewAgenda ? $this->appointmentsByWeekdayChart($organization) : null,
+                'revenueByMonth' => $canViewSales ? $this->revenueByMonthChart($organization) : null,
+                'occupancyByProfessional' => $canViewAgenda ? $this->occupancyByProfessionalChart($organization) : null,
+            ],
+        ];
+    }
+
+    /**
+     * Últimas 4 semanas (não só a semana atual, que teria dias futuros
+     * zerados) — mostra em quais dias a clínica costuma concentrar
+     * agendamentos, incluindo todos os status (cancelamentos também
+     * ocupavam o horário quando marcados).
+     *
+     * @return array<int, array{label: string, count: int}>
+     */
+    private function appointmentsByWeekdayChart(Organization $organization): array
+    {
+        $since = Carbon::now()->subDays(28)->startOfDay();
+
+        $rows = $organization->appointments()
+            ->where('starts_at', '>=', $since)
+            ->selectRaw('EXTRACT(ISODOW FROM starts_at)::int as dow, COUNT(*) as total')
+            ->groupBy('dow')
+            ->get();
+
+        $counts = $rows->mapWithKeys(fn ($row) => [
+            (int) $row->getAttribute('dow') => (int) $row->getAttribute('total'),
+        ]);
+
+        $labels = [1 => 'Seg', 2 => 'Ter', 3 => 'Qua', 4 => 'Qui', 5 => 'Sex', 6 => 'Sáb', 7 => 'Dom'];
+
+        return collect($labels)
+            ->map(fn (string $label, int $dow) => ['label' => $label, 'count' => $counts->get($dow, 0)])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Últimos 6 meses (incluindo o atual) — só vendas confirmadas contam
+     * como faturamento de verdade (rascunho/aguardando aprovação/cancelada
+     * não representam receita real, ver App\Enums\SaleStatus).
+     *
+     * @return array<int, array{label: string, total_cents: int}>
+     */
+    private function revenueByMonthChart(Organization $organization): array
+    {
+        return collect(range(5, 0))
+            ->map(function (int $monthsAgo) use ($organization) {
+                $month = Carbon::now()->subMonths($monthsAgo);
+                $totalCents = (int) Sale::query()
+                    ->where('organization_id', $organization->id)
+                    ->where('status', SaleStatus::Confirmed)
+                    ->whereBetween('created_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+                    ->sum('total_cents');
+
+                return ['label' => $month->translatedFormat('M/y'), 'total_cents' => $totalCents];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Mês atual, por profissional — exclui cancelado/não compareceu (não
+     * representam ocupação real da agenda), mesmo padrão de agrupamento em
+     * memória já usado em pendingAppointmentRequestsByProfessional() acima.
+     *
+     * @return array<int, array{label: string, count: int}>
+     */
+    private function occupancyByProfessionalChart(Organization $organization): array
+    {
+        $start = Carbon::now()->startOfMonth();
+        $end = Carbon::now()->endOfMonth();
+
+        return $organization->appointments()
+            ->whereBetween('starts_at', [$start, $end])
+            ->whereNotIn('status', [AppointmentStatus::Cancelled, AppointmentStatus::NoShow])
+            ->with(['professional' => fn ($query) => $query->withTrashed()->select(['id', 'display_name'])])
+            ->get()
+            ->groupBy('professional_id')
+            ->map(function ($appointments) {
+                $professional = $appointments->first()->professional;
+
+                return [
+                    'label' => $professional === null ? 'Sem profissional' : $professional->display_name,
+                    'count' => $appointments->count(),
+                ];
+            })
+            ->sortByDesc('count')
+            ->values()
+            ->all();
     }
 
     /**

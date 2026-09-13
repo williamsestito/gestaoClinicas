@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Organization\SetActiveOrganizationRequest;
 use App\Models\Organization;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -58,5 +59,20 @@ class OrganizationContextController extends Controller
         $action->handle($request, $request->user('web'), $organization);
 
         return to_route('dashboard');
+    }
+
+    /**
+     * Sai do "modo de gestão como superadmin" (ver
+     * resources/js/components/PlatformAdminBanner.vue) — limpa a
+     * organização/unidade ativas da sessão, sem tocar no vínculo real que
+     * SetActiveOrganizationAction concedeu (histórico/auditoria continuam
+     * intactos). Restrito a platform admin pelo middleware `platform.admin`
+     * da própria rota.
+     */
+    public function destroy(Request $request): RedirectResponse
+    {
+        $request->session()->forget(['active_organization_id', 'active_unit_id']);
+
+        return to_route('context.organization.edit');
     }
 }
