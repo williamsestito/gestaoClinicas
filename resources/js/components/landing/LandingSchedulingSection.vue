@@ -316,6 +316,22 @@ function clearInvalidService() {
     form.clearErrors('service_id');
 }
 
+// Mesmo cenário acima, mas para o serviço operacional escolhido na busca de
+// disponibilidade (`preferred_service_id`) — desativado/excluído depois que
+// a página carregou. Como esse valor vem junto com um horário específico
+// (`preferred_starts_at`), não faz sentido manter só o horário sem o
+// serviço que o originou: limpamos a busca inteira (mesmo reset usado após
+// um envio bem-sucedido) para a pessoa escolher tudo de novo.
+function clearInvalidPreferredService() {
+    preferredUnitId.value = null;
+    preferredServiceId.value = null;
+    preferredStartsAt.value = null;
+    form.preferred_service_id = '';
+    form.preferred_starts_at = '';
+    form.clearErrors('preferred_service_id', 'preferred_starts_at');
+    availabilitySearch.value?.reset();
+}
+
 function submit() {
     // A validação (nome, telefone, aceite dos termos etc.) só acontece
     // aqui, ao confirmar — nunca antes, ao escolher serviço/horário.
@@ -429,6 +445,19 @@ function submit() {
                         @click="clearInvalidService"
                     >
                         Escolher outro serviço
+                    </button>
+                </p>
+            </div>
+
+            <div v-if="form.errors.preferred_service_id" class="grid gap-2">
+                <p class="text-sm text-destructive" role="alert">
+                    {{ form.errors.preferred_service_id }}
+                    <button
+                        type="button"
+                        class="underline underline-offset-2"
+                        @click="clearInvalidPreferredService"
+                    >
+                        Escolher outro serviço e horário
                     </button>
                 </p>
             </div>

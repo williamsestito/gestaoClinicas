@@ -48,6 +48,9 @@ const { formState, postMock } = vi.hoisted(() => ({
         email: '',
         preferred_period: '',
         preferred_date: '',
+        unit_id: '',
+        preferred_service_id: '',
+        preferred_starts_at: '',
         notes: '',
         terms_accepted: false,
         website: '',
@@ -105,12 +108,17 @@ beforeEach(() => {
     formState.notes = '';
     formState.preferred_date = '';
     formState.preferred_period = '';
+    formState.preferred_service_id = '';
+    formState.preferred_starts_at = '';
     formState.errors = {};
     useLandingScheduling().selectedServiceId.value = null;
     useLandingScheduling().selectedProfessionalId.value = null;
     useLandingScheduling().selectedProfessionalName.value = null;
     useLandingScheduling().preferredDate.value = null;
     useLandingScheduling().preferredPeriod.value = null;
+    useLandingScheduling().preferredUnitId.value = null;
+    useLandingScheduling().preferredServiceId.value = null;
+    useLandingScheduling().preferredStartsAt.value = null;
 });
 
 describe('LandingSchedulingSection', () => {
@@ -480,6 +488,40 @@ describe('LandingSchedulingSection', () => {
         // Sem seleção nenhuma feita, não há nada para "escolher de novo" —
         // diferente do caso de uma seleção que se tornou inválida.
         expect(wrapper.find('button.underline').exists()).toBe(false);
+    });
+
+    it('surfaces a backend preferred_service_id validation failure (operational service from the availability search) too', async () => {
+        formState.errors = {
+            preferred_service_id: 'O serviço selecionado é inválido.',
+        };
+
+        const wrapper = mount(LandingSchedulingSection);
+
+        expect(wrapper.text()).toContain('O serviço selecionado é inválido.');
+    });
+
+    it('lets the visitor recover from a stale (now-invalid) preferred service by redoing the availability search', async () => {
+        const scheduling = useLandingScheduling();
+        scheduling.preferredUnitId.value = 'unit-1';
+        scheduling.preferredServiceId.value = 'svc-stale';
+        scheduling.preferredStartsAt.value = '2026-08-10T09:00:00';
+        formState.preferred_service_id = 'svc-stale';
+        formState.preferred_starts_at = '2026-08-10T09:00:00';
+        formState.errors = {
+            preferred_service_id: 'O serviço selecionado é inválido.',
+        };
+
+        const wrapper = mount(LandingSchedulingSection);
+
+        await wrapper.find('button.underline').trigger('click');
+
+        expect(formState.preferred_service_id).toBe('');
+        expect(formState.preferred_starts_at).toBe('');
+        expect(scheduling.preferredUnitId.value).toBeNull();
+        expect(scheduling.preferredServiceId.value).toBeNull();
+        expect(scheduling.preferredStartsAt.value).toBeNull();
+        expect(formState.errors.preferred_service_id).toBeUndefined();
+        expect(availabilitySearchReset).toHaveBeenCalledOnce();
     });
 
     it('surfaces a backend professional_id validation failure and lets the visitor recover from it too', async () => {

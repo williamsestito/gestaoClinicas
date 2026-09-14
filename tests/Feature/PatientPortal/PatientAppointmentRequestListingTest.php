@@ -70,6 +70,34 @@ it('falls back to the preferred (operational) service name when the lead came fr
         ->where('pendingRequests.0.service_name', $setup['service']->name));
 });
 
+it('prefers the operational (preferred) service name over the promotional one when both are present', function () {
+    // A pessoa pode clicar "Agendar" num serviço promocional
+    // (LandingServicesSection) e, na mesma visita, também completar a
+    // busca de disponibilidade (LandingAvailabilitySearch) — nada limpa a
+    // seleção promocional nesse fluxo, então os dois campos podem chegar
+    // preenchidos juntos. O operacional é a escolha mais concreta (vem com
+    // um horário exato) e deve prevalecer na exibição.
+    $setup = patientPortalAppointmentSetup();
+    $siteService = SiteService::factory()->create(['name' => 'Avaliação estética (promocional)']);
+    $request = AppointmentRequest::factory()
+        ->for($setup['organization'])
+        ->for($setup['patient'])
+        ->for($setup['professional'])
+        ->create([
+            'service_id' => $siteService->id,
+            'preferred_service_id' => $setup['service']->id,
+            'status' => AppointmentRequestStatus::Pending,
+            'appointment_id' => null,
+        ]);
+
+    $response = $this->actingAs($setup['patientUser'], 'patient')
+        ->get("/portal/pacientes/{$setup['patient']->id}/agendamentos");
+
+    $response->assertOk()->assertInertia(fn ($page) => $page
+        ->where('pendingRequests.0.id', $request->id)
+        ->where('pendingRequests.0.service_name', $setup['service']->name));
+});
+
 it('never shows a pending appointment request once it has been converted into a real appointment', function () {
     $setup = patientPortalAppointmentSetup();
     $appointment = Appointment::factory()
