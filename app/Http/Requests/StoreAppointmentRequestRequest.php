@@ -45,7 +45,7 @@ class StoreAppointmentRequestRequest extends FormRequest
     {
         return [
             'document.required' => 'CPF é obrigatório para localizarmos seu cadastro.',
-            'email.required' => 'E-mail é obrigatório para enviarmos a confirmação do agendamento.',
+            'email.required' => 'E-mail é obrigatório para a clínica entrar em contato, caso não consiga pelo telefone informado.',
         ];
     }
 

@@ -328,6 +328,41 @@ it('does not treat the same phone with a different service as a duplicate', func
     expect(AppointmentRequest::query()->where('phone', '(47) 99999-0000')->count())->toBe(2);
 });
 
+it('does not treat the same phone with a different preferred (operational) service as a duplicate', function () {
+    // Regressão: `service_id` fica sempre null nesse fluxo (busca de
+    // disponibilidade), então sem comparar `preferred_service_id` também,
+    // duas solicitações para serviços operacionais diferentes (mesmo
+    // telefone/data/período aproximados) colapsariam incorretamente na
+    // primeira, tratada como duplicata.
+    $organization = Organization::factory()->create();
+    $serviceA = Service::factory()->for($organization)->create();
+    $serviceB = Service::factory()->for($organization)->create();
+
+    $this->post('/agendamento', [
+        'preferred_service_id' => $serviceA->id,
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'email' => validEmail(),
+        'preferred_period' => 'Manhã',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertRedirect();
+
+    $this->post('/agendamento', [
+        'preferred_service_id' => $serviceB->id,
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'email' => validEmail(),
+        'preferred_period' => 'Manhã',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertRedirect();
+
+    expect(AppointmentRequest::query()->where('phone', '(47) 99999-0000')->count())->toBe(2);
+});
+
 it('creates a new request once the duplicate window has passed', function () {
     $existing = AppointmentRequest::factory()->create([
         'phone' => '(47) 99999-0000',
@@ -393,6 +428,39 @@ it('notifies the organization owner about a new appointment request', function (
     ])->assertRedirect();
 
     NotificationFacade::assertSentTo($owner, NewAppointmentRequestNotification::class);
+});
+
+it('falls back to the preferred (operational) service name in the owner notification e-mail too', function () {
+    // Regressão: a notificação lia só `service` (catálogo promocional) —
+    // um lead vindo da busca de disponibilidade (só `preferred_service_id`
+    // preenchido) chegava à clínica como "Serviço: Não informado", mesmo
+    // com o portal do paciente já mostrando o nome correto.
+    NotificationFacade::fake();
+
+    $organization = Organization::factory()->create();
+    $owner = User::factory()->create();
+    OrganizationMembership::factory()->owner()->for($organization)->for($owner)->create();
+    $service = Service::factory()->for($organization)->create(['name' => 'Avaliação Podológica']);
+
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'email' => validEmail(),
+        'preferred_service_id' => $service->id,
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertRedirect();
+
+    NotificationFacade::assertSentTo(
+        $owner,
+        NewAppointmentRequestNotification::class,
+        function (NewAppointmentRequestNotification $notification) use ($owner, $service) {
+            $mail = $notification->toMail($owner);
+
+            return in_array("Serviço: {$service->name}", $mail->introLines, true);
+        },
+    );
 });
 
 it('stores the CPF as digits only, regardless of mask', function () {
