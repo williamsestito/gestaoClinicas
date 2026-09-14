@@ -68,7 +68,7 @@ class RegisterPatientUserRequest extends FormRequest
             // ao Patient recém-criado — o cadastro administrativo continua
             // aceitando CPF opcional (ver CreatePatientRequest).
             'document' => ['required_if:registering_for,self', 'nullable', 'string', new CpfCnpjRule(LegalEntityType::Individual)],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['required_if:registering_for,self', 'nullable', 'string', 'max:20'],
             // Só se aplica a "self" — o dependente criado aqui não tem
             // sessão própria para fazer upload depois; deixado sem foto
             // nesta etapa, adicionável mais tarde pelo próprio portal.
@@ -101,6 +101,7 @@ class RegisterPatientUserRequest extends FormRequest
         return [
             'document.required_if' => 'CPF é obrigatório para localizarmos seu cadastro.',
             'dependent_document.required_if' => 'CPF do dependente é obrigatório para localizarmos o cadastro dele.',
+            'phone.required_if' => 'Telefone é obrigatório para a clínica entrar em contato.',
         ];
     }
 

@@ -234,8 +234,12 @@ function submit() {
                     <InputError :message="form.errors.document" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="phone">Telefone (opcional)</Label>
+                    <Label for="phone">Telefone</Label>
                     <PhoneInput id="phone" v-model="form.phone" />
+                    <p class="text-xs text-muted-foreground">
+                        Obrigatório — para a clínica entrar em contato com você.
+                    </p>
+                    <InputError :message="form.errors.phone" />
                 </div>
             </template>
 

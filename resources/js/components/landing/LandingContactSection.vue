@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Mail, MapPin, MessageCircle, Phone } from '@lucide/vue';
+import { Mail, MapPin, Phone } from '@lucide/vue';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
+import WhatsAppIcon from '@/components/WhatsAppIcon.vue';
 import { buildWhatsAppUrl } from '@/lib/whatsapp';
 import type { PublicContact } from '@/types/site';
 
@@ -138,7 +139,7 @@ const whatsappUrl = computed(() => buildWhatsAppUrl(props.contact.whatsapp));
                         rel="noopener noreferrer"
                     >
                         <Button variant="outline">
-                            <MessageCircle class="size-4" />
+                            <WhatsAppIcon class="size-4" />
                             WhatsApp
                         </Button>
                     </a>

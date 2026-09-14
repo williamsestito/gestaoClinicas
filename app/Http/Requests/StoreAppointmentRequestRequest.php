@@ -12,6 +12,7 @@ use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 /**
  * Formulário público de solicitação de agendamento (lead) na landing page.
@@ -44,7 +45,26 @@ class StoreAppointmentRequestRequest extends FormRequest
     {
         return [
             'document.required' => 'CPF é obrigatório para localizarmos seu cadastro.',
+            'email.required' => 'E-mail é obrigatório para enviarmos a confirmação do agendamento.',
         ];
+    }
+
+    /**
+     * Serviço é obrigatório, mas pode chegar em um de dois campos distintos
+     * (ver `rules()`): `service_id` (catálogo promocional, escolhido num
+     * card da landing) ou `preferred_service_id` (cadastro operacional,
+     * escolhido na busca de disponibilidade). Nenhuma regra declarativa
+     * cobre "um dos dois, quando presentes com nomes diferentes", daí o
+     * `after()` em vez de `required_without` (que exigiria os dois campos
+     * sempre presentes no payload, mesmo vazios).
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if (blank($this->input('service_id')) && blank($this->input('preferred_service_id'))) {
+                $validator->errors()->add('service_id', 'Selecione um serviço para continuar.');
+            }
+        });
     }
 
     /**
@@ -83,7 +103,7 @@ class StoreAppointmentRequestRequest extends FormRequest
                     }
                 },
             ],
-            'email' => ['nullable', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
             // Obrigatório nesta etapa (decisão de negócio) — sem checagem de
             // unicidade aqui de propósito: um lead público não é um cadastro
             // de paciente, só um indício para localizar um já existente (ver

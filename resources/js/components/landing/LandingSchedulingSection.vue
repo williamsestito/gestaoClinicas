@@ -46,7 +46,7 @@ const {
 const STEPS = [
     {
         title: 'Escolha o serviço',
-        description: 'Selecione o tratamento de interesse (opcional).',
+        description: 'Selecione o tratamento de interesse.',
     },
     {
         title: 'Preencha seus dados',
@@ -291,19 +291,29 @@ watch(
     { immediate: true },
 );
 
-// Recuperação para quando `service_id`/`professional_id` falham na
-// validação (ex.: o serviço/profissional selecionado foi desativado/
-// excluído depois que a página carregou) — sem isso, o único jeito de
-// perceber o problema era o InputError acima; a pessoa ainda precisava
-// saber que precisava rolar até a seção de serviços/equipe e escolher de
-// novo. Ambos são sempre opcionais no envio manual, então limpar a
-// seleção sempre desbloqueia o reenvio.
-function clearSelectedServiceAndProfessional() {
-    selectedServiceId.value = null;
+// Recuperação para quando `professional_id` falha na validação (ex.: o
+// profissional selecionado foi desativado/excluído depois que a página
+// carregou) — sem isso, o único jeito de perceber o problema era o
+// InputError acima; a pessoa ainda precisava saber que precisava rolar até
+// a seção de equipe e escolher de novo. Profissional continua opcional no
+// envio manual, então limpar a seleção sempre desbloqueia o reenvio.
+function clearSelectedProfessional() {
     selectedProfessionalId.value = null;
-    form.service_id = null;
     form.professional_id = null;
-    form.clearErrors('service_id', 'professional_id');
+    form.clearErrors('professional_id');
+}
+
+// Serviço é obrigatório, então não tem o mesmo escape de "enviar sem essa
+// seleção" — mas o mesmo cenário do profissional acima (serviço
+// desativado/excluído depois que a página carregou) pode deixar
+// `form.service_id` com um valor que a pessoa já escolheu, porém inválido.
+// Nesse caso, oferecemos limpar só essa seleção para escolher outro
+// serviço — nunca para pular a etapa. Sem seleção nenhuma (obrigatoriedade
+// nunca satisfeita), não há nada para "escolher de novo": só a mensagem.
+function clearInvalidService() {
+    selectedServiceId.value = null;
+    form.service_id = null;
+    form.clearErrors('service_id');
 }
 
 function submit() {
@@ -409,17 +419,28 @@ function submit() {
             class="grid gap-5 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8"
             @submit.prevent="submit"
         >
-            <div
-                v-if="form.errors.service_id || form.errors.professional_id"
-                class="grid gap-2"
-            >
+            <div v-if="form.errors.service_id" class="grid gap-2">
+                <p class="text-sm text-destructive" role="alert">
+                    {{ form.errors.service_id }}
+                    <button
+                        v-if="form.service_id !== null"
+                        type="button"
+                        class="underline underline-offset-2"
+                        @click="clearInvalidService"
+                    >
+                        Escolher outro serviço
+                    </button>
+                </p>
+            </div>
+
+            <div v-if="form.errors.professional_id" class="grid gap-2">
                 <p class="text-sm text-destructive">
-                    {{ form.errors.service_id || form.errors.professional_id }}
+                    {{ form.errors.professional_id }}
                     Você ainda pode enviar o pré-agendamento
                     <button
                         type="button"
                         class="underline underline-offset-2"
-                        @click="clearSelectedServiceAndProfessional"
+                        @click="clearSelectedProfessional"
                     >
                         sem essa seleção
                     </button>
@@ -450,11 +471,12 @@ function submit() {
                     <InputError :message="form.errors.phone" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="email">E-mail (opcional)</Label>
+                    <Label for="email">E-mail</Label>
                     <Input
                         id="email"
                         v-model="form.email"
                         type="email"
+                        required
                         autocomplete="email"
                     />
                     <InputError :message="form.errors.email" />

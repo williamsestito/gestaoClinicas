@@ -451,23 +451,35 @@ describe('LandingSchedulingSection', () => {
         expect(wrapper.text()).toContain('O serviço selecionado é inválido.');
     });
 
-    it('lets the visitor recover from a stale service selection and resubmit without it', async () => {
+    it('lets the visitor recover from a stale (now-invalid) service selection to choose another one, without a bypass', async () => {
         const scheduling = useLandingScheduling();
         scheduling.selectedServiceId.value = 42;
-        scheduling.selectedProfessionalId.value = 'prof-stale';
         formState.service_id = 42;
-        formState.professional_id = 'prof-stale';
         formState.errors = { service_id: 'O serviço selecionado é inválido.' };
 
         const wrapper = mount(LandingSchedulingSection);
 
+        expect(wrapper.text()).not.toContain('sem essa seleção');
         await wrapper.find('button.underline').trigger('click');
 
         expect(formState.service_id).toBeNull();
-        expect(formState.professional_id).toBeNull();
         expect(scheduling.selectedServiceId.value).toBeNull();
-        expect(scheduling.selectedProfessionalId.value).toBeNull();
         expect(formState.errors.service_id).toBeUndefined();
+    });
+
+    it('requires a service to be selected, with no way to bypass it, once none was chosen at all', () => {
+        formState.errors = {
+            service_id: 'Selecione um serviço para continuar.',
+        };
+
+        const wrapper = mount(LandingSchedulingSection);
+
+        expect(wrapper.text()).toContain(
+            'Selecione um serviço para continuar.',
+        );
+        // Sem seleção nenhuma feita, não há nada para "escolher de novo" —
+        // diferente do caso de uma seleção que se tornou inválida.
+        expect(wrapper.find('button.underline').exists()).toBe(false);
     });
 
     it('surfaces a backend professional_id validation failure and lets the visitor recover from it too', async () => {
