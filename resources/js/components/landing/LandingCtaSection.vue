@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { MessageCircle } from '@lucide/vue';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
+import WhatsAppIcon from '@/components/WhatsAppIcon.vue';
 import { buildWhatsAppUrl } from '@/lib/whatsapp';
 import type { PublicContact, PublicSiteContent } from '@/types/site';
 
@@ -46,7 +46,7 @@ const whatsappUrl = computed(() => buildWhatsAppUrl(props.contact?.whatsapp));
                         variant="outline"
                         class="border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
                     >
-                        <MessageCircle class="size-4" />
+                        <WhatsAppIcon class="size-4" />
                         Falar no WhatsApp
                     </Button>
                 </a>

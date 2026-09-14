@@ -164,4 +164,28 @@ describe('patient-portal/Register', () => {
 
         formState.errors = {};
     });
+
+    it('labels the phone field as required, no longer "(opcional)"', () => {
+        const wrapper = mount(Register, {
+            props: { organizationConfigured: true, prefill: emptyPrefill },
+        });
+
+        expect(wrapper.text()).not.toContain('Telefone (opcional)');
+    });
+
+    it("shows the backend's friendly message when the phone is missing, same pattern as the CPF field", () => {
+        formState.errors = {
+            phone: 'Telefone é obrigatório para a clínica entrar em contato.',
+        };
+
+        const wrapper = mount(Register, {
+            props: { organizationConfigured: true, prefill: emptyPrefill },
+        });
+
+        expect(wrapper.text()).toContain(
+            'Telefone é obrigatório para a clínica entrar em contato.',
+        );
+
+        formState.errors = {};
+    });
 });

@@ -37,6 +37,12 @@ function validDocument(): string
     return '529.982.247-25';
 }
 
+/** E-mail válido reutilizado pelos testes que não testam este campo especificamente. */
+function validEmail(): string
+{
+    return 'paciente@example.com';
+}
+
 it('creates a pending appointment request lead from the public form', function () {
     $organization = Organization::factory()->create();
     $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
@@ -90,6 +96,51 @@ it('requires a document (CPF)', function () {
     expect(AppointmentRequest::query()->count())->toBe(0);
 });
 
+it('requires an e-mail', function () {
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertSessionHasErrors('email');
+
+    expect(AppointmentRequest::query()->count())->toBe(0);
+});
+
+it('requires a service — either the promotional catalog one or the operational one from the availability search', function () {
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'email' => validEmail(),
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertSessionHasErrors('service_id');
+
+    expect(AppointmentRequest::query()->count())->toBe(0);
+});
+
+it('accepts a request with only the operational preferred_service_id, without a promotional service_id', function () {
+    $organization = Organization::factory()->create();
+    $legalEntity = LegalEntity::factory()->primary()->for($organization)->create();
+    Unit::factory()->headquarters()->for($organization)->for($legalEntity, 'legalEntity')->create();
+    $service = Service::factory()->for($organization)->create();
+
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'email' => validEmail(),
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+        'preferred_service_id' => $service->id,
+    ])->assertSessionHasNoErrors();
+
+    expect(AppointmentRequest::query()->where('name', 'Paciente Teste')->firstOrFail()->preferred_service_id)
+        ->toBe($service->id);
+});
+
 it('rejects a service_id that does not exist', function () {
     $service = SiteService::factory()->create();
 
@@ -121,6 +172,8 @@ it('normalizes phone numbers into a consistent local format', function (string $
         'name' => 'Paciente Teste',
         'phone' => $input,
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertSessionHasNoErrors();
@@ -170,6 +223,8 @@ it('accepts a valid preferred_date within the allowed window', function () {
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'preferred_date' => now()->addDays(5)->toDateString(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
@@ -204,6 +259,8 @@ it('silently accepts without persisting when the honeypot field is filled', func
         'name' => 'Bot Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'website' => 'https://spam.example.com',
         'form_rendered_at' => renderedAtMs(),
@@ -217,6 +274,8 @@ it('silently accepts without persisting when the submission is faster than a hum
         'name' => 'Bot Rápido',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(500),
     ])->assertRedirect();
@@ -229,6 +288,8 @@ it('reuses a recent identical submission instead of creating a duplicate', funct
         'name' => 'Paciente Duplicado',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'preferred_period' => 'Manhã',
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
@@ -249,6 +310,7 @@ it('does not treat the same phone with a different service as a duplicate', func
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -258,6 +320,42 @@ it('does not treat the same phone with a different service as a duplicate', func
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertRedirect();
+
+    expect(AppointmentRequest::query()->where('phone', '(47) 99999-0000')->count())->toBe(2);
+});
+
+it('does not treat the same phone with a different preferred (operational) service as a duplicate', function () {
+    // Regressão: `service_id` fica sempre null nesse fluxo (busca de
+    // disponibilidade), então sem comparar `preferred_service_id` também,
+    // duas solicitações para serviços operacionais diferentes (mesmo
+    // telefone/data/período aproximados) colapsariam incorretamente na
+    // primeira, tratada como duplicata.
+    $organization = Organization::factory()->create();
+    $serviceA = Service::factory()->for($organization)->create();
+    $serviceB = Service::factory()->for($organization)->create();
+
+    $this->post('/agendamento', [
+        'preferred_service_id' => $serviceA->id,
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'email' => validEmail(),
+        'preferred_period' => 'Manhã',
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertRedirect();
+
+    $this->post('/agendamento', [
+        'preferred_service_id' => $serviceB->id,
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'email' => validEmail(),
+        'preferred_period' => 'Manhã',
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -278,6 +376,8 @@ it('creates a new request once the duplicate window has passed', function () {
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -291,6 +391,8 @@ it('persists utm and origin parameters', function () {
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
         'utm' => [
@@ -319,6 +421,8 @@ it('notifies the organization owner about a new appointment request', function (
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -326,11 +430,46 @@ it('notifies the organization owner about a new appointment request', function (
     NotificationFacade::assertSentTo($owner, NewAppointmentRequestNotification::class);
 });
 
+it('falls back to the preferred (operational) service name in the owner notification e-mail too', function () {
+    // Regressão: a notificação lia só `service` (catálogo promocional) —
+    // um lead vindo da busca de disponibilidade (só `preferred_service_id`
+    // preenchido) chegava à clínica como "Serviço: Não informado", mesmo
+    // com o portal do paciente já mostrando o nome correto.
+    NotificationFacade::fake();
+
+    $organization = Organization::factory()->create();
+    $owner = User::factory()->create();
+    OrganizationMembership::factory()->owner()->for($organization)->for($owner)->create();
+    $service = Service::factory()->for($organization)->create(['name' => 'Avaliação Podológica']);
+
+    $this->post('/agendamento', [
+        'name' => 'Paciente Teste',
+        'phone' => '(47) 99999-0000',
+        'document' => validDocument(),
+        'email' => validEmail(),
+        'preferred_service_id' => $service->id,
+        'terms_accepted' => true,
+        'form_rendered_at' => renderedAtMs(),
+    ])->assertRedirect();
+
+    NotificationFacade::assertSentTo(
+        $owner,
+        NewAppointmentRequestNotification::class,
+        function (NewAppointmentRequestNotification $notification) use ($owner, $service) {
+            $mail = $notification->toMail($owner);
+
+            return in_array("Serviço: {$service->name}", $mail->introLines, true);
+        },
+    );
+});
+
 it('stores the CPF as digits only, regardless of mask', function () {
     $this->post('/agendamento', [
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => '529.982.247-25',
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertSessionHasNoErrors();
@@ -360,6 +499,8 @@ it('accepts a professional_id that belongs to the resolved organization', functi
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertSessionHasNoErrors();
@@ -404,6 +545,8 @@ it('rejects a new request for the same professional while a previous one is stil
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => '111.444.777-35',
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertSessionHasErrors('professional_id');
@@ -427,6 +570,8 @@ it('allows a new request for a different professional even with a pending one fo
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => '111.444.777-35',
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertSessionHasNoErrors();
@@ -449,6 +594,8 @@ it('allows a new request for the same professional once the previous one is no l
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => '111.444.777-35',
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertSessionHasNoErrors();
@@ -471,6 +618,7 @@ it('links the request to an existing patient found by CPF, over phone/e-mail', f
         'phone' => '(47) 99999-0000',
         'email' => 'diferente@example.com',
         'document' => '529.982.247-25',
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -492,6 +640,8 @@ it('falls back to phone matching when the CPF given does not match any patient',
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -509,6 +659,8 @@ it('leaves the request unlinked when no matching patient exists', function () {
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -529,6 +681,8 @@ it('links the request to the logged-in patient portal account when the submitted
         'name' => 'Paciente Teste',
         'phone' => '(47) 90000-1111',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -553,6 +707,8 @@ it('falls back to the normal matching heuristics when the logged-in patient subm
         'name' => 'Outra Pessoa',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -572,6 +728,8 @@ it('leaves the request unlinked when the logged-in patient submits a CPF matchin
         'name' => 'Pessoa Desconhecida',
         'phone' => '(47) 98888-7777',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -602,6 +760,8 @@ it('keeps the appointment request even when notifying the owner fails', function
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -620,6 +780,7 @@ it('stores the real unit/service and the exact starts_at converted to UTC when t
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
         'unit_id' => $chosenUnit->id,
@@ -642,6 +803,8 @@ it('falls back to headquarters when no real unit was chosen, exactly like before
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
     ])->assertRedirect();
@@ -660,6 +823,7 @@ it('rejects a specific-slot request that conflicts with an existing confirmed ap
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
         'unit_id' => $setup['unit']->id,
@@ -685,6 +849,7 @@ it('rejects a specific-slot request that conflicts with another patient\'s pendi
         'name' => 'Segundo Paciente',
         'phone' => '(47) 98888-8888',
         'document' => validDocument(),
+        'email' => validEmail(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
         'unit_id' => $setup['unit']->id,
@@ -705,6 +870,7 @@ it('allows a specific-slot request that conflicts when the organization allows o
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
         'unit_id' => $setup['unit']->id,
@@ -724,6 +890,8 @@ it('never blocks a manual lead without a specific slot, even when the profession
         'name' => 'Paciente Teste',
         'phone' => '(47) 99999-0000',
         'document' => validDocument(),
+        'email' => validEmail(),
+        'service_id' => SiteService::factory()->create()->id,
         'terms_accepted' => true,
         'form_rendered_at' => renderedAtMs(),
         'professional_id' => $setup['professional']->id,

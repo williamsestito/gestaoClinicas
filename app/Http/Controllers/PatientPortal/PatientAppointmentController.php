@@ -68,7 +68,7 @@ class PatientAppointmentController extends Controller
         // duplicar a mesma solicitação sob duas aparências diferentes.
         $pendingRequests = $found->appointmentRequests()
             ->whereNull('appointment_id')
-            ->with(['professional:id,display_name', 'service:id,name'])
+            ->with(['professional:id,display_name', 'service:id,name', 'preferredService:id,name'])
             ->orderByDesc('created_at')
             ->get()
             ->map(fn (AppointmentRequest $request) => [
@@ -77,7 +77,16 @@ class PatientAppointmentController extends Controller
                 'status' => $request->status->value,
                 'status_label' => $request->status->label(),
                 'professional_name' => $request->professional?->display_name,
-                'service_name' => $request->service?->name,
+                // O lead pode ter vindo do catálogo promocional (`service`,
+                // SiteService) e/ou da busca de disponibilidade
+                // (`preferredService`, Service operacional) — os dois podem
+                // estar presentes ao mesmo tempo (ex.: a pessoa clicou
+                // "Agendar" num serviço promocional e, na mesma visita,
+                // também completou a busca de disponibilidade). Nesse caso
+                // priorizamos o operacional: ele reflete a escolha mais
+                // concreta, vinculada a um horário exato (`preferred_starts_at`)
+                // — ver LandingAvailabilitySearch.vue.
+                'service_name' => $request->preferredService->name ?? $request->service?->name,
                 'preferred_date' => $request->preferred_date?->toDateString(),
                 'preferred_period' => $request->preferred_period,
                 'notes' => $request->notes,

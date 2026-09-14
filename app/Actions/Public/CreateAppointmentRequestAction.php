@@ -29,9 +29,10 @@ use Throwable;
 /**
  * Cria uma solicitação de agendamento (lead) vinda da landing pública.
  * Reaproveita uma solicitação recente idêntica em vez de duplicá-la (mesmo
- * telefone/serviço/data/período numa janela curta — duplo clique, F5 no
- * "obrigado"), audita a criação e avisa a clínica por e-mail sem deixar uma
- * falha de notificação afetar a solicitação já persistida.
+ * telefone/serviço (promocional e operacional)/profissional/data/período
+ * numa janela curta — duplo clique, F5 no "obrigado"), audita a criação e
+ * avisa a clínica por e-mail sem deixar uma falha de notificação afetar a
+ * solicitação já persistida.
  */
 class CreateAppointmentRequestAction
 {
@@ -208,6 +209,7 @@ class CreateAppointmentRequestAction
             ->where('created_at', '>=', now()->subMinutes(self::DUPLICATE_WINDOW_MINUTES));
 
         $query = $this->matchNullable($query, 'service_id', $data['service_id'] ?? null);
+        $query = $this->matchNullable($query, 'preferred_service_id', $data['preferred_service_id'] ?? null);
         $query = $this->matchNullable($query, 'professional_id', $data['professional_id'] ?? null);
         $query = $this->matchNullable($query, 'preferred_date', $data['preferred_date'] ?? null);
         $query = $this->matchNullable($query, 'preferred_period', $data['preferred_period'] ?? null);

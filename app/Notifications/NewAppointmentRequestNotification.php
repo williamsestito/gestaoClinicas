@@ -32,7 +32,11 @@ class NewAppointmentRequestNotification extends Notification implements ShouldQu
     public function toMail(object $notifiable): MailMessage
     {
         $request = $this->appointmentRequest;
-        $relatedService = $request->service;
+        // O lead pode ter vindo do catálogo promocional (`service`) e/ou da
+        // busca de disponibilidade (`preferredService`, cadastro
+        // operacional) — mesma prioridade usada na exibição ao paciente
+        // (ver PatientPortal\PatientAppointmentController::index()).
+        $relatedService = $request->service ?? $request->preferredService;
         $service = $relatedService === null ? 'Não informado' : $relatedService->name;
         $preference = trim(implode(' — ', array_filter([
             $request->preferred_date?->format('d/m/Y'),

@@ -31,6 +31,7 @@ function baseRegistrationPayload(): array
         'registering_for' => 'self',
         'birth_date' => Carbon::now()->subYears(30)->toDateString(),
         'document' => LegalEntityFactory::validCpf(),
+        'phone' => '(47) 99696-1511',
     ];
 }
 
@@ -163,6 +164,21 @@ it('rejects self-registration without a CPF, even with an orphan appointment req
     expect(PatientUser::query()->count())->toBe(0)
         ->and(Patient::query()->count())->toBe(0)
         ->and($request->fresh()->patient_id)->toBeNull();
+});
+
+it('shows a friendly custom message when the phone is missing on self-registration', function () {
+    Organization::factory()->create();
+
+    $payload = baseRegistrationPayload();
+    unset($payload['phone']);
+
+    $response = $this->post('/portal/registrar', $payload);
+
+    $response->assertSessionHasErrors('phone');
+    expect(session('errors')->get('phone')[0])->toBe(
+        'Telefone é obrigatório para a clínica entrar em contato.',
+    );
+    expect(PatientUser::query()->count())->toBe(0);
 });
 
 it('rejects a dependent registration without a CPF for the dependent', function () {
