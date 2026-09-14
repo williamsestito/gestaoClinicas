@@ -81,7 +81,7 @@ class PatientAppointmentController extends Controller
                 // SiteService) ou da busca de disponibilidade (`preferredService`,
                 // Service operacional) — nunca os dois ao mesmo tempo (ver
                 // App\Models\AppointmentRequest e LandingAvailabilitySearch.vue).
-                'service_name' => $request->service?->name ?? $request->preferredService?->name,
+                'service_name' => $request->service->name ?? $request->preferredService?->name,
                 'preferred_date' => $request->preferred_date?->toDateString(),
                 'preferred_period' => $request->preferred_period,
                 'notes' => $request->notes,
